@@ -1,38 +1,51 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Last.fm Personal Library settings</title>
-<style>
-  body { font: 15px/1.5 system-ui, sans-serif; max-width: 900px; margin: 32px auto; padding: 0 20px; color: #222; }
-  h1 { margin-bottom: 8px; }
-  label { display: block; font-weight: 600; margin: 20px 0 6px; }
-  input[type=text] { font: inherit; padding: 8px; min-width: 240px; }
-  button { font: inherit; padding: 8px 12px; margin: 8px 8px 8px 0; cursor: pointer; }
-  table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-  td, th { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; overflow-wrap: anywhere; }
-  .row-actions { white-space: nowrap; }
-  #message { min-height: 1.5em; color: #205b2a; }
-  .subtle { color: #666; }
-</style>
-<h1>Last.fm Personal Library</h1>
-<p class="subtle">Display preferences stay in this Chrome profile. They do not change Last.fm's data.</p>
-<label for="username">Your Last.fm username</label>
-<input id="username" type="text" autocomplete="off">
-<p><label><input id="infinite" type="checkbox"> Keep scrolling through library pages</label></p>
-<button id="save-settings" type="button">Save settings</button>
-<h2>Display names</h2>
-<p id="count"></p>
-<label for="search">Search display names</label>
-<input id="search" type="text" autocomplete="off" placeholder="Artist, album, track, or preferred name">
-<button id="export" type="button">Export JSON backup</button>
-<button id="import" type="button">Import JSON backup</button>
-<input id="import-file" type="file" accept=".json,application/json" hidden>
-<table>
-  <thead><tr><th>Type</th><th>Original</th><th>Preferred</th><th>Artist</th><th></th></tr></thead>
-  <tbody id="rules"></tbody>
-</table>
-<p id="message" role="status"></p>
-<script src="rules.js"></script>
-<script src="options.js"></script>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Last.fm Personal Library settings</title>
+  <link rel="stylesheet" href="extension-ui.css">
+</head>
+<body class="settings-page">
+  <header class="page-header">
+    <div><p class="eyebrow">Your library, your display names</p><h1>Last.fm Personal Library</h1></div>
+    <span id="profile-status" class="badge">Loading profile…</span>
+  </header>
+  <main>
+    <section class="card" aria-labelledby="profile-heading">
+      <h2 id="profile-heading">Profile &amp; scrolling</h2>
+      <p class="subtle">Preferences apply only to your profile in this browser.</p>
+      <form id="settings-form">
+        <div class="settings-fields">
+          <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" required></div>
+          <label class="check-label"><input id="infinite" type="checkbox"> Keep scrolling through library pages</label>
+        </div>
+        <button id="save-settings" class="primary" type="submit">Save settings</button>
+        <span id="settings-note" class="subtle"></span>
+      </form>
+    </section>
+    <section class="card" aria-labelledby="names-heading">
+      <div class="section-header"><div><h2 id="names-heading">Display names</h2><p class="subtle">Local spelling and casing. Your Last.fm scrobbles stay unchanged.</p></div><span id="count" class="subtle"></span></div>
+      <div class="filters">
+        <div class="search-field"><label for="search">Search preferences</label><input id="search" type="search" autocomplete="off" placeholder="Artist, album, track, or preferred name"></div>
+        <div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="tracks">Tracks</option><option value="albumArtists">Album artists</option></select></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th scope="col">Type</th><th scope="col">Original</th><th scope="col">Preferred</th><th scope="col">Artist</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="rules"></tbody></table></div>
+      <p id="empty" class="empty-state" hidden>No preferences yet. Edit a display name in your Last.fm library to add one.</p>
+      <div id="undo-area" class="undo-bar" hidden><span id="undo-label"></span><button id="undo" type="button">Undo delete</button></div>
+    </section>
+    <section class="card backup-card" aria-labelledby="backup-heading">
+      <div><h2 id="backup-heading">Backup &amp; restore</h2><p class="subtle">Export a JSON backup before importing or changing saved preferences.</p></div>
+      <div class="button-group"><button id="export" type="button">Export JSON backup</button><button id="import" type="button">Import backup…</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>
+    </section>
+    <p id="message" class="message" role="status" aria-live="polite" tabindex="-1"></p>
+  </main>
+  <dialog id="import-preview" aria-labelledby="import-heading">
+    <h2 id="import-heading">Review this backup</h2>
+    <p id="import-summary"></p><p id="import-details" class="subtle"></p>
+    <p>This replaces your display preferences and profile settings. Export your current preferences first if you want to keep a copy.</p>
+    <div class="button-group"><button id="preview-export" type="button">Export current backup</button><button id="cancel-import" type="button">Cancel</button><button id="confirm-import" class="primary" type="button">Replace preferences</button></div>
+  </dialog>
+  <script src="rules.js"></script><script src="store.js"></script><script src="options.js"></script>
+</body>
 </html>

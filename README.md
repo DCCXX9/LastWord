@@ -1,69 +1,75 @@
 # Last.fm Personal Library
 
-A private Chrome extension for display preferences on your own Last.fm profile.
-Local casing preferences do not change Last.fm data; real scrobble edits use
-Last.fm's normal forms. Friends' profiles and global music pages keep their
-usual names.
+Private display preferences and continuous library scrolling for your own
+Last.fm profile. Installed candidate: **v0.5.0**.
 
-## Install
+## Updating this installed copy
 
-1. Extract the ZIP to a permanent folder on your computer.
-2. Open chrome://extensions, switch on **Developer mode**, and choose
-   **Load unpacked**. Select the extracted lastfm-personal-library folder
-   containing manifest.json.
-3. Disable the old **Last.fm Infinite Artists** Tampermonkey script so it
-   does not run alongside the extension.
-4. Refresh your Last.fm page. The extension starts with DCCXX as its profile
-   username. Use the extension icon → **Settings and backup** if your username
-   differs.
+Export a JSON backup from **Settings and backup**, then click **Reload** on
+this extension in Supermium's `chrome://extensions` and refresh your Last.fm
+page. Keep this folder in place and keep the existing extension installed.
+Its identity and stored preferences depend on that installation.
 
-## Use
+## Features
 
-- **Case-only track or album edit:** Enter your preferred capitalization in
-  Last.fm's normal Edit Scrobble or Edit Album window, then click its normal
-  **Save Edit** button. If Last.fm rejects only the casing change, the extension
-  saves your display preference locally and shows a confirmation with a link
-  to manage preferences.
-- **Edit track from an album:** On an album in your own library, open a track's
-  three-dot menu and choose **Edit track**. The extension uses the track's
-  library link to find a scrobble tagged with that album and opens Last.fm's
-  normal Edit Scrobble window on the current page. If Last.fm stored that
-  scrobble under a different album name, the extension shows the actual tag
-  and asks before opening its edit window.
-- **Artist display name:** On your own Artists library, open an artist's
-  three-dot menu and choose **Edit artist display name**. This is local to
-  your profile because Last.fm has no equivalent artist-wide edit window.
-- **Manage and back up:** The extension icon opens settings. You can search,
-  edit and delete preferences, and export/import a JSON backup. The rules live in Chrome's
-  extension-local storage; uninstalling the extension removes them unless
-  you exported a backup.
-- **Keep scrolling:** Scrolling near the end of Artists, Albums, Scrobbles,
-  artist Tracks or artist Albums fetches the next page and appends its original
-  Last.fm table rows. If it fails, the ordinary pagination remains available.
-  Turn this off in settings if needed.
+- **Personal display names:** case-sensitive preferred names for artists,
+  albums and tracks, applied only to your configured profile (default DCCXX).
+  Links, library headings and rows update immediately when preferences change.
+- **Native editing:** Edit track is first in album-track menus. It checks at
+  most three track-history pages, then delegates to Last.fm's native dialog
+  on the current page. The lookup is cancellable. It asks before opening a
+  scrobble tagged with another album. No iframe is used.
+- **Local casing:** exact named original/current fields let casing-only edits
+  save locally without submitting a Last.fm edit. Real edits use Last.fm's
+  existing handler. Unsupported form layouts report the limitation. Album
+  forms need the complete named original/current pairs; the live album layout
+  remains unverified.
+- **Keep scrolling:** Artists, Albums, Tracks, Scrobbles, artist Scrobbles,
+  artist Tracks and artist Albums append Last.fm's native rows. The panel
+  reports loading, paused, error and finished states. Last.fm's pagination
+  returns if loading fails or is disabled.
+- **Request limits:** one request at a time across this extension's Last.fm
+  tabs, at least 1.5 seconds between requests and a 15-second timeout. There
+  are no automatic retries. A rate-limit response pauses requests across
+  tabs and reloads. After Last.fm's warning clears, click Resume loading in
+  the scrolling panel to make one new attempt. No cooldown expiry is assumed.
+- **Settings:** search, type filters, inline editing, Undo delete and import
+  previews. Simultaneous changes are coordinated by the background worker;
+  conflicting edits are reported instead of replacing a newer preference.
+- **Backup:** exports read current saved preferences and retain additional
+  legacy storage. Imports replace display preferences/settings only after
+  preview, and preserve existing extra storage. Nothing migrates or clears
+  storage on startup.
+- **Diagnostics:** the popup reports profile/page connection and provides
+  Copy diagnostics with version, feature status and counts. It excludes
+  scrobble titles, form values and security tokens.
 
-## Scope and performance
+The full-history album-less scanner and automatic scrobble corrections remain
+removed following Last.fm's rate limit. Existing saved legacy keys are retained.
 
-Names are matched without regard to capitalization, but the preferred display
-is shown exactly as entered. Album and track rules are scoped to an artist.
-The extension loads the rules once and looks up only the linked names present
-on the current page, so thousands of saved rules do not mean thousands of
-page edits on every visit.
+## Verification
 
-The display layer changes visible linked names and library headings, not
-Last.fm's data, URLs, statistics, sorting, search results, or other people's
-views. A few unlinked labels or new Last.fm page layouts may need additional
-selectors.
+The local checks pass in isolated Supermium profiles with website requests
+intercepted. They cover rules, adapter fields, concurrent storage writes,
+profile changes, redirects, native dialog delegation, casing/real edits,
+menu order, title spacing, settings, scrolling and rate limits. An additional
+check loads the actual unpacked extension and exercises its service worker,
+content-script injection and two settings tabs.
 
-## Development checks
+These are reconstructed fixtures using user-confirmed field names and paths,
+not captured live Last.fm HTML. The signed-in Supermium profile is unavailable
+to the browser connection. Opening Last.fm's actual edit dialog and checking
+its album form remain user acceptance items; no live account edits were made.
 
-From this folder:
+Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
+`tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`,
+`tests/options.cjs`, `tests/extension.cjs`. Browser checks require Playwright
+and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
+`tests/extension.cjs` creates a disposable profile under ignored test-results.
 
-    node tests/rules.cjs
-    node tests/smoke.cjs
-    node tests/album.cjs
-    node tests/library-scroll.cjs
-    node tests/options.cjs
+## Rollback
 
-The browser checks require Playwright and a local Chromium installation.
-They use synthetic Last.fm pages; they do not log into a real account.
+Git baseline `3a1042a0292190e18a9e66f46a46485ae8d23950` contains the exact
+previous v0.3.4 files. The cleanup is a separate commit on `polish-reliability`.
+Restoring source files does not restore or delete browser storage. The old
+failed scan candidates remain in the ignored `.codex-backups` folder.

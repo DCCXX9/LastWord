@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<title>Last.fm Personal Library</title>
-<style>
-  body { font: 14px system-ui,sans-serif; width: 240px; padding: 12px; }
-  button { padding: 8px 12px; cursor: pointer; }
-</style>
-<strong>Last.fm Personal Library</strong>
-<p id="summary">Loading…</p>
-<button id="options" type="button">Settings and backup</button>
-<script src="popup.js"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Last.fm Personal Library</title><link rel="stylesheet" href="extension-ui.css"></head>
+<body class="popup-page">
+  <header><p class="eyebrow">Last.fm</p><h1>Personal Library</h1></header>
+  <main>
+    <div class="popup-status"><span id="status-dot" class="status-dot" aria-hidden="true"></span><strong id="active-status">Checking this tab…</strong></div>
+    <p id="page-detail" class="subtle"></p>
+    <dl class="popup-details"><div><dt>Configured profile</dt><dd id="profile">…</dd></div><div><dt>Display preferences</dt><dd id="count">…</dd></div><div><dt>Keep scrolling</dt><dd id="scroll">…</dd></div></dl>
+    <button id="options" class="primary full-width" type="button">Settings &amp; backup</button>
+    <button id="diagnostics" class="full-width quiet" type="button">Copy diagnostics</button>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+  </main>
+  <script src="rules.js"></script><script src="store.js"></script><script src="popup.js"></script>
+</body>
 </html>

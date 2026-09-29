@@ -1,576 +1,301 @@
 (() => {
   'use strict';
-
   const R = globalThis.LastfmRules;
+  const A = globalThis.LastfmAdapter;
+  const S = globalThis.LastfmStore;
   const ERROR = /edit doesn.t contain any real changes|cannot accept casing changes/i;
-  let username = 'DCCXX';
+  const MODAL = '.popup_content,.modal,[role="dialog"]';
+  const MODAL_FORMS = '.popup_content form,.modal form,[role="dialog"] form';
+  let username = '';
   let rules = R.empty();
-  let recent = null;
-  let lastEdit = null;
-  let scanQueued = false;
+  let lookup = null;
+  let queued = false;
+  const pending = new Set();
+  const saving = new WeakSet();
+  const own = () => A.ownProfile(location.href, username);
+  const select = (root, selector) => [
+    ...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)
+  ];
 
-  function ownProfile() {
-    const match = location.pathname.match(/^\/user\/([^/]+)(?:\/|$)/i);
-    if (!match) return false;
-    try {
-      return R.normalize(decodeURIComponent(match[1])) === R.normalize(username);
-    } catch {
-      return false;
-    }
+  function manageLink() {
+    const link = document.createElement('a');
+    link.href = chrome.runtime.getURL('options.html');
+    link.target = '_blank'; link.rel = 'noopener';
+    link.textContent = 'Manage preferences';
+    return link;
   }
-
-  function decode(part) {
-    try { return decodeURIComponent(part.replace(/\+/g, ' ')); }
-    catch { return part.replace(/\+/g, ' '); }
-  }
-
-  function musicItem(link) {
-    let url;
-    try { url = new URL(link.href); } catch { return null; }
-    if (url.origin !== location.origin) return null;
-    const parts = url.pathname.split('/').filter(Boolean);
-    if (parts[0] !== 'music' || !parts[1]) return null;
-    const index = parts[1] === '+noredirect' ? 2 : 1;
-    if (!parts[index] || parts[index].startsWith('+')) return null;
-    const artist = decode(parts[index]);
-    if (parts[index + 1] === '_' && parts[index + 2]) {
-      return { type: 'tracks', artist, name: decode(parts[index + 2]) };
-    }
-    if (parts[index + 1] && !parts[index + 1].startsWith('+') &&
-        parts[index + 2] && !parts[index + 2].startsWith('+')) {
-      return { type: 'tracks', artist, name: decode(parts[index + 2]) };
-    }
-    if (parts[index + 1] && !parts[index + 1].startsWith('+')) {
-      return { type: 'albums', artist, name: decode(parts[index + 1]) };
-    }
-    return { type: 'artists', artist, name: artist };
-  }
-
-  function rowContext(row) {
-    if (!row) return null;
-    const items = [...row.querySelectorAll('a[href]')]
-      .map(musicItem).filter(Boolean);
-    return items.find(item => item.type === 'tracks') ||
-      items.find(item => item.type === 'albums') ||
-      items.find(item => item.type === 'artists') || null;
-  }
-
-  function libraryTrackUrl(item) {
-    const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
-    return `${location.origin}/user/${encode(username)}/library/music/+noredirect/` +
-      `${encode(item.artist)}/_/${encode(item.name)}`;
-  }
-
-  function ownLibraryTrackUrl(value) {
-    try {
-      const url = new URL(value, location.href);
-      const parts = url.pathname.split('/').filter(Boolean);
-      const music = parts.indexOf('music', 3);
-      const track = parts[music + 1] === '+noredirect' ? music + 2 : music + 1;
-      return url.origin === location.origin && parts[0] === 'user' &&
-        R.normalize(decode(parts[1] || '')) === R.normalize(username) &&
-        parts[2] === 'library' && music >= 3 && parts[track] &&
-        parts[track + 1] === '_' && parts[track + 2] ? url.href : null;
-    } catch { return null; }
-  }
-
-  async function openNativeTrackEdit(item, button, row) {
-    button.disabled = true;
-    const oldText = button.textContent;
-    button.textContent = 'Loading edit…';
-    try {
-      const album = R.normalize(item.album);
-      const linkedTrack = [...row.querySelectorAll('a[href]')]
-        .map(link => ownLibraryTrackUrl(link.href)).find(Boolean);
-      let url = linkedTrack || libraryTrackUrl(item);
-      let original = null;
-      let sourceUrl = url;
-      let alternative = null;
-      const visited = new Set();
-      for (let pageNumber = 0; url && pageNumber < 20; pageNumber++) {
-        if (visited.has(url)) break;
-        visited.add(url);
-        const response = await fetch(url, { credentials: 'same-origin' });
-        const finalUrl = new URL(response.url);
-        if (!response.ok || !ownLibraryTrackUrl(response.url)) {
-          throw new Error('Could not load your track scrobbles.');
-        }
-        const page = new DOMParser().parseFromString(await response.text(), 'text/html');
-        const forms = [...page.querySelectorAll('form[data-edit-scrobble]')]
-          .filter(form => {
-            const action = new URL(form.getAttribute('action') || '', response.url);
-            return action.origin === location.origin &&
-              action.pathname === `/user/${username}/library/edit` &&
-              form.querySelector('[name="csrfmiddlewaretoken"]');
-          });
-        original = forms.find(form =>
-          R.normalize(form.querySelector('[name="album_name"]')?.value) === album
-        );
-        if (original) { sourceUrl = response.url; break; }
-        if (!alternative && forms.length) {
-          alternative = { form: forms[0], url: response.url };
-        }
-        const next = page.querySelector('nav.pagination .pagination-next a[href],'+
-          'nav.pagination a.pagination-next[href]');
-        const nextUrl = next && new URL(next.getAttribute('href'), response.url);
-        url = nextUrl?.origin === location.origin &&
-          nextUrl.pathname === finalUrl.pathname ? nextUrl.href : null;
-      }
-      if (!original) {
-        if (!alternative) {
-          throw new Error('No editable scrobble was found on this track’s first 20 library pages.');
-        }
-        const fields = alternative.form;
-        const actualArtist = fields.querySelector('[name="artist_name"]')?.value || item.artist;
-        const actualTrack = fields.querySelector('[name="track_name"]')?.value || item.name;
-        const actualAlbum = fields.querySelector('[name="album_name"]')?.value || '(no album)';
-        const message = `No scrobble tagged “${item.album}” was found. ` +
-          `Last.fm has an editable scrobble for “${actualTrack}” by ${actualArtist} ` +
-          `tagged “${actualAlbum}”. Open its normal edit dialog instead?`;
-        if (!confirm(message)) return;
-        original = alternative.form;
-        sourceUrl = alternative.url;
-      }
-      document.querySelector('[data-lfm-track-edit-launcher]')?.remove();
-      const form = document.importNode(original, true);
-      form.dataset.lfmTrackEditLauncher = '';
-      form.action = new URL(original.getAttribute('action'), sourceUrl).href;
-      form.style.display = 'none';
-      let submit = form.querySelector(
-        'button:not([type]),button[type="submit"],input[type="submit"]'
-      );
-      if (!submit) {
-        submit = document.createElement('button');
-        submit.type = 'submit';
-        form.append(submit);
-      }
-      const host = row.querySelector('.chartlist-more-menu,.dropdown-menu,[role="menu"]') ||
-        row.lastElementChild;
-      if (!row.isConnected || !host) throw new Error('The track menu closed; open it again.');
-      const holder = button.closest('li');
-      if (holder?.isConnected) holder.append(form);
-      else {
-        const fallback = document.createElement('li');
-        fallback.hidden = true;
-        fallback.append(form);
-        host.prepend(fallback);
-      }
-      // Last.fm's own delegated handler opens its normal Edit Scrobble dialog.
-      const dialogOpen = () => [...document.querySelectorAll(
-        '.popup_content,.modal,[role="dialog"]'
-      )].some(node => node.getClientRects().length > 0 &&
-        node.querySelector('form[action*="/library/edit"]'));
-      let opened = dialogOpen();
-      const observer = new MutationObserver(() => { opened ||= dialogOpen(); });
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-      const preventNavigation = event => {
-        if (event.target === form && !event.defaultPrevented) event.preventDefault();
-      };
-      document.addEventListener('submit', preventNavigation);
-      submit.click();
-      document.removeEventListener('submit', preventNavigation);
-      setTimeout(() => {
-        observer.disconnect();
-        if (!opened && !dialogOpen() && form.isConnected) {
-          toast('Last.fm did not open its edit window. Please try again.');
-        }
-        form.remove();
-      }, 8000);
-    } catch (error) {
-      toast(error.message);
-    } finally {
-      button.disabled = false;
-      button.textContent = oldText;
-    }
-  }
-
-  function addTrackMenuItems() {
-    const context = contextFromPath();
-    if (context?.type !== 'albums') return;
-    for (const row of document.querySelectorAll('tr.chartlist-row')) {
-      const item = [...row.querySelectorAll('a[href]')]
-        .map(musicItem).find(link => link?.type === 'tracks');
-      const menu = row.querySelector('.chartlist-more-menu,.dropdown-menu,[role="menu"]');
-      if (!item || !menu) continue;
-      const existing = menu.querySelector('[data-lfm-track-action]');
-      if (existing) {
-        if (menu.firstElementChild !== existing) menu.prepend(existing);
-        continue;
-      }
-      const entry = document.createElement('li');
-      entry.dataset.lfmTrackAction = '';
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'mimic-link dropdown-menu-clickable-item more-item--edit-old';
-      button.textContent = 'Edit track';
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        recent = { ...item, time: Date.now() };
-        openNativeTrackEdit({ ...item, album: context.name }, button, row);
-      });
-      entry.append(button);
-      menu.prepend(entry);
-    }
-  }
-
-  function artistFromLibraryLink(link) {
-    let url;
-    try { url = new URL(link.href); } catch { return null; }
-    if (url.origin !== location.origin) return null;
-    const parts = url.pathname.split('/').filter(Boolean);
-    const music = parts[0] === 'user' && parts[2] === 'library'
-      ? parts.indexOf('music', 3) : -1;
-    if (music < 0 || R.normalize(decode(parts[1])) !== R.normalize(username)) {
-      return null;
-    }
-    const index = parts[music + 1] === '+noredirect' ? music + 2 : music + 1;
-    return parts[index] && !parts[index].startsWith('+')
-      ? decode(parts[index]) : null;
-  }
-
-  function contextFromPath() {
-    const parts = location.pathname.split('/').filter(Boolean);
-    if (parts[0] !== 'user' || parts[2] !== 'library') return null;
-    const music = parts.indexOf('music', 3);
-    if (music < 0) return null;
-    const index = parts[music + 1] === '+noredirect' ? music + 2 : music + 1;
-    if (!parts[index] || parts[index].startsWith('+')) return null;
-    const artist = decode(parts[index]);
-    if (parts[index + 1] && parts[index + 2] &&
-        !parts[index + 2].startsWith('+')) {
-      return { type: 'tracks', artist, name: decode(parts[index + 2]) };
-    }
-    if (parts[index + 1] && !parts[index + 1].startsWith('+')) {
-      return { type: 'albums', artist, name: decode(parts[index + 1]) };
-    }
-    return { type: 'artists', artist, name: artist };
-  }
-
-  function artistDialog(artist) {
-    document.querySelector('[data-lfm-artist-dialog]')?.remove();
-    const dialog = document.createElement('dialog');
-    dialog.dataset.lfmArtistDialog = '';
-    dialog.style.cssText =
-      'border:1px solid #ddd;border-radius:4px;padding:24px;' +
-      'width:min(430px,calc(100vw - 40px));box-shadow:0 12px 40px #0005;' +
-      'font:14px/1.5 system-ui,sans-serif;color:#222';
-    const heading = document.createElement('h2');
-    heading.textContent = 'Edit artist display name';
-    heading.style.margin = '0 0 12px';
-    const explanation = document.createElement('p');
-    explanation.textContent =
-      'This changes the name shown on your profile in this browser.';
-    const label = document.createElement('label');
-    label.textContent = 'Preferred name';
-    label.style.display = 'block';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = R.get(rules, 'artists', artist) || artist;
-    input.style.cssText =
-      'box-sizing:border-box;width:100%;padding:8px;margin:5px 0 14px;' +
-      'border:1px solid #aaa;font:inherit';
-    label.append(input);
-    const save = document.createElement('button');
-    save.type = 'button';
-    save.textContent = 'Save locally';
-    save.style.cssText =
-      'background:#d51007;color:white;border:0;padding:8px 12px;cursor:pointer';
-    const cancel = document.createElement('button');
-    cancel.type = 'button';
-    cancel.textContent = 'Cancel';
-    cancel.style.cssText = 'margin-left:8px;padding:8px 12px;cursor:pointer';
-    const message = document.createElement('div');
-    message.setAttribute('role', 'status');
-    message.style.marginTop = '8px';
-    cancel.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('close', () => dialog.remove());
-    save.addEventListener('click', async () => {
-      try {
-        R.put(rules, 'artists', artist, input.value);
-        await chrome.storage.local.set({ rules });
-        dialog.close();
-        toast('Artist display name saved locally.');
-      } catch (error) {
-        message.textContent = error.message;
-      }
-    });
-    input.addEventListener('keydown', event => {
-      if (event.key === 'Enter') save.click();
-    });
-    dialog.append(heading, explanation, label, save, cancel, message);
-    document.body.append(dialog);
-    dialog.showModal();
-    input.focus();
-    input.select();
-  }
-
-  function toast(text) {
+  function notice(text, kind = 'error', action) {
     document.querySelector('[data-lfm-local-toast]')?.remove();
     const note = document.createElement('div');
-    note.dataset.lfmLocalToast = '';
-    note.setAttribute('role', 'status');
-    note.textContent = text;
-    note.style.cssText =
-      'position:fixed;z-index:2147483647;right:20px;top:20px;' +
-      'padding:12px 16px;background:#185c32;color:#fff;' +
-      'border-radius:4px;box-shadow:0 3px 14px #0004;' +
-      'font:14px system-ui,sans-serif';
-    document.body.append(note);
-    setTimeout(() => note.remove(), 4500);
+    note.dataset.lfmLocalToast = ''; note.dataset.kind = kind;
+    note.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    note.append(text);
+    if (kind === 'success') note.append(manageLink());
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button'; dismiss.textContent = action ? 'Cancel' : 'Dismiss';
+    dismiss.addEventListener('click', () => { action?.(); note.remove(); });
+    note.append(dismiss); document.body.append(note);
+    return note;
   }
-
-  function addArtistMenuItem() {
-    const entries = [...document.querySelectorAll(
-      'a[href*="/library/music/"],.dropdown-menu a,' +
-      '.dropdown-menu button,[role="menu"] a,[role="menu"] button'
-    )]
-      .filter(el => el.textContent.trim() === 'Go to artist in library' &&
-                    el.getBoundingClientRect().height > 0);
-    for (const entry of entries) {
-      const parent = entry.closest('li') || entry;
-      const menu = entry.closest('.dropdown-menu,[role="menu"],ul') ||
-        parent.parentElement;
-      if (menu?.querySelector('[data-lfm-artist-action]')) continue;
-      const artist = artistFromLibraryLink(entry) ||
-        rowContext(entry.closest('tr.chartlist-row'))?.artist ||
-        (recent?.type === 'artists' && Date.now() - recent.time < 10000
-          ? recent.artist : null);
-      if (!artist) continue;
-      const clone = parent.cloneNode(true);
-      clone.dataset.lfmArtistAction = '';
-      const control = clone.matches('a,button')
-        ? clone : clone.querySelector('a,button');
-      if (!control) continue;
-      control.textContent = 'Edit artist display name';
-      control.removeAttribute('href');
-      control.setAttribute('role', 'button');
-      control.tabIndex = 0;
-      clone.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        artistDialog(artist);
-      });
-      control.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          artistDialog(artist);
-        }
-      });
-      parent.after(clone);
-    }
+  function context() { return A.musicItem(location.href); }
+  function rowItem(row) {
+    const items = [...row.querySelectorAll('a[href]')].map(link => A.musicItem(link)).filter(Boolean);
+    return items.find(item => item.type === 'tracks') || items.find(item => item.type === 'albums') || items[0];
   }
-
-  function textInputs(container) {
-    return [...container.querySelectorAll('input')].filter(input =>
-      ['text', 'search'].includes(input.type) &&
-      input.getBoundingClientRect().height > 0
-    );
+  function ownTrack(value) {
+    const item = A.musicItem(value);
+    return A.ownProfile(value, username) && item?.type === 'tracks' ? String(value) : null;
   }
-
-  function inputType(input) {
-    const identity = [input.name, input.id, input.getAttribute('aria-label')]
-      .filter(Boolean).join(' ').toLowerCase();
-    if (/album[_-\s]*artist|albumartist/.test(identity)) return 'albumArtist';
-    if (/album/.test(identity)) return 'album';
-    if (/artist/.test(identity)) return 'artist';
-    if (/track|title/.test(identity)) return 'track';
-    return null;
+  function trackUrl(item) {
+    const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
+    return `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(item.artist)}/_/${encode(item.name)}`;
   }
-
-  function editFields(container) {
-    const inputs = textInputs(container);
-    if (inputs.length < 2) return null;
-    const fields = {};
-
-    // The Edit Album form groups its before/after inputs under each label.
-    // Those left-hand inputs are sometimes styled gray without being disabled.
-    const types = {
-      'track': 'track', 'track title': 'track',
-      'artist': 'artist', 'album': 'album', 'album artist': 'albumArtist'
-    };
-    const labels = [...container.querySelectorAll('label,dt,strong,span,div')]
-      .filter(el => el.childElementCount === 0 &&
-        types[el.textContent.trim().toLowerCase()]);
-    for (const label of labels) {
-      const type = types[label.textContent.trim().toLowerCase()];
-      let group = label.parentElement;
-      for (let depth = 0; group && group !== container && depth < 5;
-           depth++, group = group.parentElement) {
-        const pair = textInputs(group);
-        if (pair.length === 2) {
-          fields[type] = { from: pair[0].value, to: pair[1].value };
-          break;
-        }
-        if (pair.length > 2) break;
-      }
-    }
-    const original = inputs.filter(input => input.disabled || input.readOnly);
-    const edited = inputs.filter(input => !input.disabled && !input.readOnly);
-    // Older forms mark original inputs readonly; newer forms put each pair
-    // side by side with both inputs technically editable.
-    const paired = original.length && original.length === edited.length
-      ? original.map((input, i) => [input, edited[i]])
-      : Array.from({ length: Math.floor(inputs.length / 2) }, (_, i) =>
-        [inputs[i * 2], inputs[i * 2 + 1]]);
-    const count = paired.length;
-    const fallback = count >= 4
-      ? ['track', 'album', 'artist', 'albumArtist']
-      : count === 3
-        ? ['album', 'artist', 'albumArtist']
-        : count === 2
-          ? ['album', 'albumArtist']
-          : ['album'];
-    for (let i = 0; i < count; i++) {
-      const type = inputType(paired[i][1]) || fallback[i];
-      if (type && !fields[type]) fields[type] = {
-        from: paired[i][0].value, to: paired[i][1].value
-      };
-    }
-    return fields;
-  }
-
-  function findContainer(element) {
-    let node = element.closest('form,[role="dialog"],.modal') ||
-      element.parentElement;
-    for (let i = 0; node && node !== document.body && i < 12;
-         i++, node = node.parentElement) {
-      if (editFields(node)) return node;
-    }
-    return null;
-  }
-
-  function caseChanges(fields) {
-    return Object.entries(fields).filter(([, pair]) =>
-      pair.from !== pair.to &&
-      R.normalize(pair.from) === R.normalize(pair.to)
-    );
-  }
-
-  async function saveRejectedCase(error) {
-    if (error.dataset.lfmCaseHandled) return;
-    const container = findContainer(error);
-    const fields = (container && editFields(container)) ||
-      (lastEdit && Date.now() - lastEdit.time < 120000
-        ? lastEdit.fields : null);
-    if (!fields) return;
-    const allChanges = Object.entries(fields).filter(([, pair]) => pair.from !== pair.to);
-    const changes = caseChanges(fields);
-    if (allChanges.length !== changes.length) return;
-    if (!changes.length) return;
-    error.dataset.lfmCaseHandled = '1';
-    const context = (lastEdit && Date.now() - lastEdit.time < 120000
-      ? lastEdit.context : null) || contextFromPath();
-    const artist = fields.artist?.from ||
-      (context?.type === 'albums' || context?.type === 'tracks'
-        ? context.artist : null) ||
-      fields.albumArtist?.from;
-    let saved = 0;
-    try {
-      for (const [type, pair] of changes) {
-        if (type === 'artist') {
-          R.put(rules, 'artists', pair.from, pair.to);
-          saved++;
-        } else if (type === 'album' && artist) {
-          R.put(rules, 'albums', pair.from, pair.to, artist);
-          saved++;
-        } else if (type === 'track' && artist) {
-          R.put(rules, 'tracks', pair.from, pair.to, artist);
-          saved++;
-        } else if (type === 'albumArtist') {
-          R.put(rules, 'albumArtists', pair.from, pair.to);
-          saved++;
-        }
-      }
-      if (!saved) {
-        delete error.dataset.lfmCaseHandled;
-        return;
-      }
-      await chrome.storage.local.set({ rules });
-      const banner = error.closest('[role="alert"],.alert,.alert-danger') || error;
-      banner.hidden = true;
-      const confirmation = document.createElement('div');
-      confirmation.dataset.lfmCaseConfirmation = '';
-      confirmation.setAttribute('role', 'status');
-      confirmation.append('Case-sensitive changes saved locally. ');
-      const manage = document.createElement('a');
-      manage.href = chrome.runtime.getURL('options.html');
-      manage.target = '_blank';
-      manage.rel = 'noopener';
-      manage.textContent = 'Manage preferences';
-      confirmation.append(manage);
-      confirmation.style.cssText =
-        'margin:10px 0;padding:10px;background:#e4f3e8;' +
-        'border:1px solid #64a978;color:#1b5930';
-      banner.after(confirmation);
-      toast('Case-sensitive changes saved locally.');
-    } catch (failure) {
-      delete error.dataset.lfmCaseHandled;
-      toast('Could not save local case changes: ' + failure.message);
-    }
-  }
-
-  function scanErrors() {
-    if (!ERROR.test(document.body.textContent)) return;
-    // Last.fm's album dialog uses a red banner that need not have an alert
-    // class or role. Pick the innermost visible element containing its message.
-    const errors = [...document.body.querySelectorAll('*')].filter(el =>
-      ERROR.test(el.textContent) && el.getClientRects().length > 0 &&
-      ![...el.children].some(child => ERROR.test(child.textContent))
-    );
-    errors.forEach(error => saveRejectedCase(error));
-  }
-
-  function scheduleScan() {
-    if (scanQueued) return;
-    scanQueued = true;
+  function openForm(original, source, row) {
+    document.querySelector('[data-lfm-track-edit-launcher]')?.remove();
+    const form = document.importNode(original, true);
+    form.dataset.lfmTrackEditLauncher = '';
+    form.action = new URL(original.getAttribute('action'), source).href;
+    form.hidden = true;
+    let submit = form.querySelector('button:not([type]),button[type="submit"],input[type="submit"]');
+    if (!submit) { submit = document.createElement('button'); submit.type = 'submit'; form.append(submit); }
+    const host = row.querySelector('[data-lfm-track-action]');
+    if (!row.isConnected || !host) throw new Error('The track list changed. Open its menu again.');
+    host.append(form);
+    const visibleForms = () => [...document.querySelectorAll(MODAL_FORMS)]
+      .filter(candidate => candidate.getClientRects().length && editForm(candidate));
+    const before = new Set(visibleForms());
+    let opened = false;
+    const checkOpened = () => { opened ||= visibleForms().some(candidate => !before.has(candidate)); };
+    const observer = new MutationObserver(checkOpened);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ['class', 'style', 'hidden'] });
+    // Retain Last.fm's delegated submit handler. Guard against page navigation if
+    // it is unavailable; this extension never submits real edits itself.
+    const guard = event => { if (event.target === form) event.preventDefault(); };
+    document.addEventListener('submit', guard);
+    submit.click();
+    document.removeEventListener('submit', guard);
+    checkOpened();
     setTimeout(() => {
-      scanQueued = false;
-      if (!ownProfile()) return;
-      addArtistMenuItem();
-      addTrackMenuItems();
-      scanErrors();
-    }, 80);
+      observer.disconnect();
+      if (own() && !opened && form.isConnected) {
+        notice('Last.fm did not open its edit dialog. Open this track in your library and use its normal Edit action.');
+      }
+      form.remove();
+    }, 8000);
   }
-
+  async function openTrack(item, button, row) {
+    lookup?.abort();
+    const controller = new AbortController(); lookup = controller;
+    button.disabled = true; button.textContent = 'Loading edit…';
+    const loading = notice('Finding a scrobble for this track…', 'loading', () => controller.abort());
+    try {
+      let url = [...row.querySelectorAll('a[href]')].map(link => ownTrack(link.href)).find(Boolean) || trackUrl(item);
+      let original = null;
+      let source = url;
+      let alternative = null;
+      for (let pages = 0; url && pages < 3; pages++) {
+        const result = await LastfmPages.get(url, { signal: controller.signal });
+        if (!ownTrack(result.url)) throw new Error('Last.fm did not return your track history.');
+        const matches = [...result.doc.querySelectorAll('form[data-edit-scrobble]')]
+          .map(form => ({ form, fields: A.editRow(form, result.url, username) }))
+          .filter(entry => entry.fields && R.normalize(entry.fields.artist) === R.normalize(item.artist) &&
+            R.normalize(entry.fields.track) === R.normalize(item.name));
+        const match = matches.find(entry => R.normalize(entry.fields.album) === R.normalize(item.album));
+        if (match) { original = match.form; source = result.url; break; }
+        if (!alternative && matches.length) alternative = { ...matches[0], url: result.url };
+        url = A.nextPage(result.doc, result.url);
+      }
+      if (controller.signal.aborted || !own()) return;
+      if (!original && alternative) {
+        const found = alternative.fields.album || '(no album)';
+        if (!confirm(`No scrobble tagged “${item.album}” was found in the checked pages (up to 3). Open the normal edit dialog for this track tagged “${found}”?`)) return;
+        original = alternative.form; source = alternative.url;
+      }
+      if (!original) throw new Error('No matching editable scrobble was found in the checked pages (up to 3). Open the track in your library to choose an older play.');
+      openForm(original, source, row);
+    } catch (error) { if (error.name !== 'AbortError') notice(error.message); }
+    finally {
+      loading.remove(); if (lookup === controller) lookup = null;
+      button.disabled = false; button.textContent = 'Edit track';
+    }
+  }
+  function trackMenus(root) {
+    const album = context();
+    if (album?.type !== 'albums') return;
+    const rows = new Set(select(root, 'tr.chartlist-row'));
+    const closest = root.closest?.('tr.chartlist-row');
+    if (closest) rows.add(closest);
+    for (const row of rows) {
+      const item = rowItem(row);
+      const menu = row.querySelector('.chartlist-more-menu,.dropdown-menu,[role="menu"]');
+      if (item?.type !== 'tracks' || !menu) continue;
+      let entry = menu.querySelector('[data-lfm-track-action]');
+      if (!entry) {
+        entry = document.createElement('li'); entry.dataset.lfmTrackAction = '';
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'mimic-link dropdown-menu-clickable-item more-item--edit-old';
+        button.textContent = 'Edit track';
+        button.addEventListener('click', event => {
+          event.preventDefault(); event.stopPropagation();
+          if (own()) openTrack({ ...item, album: album.name }, button, row);
+        });
+        entry.append(button);
+      }
+      if (menu.firstElementChild !== entry) menu.prepend(entry);
+    }
+  }
+  function artistDialog(artist, opener) {
+    document.querySelector('[data-lfm-artist-dialog]')?.close();
+    const dialog = document.createElement('dialog'); dialog.dataset.lfmArtistDialog = '';
+    dialog.setAttribute('aria-labelledby', 'lfm-artist-dialog-title');
+    const title = document.createElement('h2');
+    title.id = 'lfm-artist-dialog-title'; title.textContent = 'Edit artist display name';
+    const explanation = document.createElement('p');
+    explanation.textContent = 'Choose how this artist appears on your profile in this browser.';
+    const label = document.createElement('label'); label.textContent = 'Preferred name';
+    const input = document.createElement('input'); input.type = 'text'; input.maxLength = 500;
+    input.value = R.get(rules, 'artists', artist) || artist; label.append(input);
+    const save = document.createElement('button');
+    save.type = 'button'; save.dataset.primary = ''; save.textContent = 'Save locally';
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel';
+    const message = document.createElement('div'); message.setAttribute('role', 'alert');
+    cancel.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => { dialog.remove(); if (opener?.isConnected) opener.focus(); });
+    save.addEventListener('click', async () => {
+      save.disabled = true;
+      try {
+        if (!own()) throw new Error('Your configured profile changed. Refresh this page.');
+        await S.mutate([{ op: 'put', type: 'artists', from: artist, to: input.value }]);
+        dialog.close(); notice('Artist display name saved locally.', 'success');
+      } catch (error) { message.textContent = error.message; }
+      finally { save.disabled = false; }
+    });
+    input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); save.click(); } });
+    dialog.append(title, explanation, label, save, cancel, message);
+    document.body.append(dialog); dialog.showModal(); input.focus(); input.select();
+  }
+  function artistMenus(root) {
+    const menus = new Set(select(root, '.chartlist-more-menu,.dropdown-menu,[role="menu"]'));
+    const closest = root.closest?.('.chartlist-more-menu,.dropdown-menu,[role="menu"]');
+    if (closest) menus.add(closest);
+    for (const menu of menus) {
+      if (menu.querySelector('[data-lfm-artist-action]')) continue;
+      const link = [...menu.querySelectorAll('a[href]')].find(candidate =>
+        A.ownProfile(candidate.href, username) && A.musicItem(candidate)?.type === 'artists');
+      if (!link) continue;
+      const artist = A.musicItem(link).artist;
+      const entry = document.createElement('li'); entry.dataset.lfmArtistAction = '';
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'mimic-link dropdown-menu-clickable-item more-item--edit-old';
+      button.textContent = 'Edit artist display name';
+      button.addEventListener('click', event => {
+        event.preventDefault(); event.stopPropagation(); if (own()) artistDialog(artist, button);
+      });
+      entry.append(button); (link.closest('li') || link).after(entry);
+    }
+  }
+  function editForm(form) {
+    if (!form?.matches?.('form') || form.hasAttribute('data-edit-scrobble')) return false;
+    try {
+      const action = new URL(form.getAttribute('action'), location.href);
+      return A.ownProfile(action.href, username) && /^\/user\/[^/]+\/library\/edit-(track|album)$/.test(action.pathname);
+    } catch { return false; }
+  }
+  function casingOperations(pairs) {
+    const changes = Object.entries(pairs).filter(([, pair]) => pair.from !== pair.to);
+    if (!changes.length || changes.some(([, pair]) => !pair.from.trim() || !pair.to.trim() ||
+        R.normalize(pair.from) !== R.normalize(pair.to))) return [];
+    const types = { track: 'tracks', album: 'albums', artist: 'artists', albumArtist: 'albumArtists' };
+    return changes.map(([type, pair]) => ({ op: 'put', type: types[type], from: pair.from,
+      to: pair.to, ...(['track', 'album'].includes(type) ? { artist: pairs.artist.from } : {}) }));
+  }
+  async function saveCasing(form, operations, error) {
+    if (saving.has(form)) return;
+    saving.add(form);
+    try {
+      await S.mutate(operations);
+      form.querySelector('[data-lfm-case-confirmation]')?.remove();
+      const confirmation = document.createElement('div'); confirmation.dataset.lfmCaseConfirmation = '';
+      confirmation.setAttribute('role', 'status');
+      confirmation.append('Case-sensitive changes saved locally. ', manageLink());
+      form.append(confirmation); if (error) error.hidden = true;
+      notice('Case-sensitive changes saved locally.', 'success');
+    } catch (failure) { notice('Could not save display preferences: ' + failure.message); }
+    finally { saving.delete(form); }
+  }
+  function intercept(event) {
+    if (!own()) return;
+    const button = event.type === 'click' && event.target.closest?.('button,input[type="submit"]');
+    if (event.type === 'click' && (!button || button.type !== 'submit')) return;
+    const form = event.type === 'submit' ? event.target : button.form;
+    if (!editForm(form)) return;
+    const pairs = A.editPairs(form);
+    if (!pairs) {
+      notice('This Last.fm form is not supported for local display changes yet. Its normal edit controls remain available.');
+      return;
+    }
+    const operations = casingOperations(pairs);
+    if (!operations.length) return;
+    event.preventDefault(); event.stopImmediatePropagation(); saveCasing(form, operations);
+  }
+  function errors(root) {
+    const forms = new Set(select(root, MODAL_FORMS));
+    const enclosing = root.closest?.('form');
+    if (enclosing?.closest(MODAL)) forms.add(enclosing);
+    for (const form of forms) {
+      if (!editForm(form) || form.querySelector('[data-lfm-case-confirmation]')) continue;
+      // Check only a native dialog's error nodes, never the entire page text.
+      const error = [...form.querySelectorAll('[role="alert"],.alert,.errorlist,.alert-danger,span,p,div')]
+        .find(node => !node.hidden && ERROR.test(node.textContent) &&
+          ![...node.children].some(child => ERROR.test(child.textContent)));
+      if (!error) continue;
+      const pairs = A.editPairs(form);
+      if (!pairs) { notice('Last.fm rejected this edit, but its fields could not be matched safely. No local preference was saved.'); continue; }
+      const operations = casingOperations(pairs);
+      if (operations.length) saveCasing(form, operations, error);
+    }
+  }
+  function queue(root) {
+    if (!root?.querySelectorAll) return;
+    pending.add(root);
+    if (queued) return;
+    queued = true;
+    queueMicrotask(() => {
+      queued = false;
+      const roots = [...pending]; pending.clear();
+      if (!own()) return;
+      for (const node of roots) if (node === document || node.isConnected) {
+        trackMenus(node); artistMenus(node); errors(node);
+      }
+    });
+  }
+  function update(state) {
+    const changed = username !== state.settings.username;
+    username = state.settings.username; rules = state.rules;
+    if (changed) lookup?.abort();
+    if (!own()) {
+      document.querySelector('[data-lfm-artist-dialog]')?.close();
+      document.querySelectorAll('[data-lfm-track-action],[data-lfm-artist-action],[data-lfm-local-toast],[data-lfm-case-confirmation]')
+        .forEach(node => node.remove());
+    } else queue(document);
+  }
   async function init() {
-    const stored = await chrome.storage.local.get(['settings', 'rules']);
-    username = stored.settings?.username || username;
-    rules = R.clean(stored.rules);
-    if (!ownProfile()) return;
-    document.addEventListener('click', event => {
-      const row = event.target.closest?.('tr.chartlist-row');
-      const item = rowContext(row);
-      if (item) recent = { ...item, time: Date.now() };
-      const button = event.target.closest?.('button,input[type="submit"]');
-      if (/save\s+edit/i.test(button?.textContent || button?.value || '')) {
-        const container = findContainer(button);
-        const fields = container && editFields(container);
-        if (fields) {
-          lastEdit = {
-            fields, context: recent || contextFromPath(), time: Date.now()
-          };
+    update(await S.read()); S.subscribe(update);
+    document.addEventListener('click', intercept, true);
+    document.addEventListener('submit', intercept, true);
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === 'characterData') {
+          const form = record.target.parentElement?.closest('form');
+          if (form?.closest(MODAL)) queue(form);
+        } else {
+          if (record.target.matches?.('.chartlist-more-menu,.dropdown-menu,[role="menu"]')) queue(record.target);
+          record.addedNodes.forEach(node => { if (node.nodeType === Node.ELEMENT_NODE) queue(node); });
         }
       }
-      scheduleScan();
-    }, true);
-    document.addEventListener('submit', event => {
-      const fields = editFields(event.target);
-      if (fields) lastEdit = {
-        fields, context: recent || contextFromPath(), time: Date.now()
-      };
-    }, true);
-    new MutationObserver(scheduleScan)
-      .observe(document.body, {
-        childList: true, characterData: true, subtree: true
-      });
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== 'local') return;
-      if (changes.rules) rules = R.clean(changes.rules.newValue);
-      if (changes.settings) username = changes.settings.newValue?.username || '';
-    });
-    scheduleScan();
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    addEventListener('pagehide', () => lookup?.abort());
   }
-
-  init().catch(error => console.error('Last.fm Personal Library edit controls:', error));
+  init().catch(error => notice('Extension edit controls could not start: ' + error.message));
 })();

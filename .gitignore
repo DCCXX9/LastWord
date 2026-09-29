@@ -1,0 +1,5 @@
+.codex-backups/
+test-results/
+node_modules/
+*.log
+
