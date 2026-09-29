@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Last.fm Personal Library settings</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 900px; margin: 32px auto; padding: 0 20px; color: #222; }
+  h1 { margin-bottom: 8px; }
+  label { display: block; font-weight: 600; margin: 20px 0 6px; }
+  input[type=text] { font: inherit; padding: 8px; min-width: 240px; }
+  button { font: inherit; padding: 8px 12px; margin: 8px 8px 8px 0; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  td, th { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; overflow-wrap: anywhere; }
+  .row-actions { white-space: nowrap; }
+  #message { min-height: 1.5em; color: #205b2a; }
+  .subtle { color: #666; }
+</style>
+<h1>Last.fm Personal Library</h1>
+<p class="subtle">Display preferences stay in this Chrome profile. They do not change Last.fm's data.</p>
+<label for="username">Your Last.fm username</label>
+<input id="username" type="text" autocomplete="off">
+<p><label><input id="infinite" type="checkbox"> Keep scrolling through library pages</label></p>
+<button id="save-settings" type="button">Save settings</button>
+<h2>Display names</h2>
+<p id="count"></p>
+<label for="search">Search display names</label>
+<input id="search" type="text" autocomplete="off" placeholder="Artist, album, track, or preferred name">
+<button id="export" type="button">Export JSON backup</button>
+<button id="import" type="button">Import JSON backup</button>
+<input id="import-file" type="file" accept=".json,application/json" hidden>
+<table>
+  <thead><tr><th>Type</th><th>Original</th><th>Preferred</th><th>Artist</th><th></th></tr></thead>
+  <tbody id="rules"></tbody>
+</table>
+<p id="message" role="status"></p>
+<script src="rules.js"></script>
+<script src="options.js"></script>
+</html>
