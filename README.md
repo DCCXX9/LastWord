@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.0**.
+Last.fm profile. Installed candidate: **v0.6.1**.
 
 ## Updating this installed copy
 
@@ -13,8 +13,9 @@ Its identity and stored preferences depend on that installation.
 ## Features
 
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
-  a library XML export (up to 50 MB). A cancellable progress bar checks every
-  track entry locally, then the review shows all distinct artist, album, track
+  a library XML export. Files are read incrementally, with no 50 MB file cap.
+  A cancellable progress bar shows the file percentage and songs checked while
+  the XML is scanned locally. The review shows all distinct artist, album, track
   and album-artist casing preferences, with search/filter and 100-row pages.
   Tick the names you want, choose between conflicting XML casings, and click
   Apply. Existing preferences that differ are initially unchecked. Duplicate
@@ -51,8 +52,13 @@ Its identity and stored preferences depend on that installation.
   are no automatic retries. A rate-limit response pauses requests across
   tabs and reloads. After Last.fm's warning clears, click Resume loading in
   the scrolling panel to make one new attempt. No cooldown expiry is assumed.
-- **Settings:** search, type filters, inline editing, Undo delete and import
-  previews. Simultaneous changes are coordinated by the background worker;
+- **Display name preferences:** Open Settings and backup → Manage artist, album
+  and song preferences. The separate page groups Artists, Albums and Songs.
+  Artists sort by preferred name; albums and songs sort by artist then preferred
+  title. Album-artist rules are included under Artists. Search, type filters,
+  inline editing and Undo delete remain available.
+- **Settings:** the main page keeps profile/scrolling settings, import links and
+  backup/restore controls. Simultaneous changes are coordinated by the background worker;
   conflicting edits are reported instead of replacing a newer preference.
 - **Backup:** exports read current saved preferences and retain additional
   legacy storage. Imports replace display preferences/settings only after
@@ -73,6 +79,10 @@ profile changes, redirects, native dialog delegation, casing/real edits,
 menu order, title spacing, settings, scrolling and rate limits. An additional
 check loads the actual unpacked extension and exercises its service worker,
 content-script injection and two settings tabs.
+Large-file checks include a constructed 128 MiB XML Blob and a 64 MiB XML file
+through the actual extension file picker. They verify progress/cancellation,
+complete-file validation and no storage writes during scanning. The user's own
+larger export remains to be checked after Reload.
 
 These are reconstructed fixtures using user-confirmed field names and paths,
 not captured live Last.fm HTML. The signed-in Supermium profile is unavailable
@@ -87,6 +97,9 @@ and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The preferences-page/large-XML change starts from `1fd1c718ef1ad3d99f9a991d4c00dd72fb17dc59`
+(v0.6.0) on `preferences-page`. It changes no stored-data format.
 
 Git baseline `3a1042a0292190e18a9e66f46a46485ae8d23950` contains the exact
 previous v0.3.4 files. The cleanup is a separate commit on `polish-reliability`.

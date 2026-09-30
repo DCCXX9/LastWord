@@ -115,33 +115,21 @@
     }
     $('issues').hidden = !scan.skipped && !scan.duplicates && !issues.length;
   }
-  function readFile(file, signal) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      const abort = () => reader.abort(); signal.addEventListener('abort', abort, { once: true });
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('The XML file could not be read.'));
-      reader.onabort = () => reject(new DOMException('Scan cancelled.', 'AbortError'));
-      reader.onloadend = () => signal.removeEventListener('abort', abort);
-      reader.readAsText(file);
-    });
-  }
   $('xml-file').addEventListener('change', async event => {
     const file = event.target.files?.[0];
     if (!file) return;
     event.target.value = ''; $('scan-error').textContent = ''; message('');
     result = null; entries = []; $('review').hidden = true;
-    if (file.size > 50 * 1024 * 1024) { $('scan-error').textContent = 'Choose an XML file no larger than 50 MB.'; return; }
     controller = new AbortController(); const signal = controller.signal;
     setBusy(true); $('review').hidden = true; $('scan-status').hidden = false;
     $('scan-progress').removeAttribute('value'); $('scan-label').textContent = 'Reading XML on this device…';
     try {
-      const xml = await readFile(file, signal);
-      if (signal.aborted) throw new DOMException('Scan cancelled.', 'AbortError');
-      const scan = await P.scan(xml, { signal, onProgress: progress => {
-        $('scan-progress').max = Math.max(1, progress.total);
-        $('scan-progress').value = progress.processed;
-        $('scan-label').textContent = 'Checked ' + progress.processed.toLocaleString() + ' of ' + progress.total.toLocaleString() + ' songs';
+      const scan = await P.scanFile(file, { signal, onProgress: progress => {
+        $('scan-progress').max = Math.max(1, progress.totalBytes);
+        $('scan-progress').value = progress.bytesRead;
+        const percent = Math.min(100, Math.floor(100 * progress.bytesRead / Math.max(1, progress.totalBytes)));
+        $('scan-label').textContent = 'Checked ' + progress.processed.toLocaleString() +
+          ' songs · ' + percent + '% of file read';
       } });
       if (signal.aborted) throw new DOMException('Scan cancelled.', 'AbortError');
       await refreshSaved(); result = scan; entries = [];

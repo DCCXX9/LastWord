@@ -14,7 +14,7 @@ const project = path.resolve(__dirname, '..');
   const page = await browser.newPage();
   try {
     await page.goto('about:blank');
-    await page.setContent(fs.readFileSync(path.join(project, 'options.html'), 'utf8')
+    await page.setContent(fs.readFileSync(path.join(project, 'preferences.html'), 'utf8')
       .replace(/<script[^>]*><\/script>/g, ''));
     await page.addStyleTag({ path: path.join(project, 'extension-ui.css') });
     const worker = await mockExtension(page, {
@@ -22,10 +22,10 @@ const project = path.resolve(__dirname, '..');
       rules: { artists: { '["dean blunt"]': { from: 'Dean Blunt', to: 'DEAN BLUNT' } }, albums: {}, tracks: {}, albumArtists: {} },
       albumlessScanDraft: { pages: 93, found: [] }
     });
-    await loadScripts(page, ['rules.js', 'store.js', 'options.js']);
-    await page.waitForFunction(() => document.querySelectorAll('#rules tr').length === 1);
+    await loadScripts(page, ['rules.js', 'store.js', 'preferences.js']);
+    await page.waitForFunction(() => document.querySelectorAll('#rules tbody tr').length === 1);
     await page.locator('#search').fill('no match');
-    assert.equal(await page.locator('#rules tr').count(), 0);
+    assert.equal(await page.locator('#rules tbody tr').count(), 0);
     await page.locator('#search').fill('dean');
     await page.getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('textbox', { name: 'Preferred name for Dean Blunt' })
@@ -58,8 +58,52 @@ const project = path.resolve(__dirname, '..');
     await worker.request('mutate', { operations: [{ op: 'put', type: 'tracks', from: 'Song', to: 'SONG', artist: 'Artist' }] });
     await page.locator('#search').fill('');
     await page.locator('#type-filter').selectOption('tracks');
-    await page.waitForFunction(() => document.querySelectorAll('#rules tr').length === 1 && document.querySelector('#rules').textContent.includes('SONG'));
+    await page.waitForFunction(() => document.querySelectorAll('#rules tbody tr').length === 1 && document.querySelector('#rules').textContent.includes('SONG'));
     await page.locator('#type-filter').selectOption('');
+
+    await worker.request('mutate', { operations: [
+      { op: 'put', type: 'artists', from: 'Zebra', to: 'ZEBRA' },
+      { op: 'put', type: 'artists', from: 'Alpha', to: 'ALPHA' },
+      { op: 'put', type: 'albumArtists', from: 'Beta', to: 'BETA' },
+      { op: 'put', type: 'albums', from: 'Zoo', to: 'ZOO', artist: 'Artist' },
+      { op: 'put', type: 'albums', from: 'Apple', to: 'APPLE', artist: 'Artist' }
+    ] });
+    await page.waitForFunction(() => document.querySelectorAll('#rules-artists tr').length === 4);
+    assert.deepEqual(await page.locator('#rules-artists tr td:nth-child(3)').allTextContents(), ['ALPHA', 'BETA', 'DEAN blunt', 'ZEBRA']);
+    assert.deepEqual(await page.locator('#rules-albums tr td:nth-child(3)').allTextContents(), ['APPLE', 'ZOO']);
+    await page.locator('#type-filter').selectOption('artists');
+    assert.match(await page.locator('#rules-artists').innerText(), /Album artist/);
+    await page.locator('#type-filter').selectOption('');
+    // A queued worker save must not let another row replace the active draft.
+    await page.evaluate(() => {
+      const send = chrome.runtime.sendMessage;
+      const gate = new Promise(resolve => { window.releaseSave = resolve; });
+      chrome.runtime.sendMessage = async message => {
+        if (message.action === 'mutate') await gate;
+        return send(message);
+      };
+    });
+    await page.locator('#rules-artists tr').filter({ hasText: 'ZEBRA' }).getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.locator('#preferred-edit').fill('ZeBrA');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    assert.equal(await page.locator('#preferred-edit').isDisabled(), true);
+    assert.equal(await page.getByRole('button', { name: 'Cancel', exact: true }).isDisabled(), true);
+    assert.equal(await page.locator('#rules button:not(:disabled)').count(), 0);
+    await page.evaluate(() => window.releaseSave());
+    await page.waitForFunction(() => !document.querySelector('#preferred-edit') && window.saved.rules.artists['["zebra"]'].to === 'ZeBrA');
+    fs.mkdirSync(path.join(project, 'test-results'), { recursive: true });
+    await page.setViewportSize({width:1180,height:1000});
+    await page.screenshot({path:path.join(project,'test-results','preferences.png'),fullPage:true});
+
+    await page.goto('about:blank');
+    await page.setContent(fs.readFileSync(path.join(project, 'options.html'), 'utf8').replace(/<script[^>]*><\/script>/g, ''));
+    await page.addStyleTag({ path: path.join(project, 'extension-ui.css') });
+    await mockExtension(page, {}, { worker });
+    await loadScripts(page, ['rules.js','store.js','options.js']);
+    await page.waitForFunction(() => document.querySelector('#count').textContent.includes('preferences'));
+    assert.equal(await page.locator('#rules, #search, #type-filter').count(),0,'main options has no preference list');
+    assert.equal(await page.locator('a[href="preferences.html"]').count(),1);
+    await page.screenshot({path:path.join(project,'test-results','options.png'),fullPage:true});
 
     const backup = { version: 1, settings: { username: 'DCCXX', infiniteScroll: false },
       rules: { artists: { '["imported"]': { from: 'Imported', to: 'IMPORTED' } }, albums: {}, tracks: {}, albumArtists: {} } };
@@ -73,6 +117,9 @@ const project = path.resolve(__dirname, '..');
     await page.waitForFunction(() => document.querySelector('#message').textContent.includes('Preferences changed'));
     assert.ok(worker.data.rules.artists['["new"]'], 'stale import must not discard newer rules');
     await upload();
+    await page.locator('#import-preview').waitFor({ state: 'visible' });
+    // Closing the previous preview queues an event; it must not erase a new preview.
+    await page.evaluate(() => document.querySelector('#import-preview').dispatchEvent(new Event('close')));
     await page.locator('#confirm-import').click();
     await page.waitForFunction(() => document.querySelector('#message').textContent === 'Backup imported.');
     assert.deepEqual(worker.data.rules, backup.rules);
@@ -113,6 +160,13 @@ const project = path.resolve(__dirname, '..');
     assert.equal(diagnostics.configuredProfile, 'DCCXX');
     await popup.screenshot({ path: path.join(process.env.TEMP || '/tmp', 'lastfm-popup-polish.png') });
     await popup.close();
-    console.log('PASS: options search/filter, edit conflicts, undo conflicts, import preview/concurrency, fresh backup, popup status and safe diagnostics');
+    console.log('PASS: separate grouped/sorted preferences, edit/undo conflicts, clean options, import/backup and popup');
+  } catch (error) {
+    console.error('Options state:', await page.evaluate(() => ({
+      message: document.querySelector('#message')?.textContent,
+      importOpen: document.querySelector('#import-preview')?.open,
+      importSummary: document.querySelector('#import-summary')?.textContent
+    })));
+    throw error;
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

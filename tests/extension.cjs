@@ -26,7 +26,10 @@ const root = path.resolve(__dirname,'..');
    first.evaluate(()=>LastfmStore.mutate([{op:'put',type:'artists',from:'Bladee',to:'BLADEE'}])),
    second.evaluate(()=>LastfmStore.mutate([{op:'put',type:'artists',from:'Ecco2k',to:'ECCO2K'}]))
   ]);
-  await first.waitForFunction(()=>document.querySelectorAll('#rules tr').length===2);
+  await first.waitForFunction(()=>document.querySelector('#count').textContent==='2 preferences');
+  await first.locator('a[href="preferences.html"]').click();
+  await first.waitForFunction(()=>document.querySelectorAll('#rules tbody tr').length===2);
+  assert.equal(await first.locator('#rules-artists tr').count(),2);
   const data=await first.evaluate(()=>LastfmStore.read());
   assert.equal(Object.keys(data.rules.artists).length,2);
   const library=await browser.newPage();
@@ -58,6 +61,24 @@ const root = path.resolve(__dirname,'..');
   await importer.locator('#confirm').click();
   await importer.getByText('3 preferences reverted; 0 later changes kept.',{exact:true}).waitFor();
   await library.getByRole('link',{name:'BLADEE',exact:true}).waitFor();
+  // Exercise the actual file picker above the former 50 MB cap. Small comments
+  // fill the gap between two tracks without inventing millions of preferences.
+  const largeXmlPath=path.join(root,'test-results','large-library.xml');
+  const largeFile=fs.openSync(largeXmlPath,'w');
+  const track=n=>`<key>${n}</key><dict><key>Name</key><string>Large file track ${n}</string><key>Artist</key><string>Large artist</string></dict>`;
+  try {
+   fs.writeSync(largeFile,'<plist version="1.0"><dict><key>Tracks</key><dict>'+track(1));
+   const padding='<!--'+' '.repeat(8185)+'-->';
+   for(let i=0;i<8192;i++) fs.writeSync(largeFile,padding);
+   fs.writeSync(largeFile,track(2)+'</dict></dict></plist>');
+  } finally {fs.closeSync(largeFile);}
+  assert.ok(fs.statSync(largeXmlPath).size>50*1024*1024);
+  const beforeLarge=await first.evaluate(()=>LastfmStore.read());
+  await importer.locator('#xml-file').setInputFiles(largeXmlPath);
+  await importer.locator('#review').waitFor({state:'visible',timeout:60000});
+  assert.match(await importer.locator('#scan-summary').innerText(),/2 songs checked/);
+  assert.match(await importer.locator('#candidates').innerText(),/Large file track 2/);
+  assert.deepEqual(await first.evaluate(()=>LastfmStore.read()),beforeLarge,'scanning a large file must not write rules');
   const status=await first.evaluate(async()=>{
    const tabs=await chrome.tabs.query({});
    const tab=tabs.find(t=>t.url?.includes('/user/Friend/'));
@@ -65,13 +86,14 @@ const root = path.resolve(__dirname,'..');
   });
   // URLs of tabs need a tabs/host permission; the content behavior above is independent.
   if(status) assert.equal(status.ownProfile,false);
+  await first.bringToFront();
   await first.setViewportSize({width:1180,height:1000});
-  await first.screenshot({path:path.join(root,'test-results','settings.png'),fullPage:true});
+  await first.screenshot({path:path.join(root,'test-results','preferences-extension.png'),fullPage:true});
   const popup=await browser.newPage();
   await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.locator('#active-status').waitFor();
   await popup.setViewportSize({width:380,height:540});
   await popup.screenshot({path:path.join(root,'test-results','popup.png')});
-  console.log('PASS: actual extension, worker, concurrent saves, own/friend display, XML file review/apply, lowercase display and persisted revert');
+  console.log('PASS: actual extension, sorted preferences page, worker, XML apply/revert and 64 MiB file-picker scan without writes');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

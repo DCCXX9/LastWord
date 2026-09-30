@@ -30,7 +30,11 @@ and never revives an undo action from the backup. Revert cannot erase intervenin
 changed a value back to the imported spelling. Only the latest XML import has
 an undo record. JSON backups include it and all legacy data.
 
-The parser reads direct XML plist key/value pairs, strips the standard Apple
-DTD declaration before DOM parsing, and rejects custom entity declarations.
-Progress yields every 100 tracks; UI review paginates the entire candidate list.
+The parser reads 64 KiB file slices with streaming UTF-8 decoding and validates
+XML structure through the end of the file. Only the current track and unfinished
+token are retained, then each track is parsed as a small XML dictionary. The
+standard Apple DTD is accepted without loading it; custom entity declarations
+are rejected. There is no total file-size cap; individual tracks/tokens are
+limited to 16 MiB and nesting to 256 levels. Distinct review names remain in
+memory. Progress yields per chunk and every 100 tracks; review uses 100-row pages.
 References: https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFPropertyLists/Articles/XMLTags.html

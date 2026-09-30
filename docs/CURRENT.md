@@ -1,39 +1,47 @@
 # Current state — 30 September 2026
 
-Installed candidate: **v0.6.0**, branch `import-itunes-xml`.
-Baseline: `c6a83f5e708f385867726edd015d16d604570faf` (v0.5.0).
+Installed candidate: **v0.6.1**, branch `preferences-page`.
+Baseline: `1fd1c718ef1ad3d99f9a991d4c00dd72fb17dc59` (v0.6.0).
 
 ## Scope
 
-User requested iTunes XML upload, per-song scan progress, full review with
-artist/album/track checkboxes, Apply and Revert. Allowed files: new itunes page,
-parser/controller/styles and tests; options entry point; rules/store/background
-for atomic selected imports and undo; manifest version; relevant README/docs.
-Excluded: Last.fm requests/edits/scans, changing installation identity/path,
-clearing/migrating current storage, unrelated UI and publication.
+Move display-name management to a separate page, grouped/sorted by artist,
+album and song, preserving edit/delete/Undo/search. User also reported an XML
+larger than the arbitrary 50 MB upload limit; remove that restriction and use
+incremental parsing with progress/cancellation for larger files.
 
-## Implementation
+Allowed files: options/preference HTML/JS/styles; native manage link; worker
+page authorization; XML parser/controller/page; manifest version; related tests
+and README/docs. Excluded: preference migration/reset, installation identity/path
+changes, Last.fm data/network access, scrobble automation and unrelated features.
 
-XML is parsed on-device; no file upload or retention. Every Tracks entry is
-checked in cancellable batches. Duplicate identities are combined, casing
-conflicts require a choice, invalid metadata is reported, and every candidate
-is accessible through searchable/filterable 100-row pages. Existing differing
-preferences default to unchecked. Exact casing includes lowercase targets.
+## Candidate
 
-Apply atomically saves selected rules and a persistent latest-import undo
-record. Revert restores only imported entries untouched by subsequent manual
-changes. Stale review, wrong profile, malformed import, duplicate entries and
-quota failures do not partly write preferences. A new import replaces the
-previous undo record. Existing legacy/scan storage is preserved.
+The main options page retains profile, scrolling, import and backup controls.
+The dedicated preferences page groups Artists, Albums and Songs alphabetically;
+albums/songs sort by artist then preferred title. Album-artist rules stay visible
+under Artists. Existing local preferences and XML undo records are unchanged.
 
-All 11 local suites passed. Acceptance checks: parser progress/cancel/Unicode/duplicate/conflict cases;
-selected apply/revert and concurrent edits; 2500-track storage fixture; options
-and display regression; actual unpacked extension file input, review/apply,
-lowercase Last.fm display fixture, reopening and revert. The final backup/undo
-correction passed focused storage regressions. The import page was visually
-inspected in isolated Supermium. Original personal
-XML has not been supplied, so its contents are not independently verified.
+Large XML files are read incrementally instead of building one full XML DOM.
+Progress reports bytes read and tracks checked, with cancellation. Display-name
+aggregation still retains the distinct names needed for review. Apply remains
+subject to Chrome's local storage capacity and remains atomic with undo.
 
-The earlier native edit and scrolling features retain their prior evidence:
-local isolated Supermium fixtures pass; real signed-in Last.fm dialog/album
-layout remains an acceptance item because that profile is not connected.
+## Verification and acceptance
+
+All 11 regression suites pass in isolated Supermium profiles: rules, adapter,
+storage, XML store/parser/UI, content smoke, album menus, scrolling, options,
+and the actual unpacked-extension integration. The parser passed a constructed
+128 MiB XML Blob with progress/cancel, split Unicode/XML tokens and malformed
+tail checks. A 64 MiB file passed through the extension's actual file picker
+to review without writing preferences. Apply/reopen/Revert passed separately.
+Settings/preferences screenshots were inspected. A pending-save draft race and
+a delayed dialog-close race were corrected and covered by focused checks.
+
+User acceptance: Reload v0.6.1 in the existing installation, reopen Settings,
+check the grouped preferences page, and scan the user's larger XML to review.
+No personal XML was supplied; no signed-in Last.fm flows or live edits were
+tested in this change. Export JSON before applying imported preferences.
+
+Rollback: restore source from the baseline commit above. Browser preferences
+and the storage format are unchanged by this source update.

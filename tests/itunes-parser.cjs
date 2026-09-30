@@ -65,7 +65,67 @@ const entry = (id, name = 'Song', artist = 'Artist') => `<key>${id}</key><dict><
       } catch (error) { return { name: error.name, updates }; }
     }, many);
     assert.equal(cancel.name, 'AbortError'); assert.deepEqual(cancel.updates, [0, 100]);
+    const streaming = await page.evaluate(async () => {
+      const tracks = '<key>Tracks</key><dict><key>1</key><dict><key>Name</key><string>First</string><key>Artist</key><string>A</string></dict>' +
+        '<key>2</key><dict><key>Name</key><string>Last</string><key>Artist</key><string>B</string></dict></dict>';
+      const prefix = '<plist><dict>' + tracks + '<key>Playlists</key><array><dict><key>Unused</key><string>';
+      const suffix = '</string></dict></array></dict></plist>';
+      const blob = new Blob([prefix, ...Array(128).fill('x'.repeat(1024 * 1024)), suffix]);
+      const updates = [];
+      const result = await LastfmItunes.scanFile(blob, { onProgress: info => {
+        if (!updates.length || info.bytesRead - updates.at(-1).bytesRead >= 16 * 1024 * 1024 || info.total !== null) updates.push(info);
+      } });
+      const controller = new AbortController();
+      let cancelled;
+      try {
+        await LastfmItunes.scanFile(blob, { signal: controller.signal, onProgress: info => {
+          if (info.bytesRead >= 2 * 1024 * 1024) controller.abort();
+        } });
+      } catch (error) { cancelled = error.name; }
+      return { size: blob.size, result, updates, cancelled };
+    });
+    assert.ok(streaming.size > 128 * 1024 * 1024);
+    assert.equal(streaming.result.songs, 2);
+    assert.deepEqual(streaming.result.candidates.filter(item => item.type === 'tracks').map(item => item.to), ['First', 'Last']);
+    assert.ok(streaming.updates.length >= 9);
+    assert.ok(streaming.updates.slice(0, -1).every(update => update.total === null));
+    assert.equal(streaming.updates.at(-1).total, 2);
+    assert.equal(streaming.updates.at(-1).bytesRead, streaming.size);
+    assert.equal(streaming.cancelled, 'AbortError');
+
+    const splitResults = await page.evaluate(async () => {
+      const prefix = '<plist><dict><key>Padding</key><string>';
+      const rest = '</string><key>Tracks</key><dict><key>1</key><dict note="one > zero">' +
+        '<!-- comment --><key>Name</key><string><![CDATA[Café & Blue]]></string>' +
+        '<key>Artist</key><string>A &amp; B</string></dict></dict></dict></plist>';
+      const markers = ['<!--', '<![CDATA[', 'Café', ']]>', '&amp;', 'note="one > zero"', '</plist>'];
+      const results = [];
+      for (const marker of markers) {
+        for (const offset of [1, Math.max(1, marker.length - 1)]) {
+          const target = rest.indexOf(marker) + offset;
+          const bytes = new TextEncoder().encode(prefix + rest.slice(0, target)).length;
+          const blob = new Blob([prefix, 'x'.repeat(65536 - bytes), rest]);
+          const result = await LastfmItunes.scanFile(blob);
+          results.push(result.candidates.find(item => item.type === 'tracks').to);
+        }
+      }
+      // Split the two-byte UTF-8 é in the middle, independently of token splits.
+      const unicodeTarget = rest.indexOf('é');
+      const before = new TextEncoder().encode(prefix + rest.slice(0, unicodeTarget)).length;
+      results.push((await LastfmItunes.scanFile(new Blob([prefix, 'x'.repeat(65535 - before), rest])))
+        .candidates.find(item => item.type === 'tracks').to);
+      return results;
+    });
+    assert.equal(splitResults.length, 15);
+    assert.ok(splitResults.every(value => value === 'Café & Blue'));
+    for (const trailing of ['</wrong>', '<plist/>', '&unknown;', '<!-- unclosed', '<?xml?>']) {
+      const error = await page.evaluate(async ({ xml, trailing }) => {
+        try { await LastfmItunes.scanFile(new Blob([xml, trailing])); return ''; }
+        catch (error) { return error.message; }
+      }, { xml: wrap(entry(1)), trailing });
+      assert.ok(error, 'Malformed trailing XML must not return a partial successful result');
+    }
     assert.deepEqual(requests, [], 'XML scans must not request external DTDs or any other resource');
-    console.log('PASS: iTunes XML names/scopes/conflicts, empty/invalid/entity inputs, 1101 tracks, progress/cancel, zero network requests');
+    console.log('PASS: shared streaming parser, 128 MiB Blob, chunk boundaries/Unicode/CDATA/entities, full tail validation, progress/cancel, zero network requests');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

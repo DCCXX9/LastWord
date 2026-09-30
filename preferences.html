@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Display name preferences · Last.fm Personal Library</title>
+  <link rel="stylesheet" href="extension-ui.css">
+</head>
+<body class="settings-page preferences-page">
+  <a class="preferences-back" href="options.html">← Settings &amp; backup</a>
+  <header class="page-header"><div><p class="eyebrow">Last.fm Personal Library</p><h1>Display name preferences</h1></div><span id="profile-status" class="badge">Loading profile…</span></header>
+  <main>
+    <section class="card" aria-label="Find display preferences">
+      <div class="section-header"><p class="subtle">Local spelling and casing. Your Last.fm scrobbles stay unchanged.</p><span id="count" class="subtle" role="status"></span></div>
+      <div class="filters"><div class="search-field"><label for="search">Search preferences</label><input id="search" type="search" autocomplete="off" placeholder="Artist, album, song, or preferred name"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="tracks">Songs</option></select></div></div>
+      <div id="undo-area" class="undo-bar" hidden><span id="undo-label"></span><button id="undo" type="button">Undo delete</button></div>
+      <p id="message" class="message" role="status" aria-live="polite" tabindex="-1"></p>
+    </section>
+    <div id="rules">
+      <section id="group-artists" class="card preference-group" aria-labelledby="heading-artists">
+        <div class="section-header"><div><h2 id="heading-artists">Artists</h2><p class="subtle">Alphabetical by preferred name. Includes album artists.</p></div><span id="count-artists" class="subtle"></span></div>
+        <div class="table-wrap"><table aria-labelledby="heading-artists"><thead><tr><th scope="col">Type</th><th scope="col">Original</th><th scope="col">Preferred</th><th scope="col">Artist</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="rules-artists"></tbody></table></div>
+      </section>
+      <section id="group-albums" class="card preference-group" aria-labelledby="heading-albums">
+        <div class="section-header"><div><h2 id="heading-albums">Albums</h2><p class="subtle">Alphabetical by artist, then preferred album name.</p></div><span id="count-albums" class="subtle"></span></div>
+        <div class="table-wrap"><table aria-labelledby="heading-albums"><thead><tr><th scope="col">Type</th><th scope="col">Original</th><th scope="col">Preferred</th><th scope="col">Artist</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="rules-albums"></tbody></table></div>
+      </section>
+      <section id="group-tracks" class="card preference-group" aria-labelledby="heading-tracks">
+        <div class="section-header"><div><h2 id="heading-tracks">Songs</h2><p class="subtle">Alphabetical by artist, then preferred song title.</p></div><span id="count-tracks" class="subtle"></span></div>
+        <div class="table-wrap"><table aria-labelledby="heading-tracks"><thead><tr><th scope="col">Type</th><th scope="col">Original</th><th scope="col">Preferred</th><th scope="col">Artist</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody id="rules-tracks"></tbody></table></div>
+      </section>
+    </div>
+    <p id="empty" class="card empty-state" hidden>No preferences yet. Edit a display name in your Last.fm library to add one.</p>
+  </main>
+  <script src="rules.js"></script><script src="store.js"></script><script src="preferences.js"></script>
+</body>
+</html>

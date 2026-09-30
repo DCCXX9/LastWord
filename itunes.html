@@ -13,9 +13,9 @@
       <h2 id="file-heading">Choose an iTunes library XML</h2>
       <p class="subtle">Every song is checked for artist, album, track and album artist names. Review the results before saving any preferences.</p>
       <p class="privacy-note">Your file is read on this device. No uploads or Last.fm requests. The original XML is never saved by the extension.</p>
-      <label for="xml-file">iTunes library XML · up to 50 MB</label>
+      <label for="xml-file">iTunes library XML</label>
       <input id="xml-file" type="file" accept=".xml,text/xml,application/xml" disabled>
-      <div id="scan-status" class="scan-status" hidden><progress id="scan-progress" aria-label="Songs checked"></progress><span id="scan-label" role="status" aria-live="polite"></span><button id="cancel-scan" type="button">Cancel scan</button></div>
+      <div id="scan-status" class="scan-status" hidden><progress id="scan-progress" aria-label="XML file scanned"></progress><span id="scan-label" role="status" aria-live="polite"></span><button id="cancel-scan" type="button">Cancel scan</button></div>
       <p id="scan-error" class="message" role="alert" data-tone="error"></p>
     </section>
     <section id="review" class="card" aria-labelledby="review-heading" hidden>

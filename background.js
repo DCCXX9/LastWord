@@ -90,7 +90,7 @@ importScripts('rules.js', 'store.js');
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html', '/itunes.html'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html'].includes(url.pathname);
     if (extension) return;
     const match = url.pathname.match(/^\/user\/([^/]+)(?:\/|$)/i);
     let user = '';

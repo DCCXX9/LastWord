@@ -19,7 +19,7 @@
 
   function manageLink() {
     const link = document.createElement('a');
-    link.href = chrome.runtime.getURL('options.html');
+    link.href = chrome.runtime.getURL('preferences.html');
     link.target = '_blank'; link.rel = 'noopener';
     link.textContent = 'Manage preferences';
     return link;
