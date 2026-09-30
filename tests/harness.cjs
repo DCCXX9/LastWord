@@ -45,7 +45,8 @@ function createMockWorker(initialData = {}) {
       removeListener(listener) { storageListeners.delete(listener); }
     } }
   };
-  const context = vm.createContext({ chrome, URL, console, setTimeout, clearTimeout, structuredClone });
+  const context = vm.createContext({ chrome, URL, console, setTimeout, clearTimeout, structuredClone,
+    crypto: require('node:crypto').webcrypto });
   context.importScripts = (...files) => files.forEach(file =>
     vm.runInContext(fs.readFileSync(path.join(project, file), 'utf8'), context, { filename: file }));
   context.importScripts('background.js');

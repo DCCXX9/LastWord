@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Constructed fixture, not an exported personal library. -->
+<plist version="1.0"><dict>
+  <key>Major Version</key><integer>1</integer>
+  <key>Tracks</key><dict>
+    <key>1</key><dict>
+      <key>Name</key><string>  Café &amp; BLUE  </string>
+      <key>Artist</key><string>Bladee &amp; Ecco2k</string>
+      <key>Album</key><string>Crest</string>
+      <key>Album Artist</key><string>Bladee &amp; Ecco2k</string>
+      <key>Location</key><string>file://localhost/private/example.mp3</string>
+    </dict>
+    <key>2</key><dict>
+      <key>Name</key><string>Café &amp; BLUE</string>
+      <key>Artist</key><string>Bladee &amp; Ecco2k</string>
+      <key>Album</key><string>CREST</string>
+      <key>Album Artist</key><string>Bladee &amp; Ecco2k</string>
+    </dict>
+    <key>3</key><dict>
+      <key>Name</key><string>lowercase</string>
+      <key>Artist</key><string>another artist</string>
+      <key>Album</key><string>Compilation</string>
+      <key>Album Artist</key><string>Various Artists</string>
+    </dict>
+    <key>4</key><dict>
+      <key>Name</key><string>Single</string>
+      <key>Artist</key><string>another artist</string>
+    </dict>
+    <key>5</key><dict><key>Name</key><string>Missing artist</string></dict>
+  </dict>
+  <key>Playlists</key><array><dict><key>Name</key><string>Ignored playlist</string></dict></array>
+</dict></plist>

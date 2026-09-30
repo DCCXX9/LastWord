@@ -42,11 +42,12 @@ importScripts('rules.js', 'store.js');
     if (!R.TYPES.includes(type) || typeof id !== 'string' || !object(rule) ||
         typeof rule.from !== 'string' || typeof rule.to !== 'string' ||
         (owns(rule, 'artist') && typeof rule.artist !== 'string') ||
-        Object.keys(rule).some(key => !['from', 'to', 'artist'].includes(key))) {
+        (owns(rule, 'exact') && rule.exact !== true) ||
+        Object.keys(rule).some(key => !['from', 'to', 'artist', 'exact'].includes(key))) {
       throw new Error('The backup contains an invalid display preference.');
     }
     const probe = R.empty();
-    const generated = R.put(probe, type, rule.from, rule.to, rule.artist || '');
+    const generated = R.put(probe, type, rule.from, rule.to, rule.artist || '', rule.exact === true);
     if (generated !== id || !probe[type][id] || !equal(probe[type][id], rule)) {
       throw new Error('The backup contains an invalid display preference.');
     }
@@ -76,6 +77,7 @@ importScripts('rules.js', 'store.js');
     if (!object(extra) || owns(extra, 'rules') || owns(extra, 'settings')) {
       throw new Error('The backup contains invalid additional storage.');
     }
+    if (owns(extra, 'itunesImportUndo')) journal(extra);
     // Chrome local storage values must survive JSON serialization unchanged.
     let serialized;
     try { serialized = JSON.stringify(extra); } catch { throw new Error('The backup contains invalid additional storage.'); }
@@ -88,7 +90,7 @@ importScripts('rules.js', 'store.js');
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html'].includes(url.pathname);
     if (extension) return;
     const match = url.pathname.match(/^\/user\/([^/]+)(?:\/|$)/i);
     let user = '';
@@ -118,7 +120,7 @@ importScripts('rules.js', 'store.js');
             (owns(operation, 'artist') && typeof operation.artist !== 'string')) {
           throw new Error('Enter the original name, preferred name, and artist where needed.');
         }
-        R.put(rules, type, operation.from, operation.to, operation.artist || '');
+        R.put(rules, type, operation.from, operation.to, operation.artist || '', existing?.exact === true);
       } else if (op === 'delete') {
         delete rules[type][id];
       } else if (op === 'restore') {
@@ -131,11 +133,102 @@ importScripts('rules.js', 'store.js');
     return rules;
   }
 
+  const UNDO = 'itunesImportUndo';
+  function journal(stored) {
+    const batch = stored[UNDO];
+    if (!batch) return null;
+    if (batch.version !== 1 || typeof batch.id !== 'string' ||
+        typeof batch.username !== 'string' || !Number.isFinite(batch.appliedAt) ||
+        !Array.isArray(batch.changes)) {
+      throw new Error('The saved XML revert record is invalid. Export a JSON backup before continuing.');
+    }
+    const seen = new Set();
+    for (const change of batch.changes) {
+      const key = change.type + ':' + change.id;
+      if (seen.has(key) || (owns(change, 'touched') && typeof change.touched !== 'boolean')) {
+        throw new Error('The saved XML revert record is invalid.');
+      }
+      seen.add(key);
+      validRule(change.type, change.id, change.after);
+      if (change.before !== null) validRule(change.type, change.id, change.before);
+    }
+    return batch;
+  }
+  function batchSummary(batch) {
+    return batch ? { id: batch.id, username: batch.username, appliedAt: batch.appliedAt,
+      count: batch.changes.length, remaining: batch.changes.filter(change => !change.touched).length } : null;
+  }
+  function touchJournal(stored, operations) {
+    const batch = journal(stored);
+    if (!batch) return {};
+    const touched = operations && new Set(operations.map(op => op.type + ':' +
+      (op.op === 'put' ? R.idFor(op.type, op.from, op.artist || '') : op.id)));
+    return { [UNDO]: { ...batch, changes: batch.changes.map(change =>
+      !touched || touched.has(change.type + ':' + change.id) ? { ...change, touched: true } : change) } };
+  }
+  async function applyItunes(stored, current, message) {
+    if (message.username !== current.settings.username) {
+      throw new Error('Your configured profile changed. Scan the XML again before applying it.');
+    }
+    if (!Array.isArray(message.entries) || !message.entries.length) {
+      throw new Error('Select at least one display preference to apply.');
+    }
+    const rules = stored.rules == null ? R.empty() : validateRules(stored.rules);
+    const changes = [], seen = new Set();
+    let unchanged = 0;
+    for (const entry of message.entries) {
+      const { type, id, rule } = entry;
+      const key = type + ':' + id;
+      if (seen.has(key)) throw new Error('The selection contains duplicate display preferences.');
+      seen.add(key);
+      validRule(type, id, rule);
+      if (rule.exact !== true || rule.from !== R.normalize(rule.to)) {
+        throw new Error('An XML preference must preserve its original spelling and change display casing only.');
+      }
+      const before = rules[type][id] || null;
+      if (!owns(entry, 'expected') || !equal(before, entry.expected)) {
+        throw new Error('A selected preference changed in another tab. Scan again to review the latest preferences.');
+      }
+      if (before?.to === rule.to) { unchanged++; continue; }
+      rules[type][id] = rule;
+      changes.push({ type, id, before, after: rule });
+    }
+    if (!changes.length) return { snapshot: current, batch: batchSummary(journal(stored)), applied: 0, unchanged };
+    const batch = { version: 1, id: crypto.randomUUID(), username: current.settings.username,
+      appliedAt: Date.now(), changes };
+    // The rules and their undo record are committed in the same storage call.
+    try {
+      await chrome.storage.local.set({ rules, [UNDO]: batch });
+    } catch (error) {
+      if (/quota/i.test(error.message)) throw new Error('There is not enough extension storage for these rules and their undo record. Nothing was applied. Select fewer items and try again.');
+      throw error;
+    }
+    return { snapshot: { ...current, rules }, batch: batchSummary(batch), applied: changes.length, unchanged };
+  }
+  async function revertItunes(stored, current, message) {
+    const batch = journal(stored);
+    if (!batch || batch.id !== message.id) throw new Error('This XML import is no longer the latest import. Refresh this page.');
+    if (batch.username !== current.settings.username) throw new Error('Switch back to the imported profile before reverting.');
+    const rules = stored.rules == null ? R.empty() : validateRules(stored.rules);
+    let reverted = 0, kept = 0;
+    for (const change of batch.changes) {
+      if (change.touched || !equal(rules[change.type][change.id] || null, change.after)) { kept++; continue; }
+      if (change.before === null) delete rules[change.type][change.id];
+      else rules[change.type][change.id] = change.before;
+      reverted++;
+    }
+    await chrome.storage.local.set({ rules, [UNDO]: null });
+    return { snapshot: { ...current, rules }, batch: null, reverted, kept };
+  }
+
   async function execute(message, sender) {
     const stored = await chrome.storage.local.get(null);
     const current = snapshot(stored);
     authorize(sender, message.action, current);
     if (message.action === 'read') return current;
+    if (message.action === 'itunes-status') return { batch: batchSummary(journal(stored)) };
+    if (message.action === 'itunes-apply') return applyItunes(stored, current, message);
+    if (message.action === 'itunes-revert') return revertItunes(stored, current, message);
     if (message.action === 'backup') {
       const extraStorage = Object.fromEntries(Object.entries(stored).filter(([key]) => !['rules', 'settings'].includes(key)));
       // Preserve the complete original rules if malformed legacy data exists;
@@ -146,7 +239,7 @@ importScripts('rules.js', 'store.js');
       // Mutations must not silently discard malformed existing rules either.
       const rules = stored.rules == null ? R.empty() : validateRules(stored.rules);
       applyOperations(rules, message.operations);
-      await chrome.storage.local.set({ rules });
+      await chrome.storage.local.set({ rules, ...touchJournal(stored, message.operations) });
       return { ...current, rules };
     }
     if (message.action === 'settings') {
@@ -164,8 +257,10 @@ importScripts('rules.js', 'store.js');
       }
       // Retain current unrecognized keys. Restore extra keys only when absent;
       // replacing display preferences must never overwrite a newer scan draft.
-      const extras = Object.fromEntries(Object.entries(imported.extra).filter(([key]) => !owns(stored, key)));
-      await chrome.storage.local.set({ ...extras, rules: imported.rules,
+      const extras = Object.fromEntries(Object.entries(imported.extra).filter(([key]) => key !== UNDO && !owns(stored, key)));
+      // A whole-backup restore establishes a new baseline, not an XML import.
+      // Never revive an old undo action from that backup or the replaced state.
+      await chrome.storage.local.set({ ...extras, [UNDO]: null, rules: imported.rules,
         settings: { ...(stored.settings || {}), ...imported.settings } });
       return { rules: imported.rules, settings: imported.settings };
     }

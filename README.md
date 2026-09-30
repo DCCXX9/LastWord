@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.5.0**.
+Last.fm profile. Installed candidate: **v0.6.0**.
 
 ## Updating this installed copy
 
@@ -11,6 +11,24 @@ page. Keep this folder in place and keep the existing extension installed.
 Its identity and stored preferences depend on that installation.
 
 ## Features
+
+- **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
+  a library XML export (up to 50 MB). A cancellable progress bar checks every
+  track entry locally, then the review shows all distinct artist, album, track
+  and album-artist casing preferences, with search/filter and 100-row pages.
+  Tick the names you want, choose between conflicting XML casings, and click
+  Apply. Existing preferences that differ are initially unchecked. Duplicate
+  names are combined; missing/invalid metadata is reported. Compilation albums
+  can appear under both the track artist and album artist as separate scopes.
+- **Revert XML import:** The last applied XML import can be reverted after
+  closing/reopening the page or restarting the browser. Revert restores the
+  overwritten preferences and removes new ones, preserving later manual edits.
+  Applying another import replaces the previous undo record. Export JSON first
+  for a lasting backup. Restoring a full JSON backup clears the XML undo action.
+  If storage is full, Apply fails without a partial import.
+  The original XML and its filename are not stored or uploaded; Last.fm is not
+  contacted and its scrobble data is unchanged. These preferences match names
+  ignoring case; they do not map different spellings or renamed artists.
 
 - **Personal display names:** case-sensitive preferred names for artists,
   albums and tracks, applied only to your configured profile (default DCCXX).
@@ -63,7 +81,8 @@ its album form remain user acceptance items; no live account edits were made.
 
 Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`,
-`tests/options.cjs`, `tests/extension.cjs`. Browser checks require Playwright
+`tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
+`tests/itunes-store.cjs`, `tests/itunes-ui.cjs`. Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
@@ -71,5 +90,10 @@ and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 
 Git baseline `3a1042a0292190e18a9e66f46a46485ae8d23950` contains the exact
 previous v0.3.4 files. The cleanup is a separate commit on `polish-reliability`.
+The XML importer starts from `c6a83f5e708f385867726edd015d16d604570faf` (v0.5.0)
+on `import-itunes-xml`. Imported rules carry an additive `exact: true` flag so
+an all-lowercase or unchanged XML name remains an explicit preference. Existing
+rules are not migrated. Export a backup before reverting to older source that
+does not understand imported exact preferences.
 Restoring source files does not restore or delete browser storage. The old
 failed scan candidates remain in the ignored `.codex-backups` folder.

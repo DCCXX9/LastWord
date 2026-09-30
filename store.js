@@ -34,6 +34,9 @@
     mutate: operations => request('mutate', { operations }),
     saveSettings: patch => request('settings', { patch }),
     replace: (backup, expectedSnapshot) => request('replace', { backup, expectedSnapshot }),
-    backup: () => request('backup')
+    backup: () => request('backup'),
+    itunesStatus: () => request('itunes-status'),
+    applyItunes: values => request('itunes-apply', values),
+    revertItunes: values => request('itunes-revert', values)
   });
 })();

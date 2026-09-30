@@ -20,6 +20,7 @@
         result[type][id] = {
           from: rule.from,
           to: rule.to,
+          ...(rule.exact === true ? { exact: true } : {}),
           ...(rule.artist ? { artist: rule.artist } : {})
         };
       }
@@ -32,7 +33,7 @@
       ? key([artist, from]) : key([from]);
   }
 
-  function put(rules, type, from, to, artist = '') {
+  function put(rules, type, from, to, artist = '', exact = false) {
     if (!TYPES.includes(type)) throw new Error('Unknown rule type');
     from = String(from).trim();
     to = String(to).trim();
@@ -42,8 +43,8 @@
       throw new Error('Enter the original name, preferred name, and artist where needed.');
     }
     const id = idFor(type, from, artist);
-    if (from === to) delete rules[type][id];
-    else rules[type][id] = { from, to, ...(artist ? { artist } : {}) };
+    if (from === to && !exact) delete rules[type][id];
+    else rules[type][id] = { from, to, ...(artist ? { artist } : {}), ...(exact ? { exact: true } : {}) };
     return id;
   }
 
