@@ -95,6 +95,12 @@
     return null;
   }
 
+  function datedSections(table) {
+    const section = table.closest('section.tracklist-section');
+    return section && [...section.parentElement.children]
+      .filter(node => node.matches('section.tracklist-section'));
+  }
+
   function renderScroll(state, mode, message) {
     state.mode = mode;
     state.label.textContent = message;
@@ -107,8 +113,24 @@
   }
 
   async function appendRows(state, sourceTable, pageUrl) {
-    const rows = [...sourceTable.querySelectorAll('tbody > tr.chartlist-row')]
-      .map(row => document.importNode(row, true));
+    const added = [], rows = [];
+    let lastSection = state.lastSection;
+    let copies;
+    if (lastSection) {
+      const sections = datedSections(sourceTable);
+      if (!sections?.length) throw new Error('The scrobble date sections changed. Use Last.fm’s page links below.');
+      copies = sections.map(section => document.importNode(section, true));
+      // Validate the whole fetched page before changing the visible history.
+      for (const copy of copies) {
+        if (!copy.querySelector('h2.date-heading')?.textContent.trim() || !copy.querySelector('table.chartlist tbody > tr.chartlist-row')) {
+          throw new Error('A scrobble date section contained no library rows. Loading stopped.');
+        }
+        rows.push(...copy.querySelectorAll('table.chartlist tbody > tr.chartlist-row'));
+      }
+    } else {
+      rows.push(...[...sourceTable.querySelectorAll('tbody > tr.chartlist-row')]
+        .map(row => document.importNode(row, true)));
+    }
     if (!rows.length) throw new Error('This page contained no library rows. Loading stopped.');
     for (const row of rows) {
       row.querySelectorAll('img[data-src]').forEach(img => {
@@ -117,15 +139,36 @@
         }
       });
     }
-    state.table.tBodies[0].append(...rows);
+    if (lastSection) {
+      const heading = section => section.querySelector('h2.date-heading')?.textContent.trim();
+      for (const copy of copies) {
+        const incoming = [...copy.querySelectorAll('table.chartlist tbody > tr.chartlist-row')];
+        if (heading(lastSection) === heading(copy)) {
+          lastSection.querySelector('table.chartlist').tBodies[0].append(...incoming);
+          added.push(...incoming);
+        } else {
+          lastSection.after(copy);
+          added.push(copy);
+          lastSection = copy;
+        }
+      }
+    } else {
+      state.table.tBodies[0].append(...rows);
+      added.push(...rows);
+    }
     await new Promise(requestAnimationFrame);
     if (scroller !== state || state.controller?.signal.aborted) {
-      rows.forEach(row => row.remove());
+      added.forEach(node => node.remove());
+      if (state.controller?.signal.aborted) throw new DOMException('Loading paused.', 'AbortError');
       return false;
     }
     if (rows.some(row => row.getBoundingClientRect().height === 0)) {
-      rows.forEach(row => row.remove());
+      added.forEach(node => node.remove());
       throw new Error('Last.fm hid the added rows. Use its page links below.');
+    }
+    if (lastSection) {
+      state.lastSection = lastSection;
+      lastSection.after(state.notice);
     }
     rows.forEach(applyNames);
     return true;
@@ -193,8 +236,10 @@
     const action = document.createElement('button');
     action.type = 'button';
     notice.append(label, action);
-    table.after(notice);
-    const state = { table, pagination, notice, label, action, next,
+    const isHistory = ['scrobbles', 'artistScrobbles'].includes(A.libraryView(location.href));
+    const lastSection = isHistory ? datedSections(table)?.at(-1) : null;
+    (lastSection || table).after(notice);
+    const state = { table, lastSection, pagination, notice, label, action, next,
       wasHidden: pagination.hidden, tableIndex: [...document.querySelectorAll('table.chartlist')].indexOf(table),
       visited: new Set([location.href]), loaded: 0, controller: null, observer: null, mode: 'ready' };
     scroller = state;

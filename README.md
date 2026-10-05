@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.1**.
+Last.fm profile. Installed candidate: **v0.6.2**.
 
 ## Updating this installed copy
 
@@ -47,6 +47,9 @@ Its identity and stored preferences depend on that installation.
   artist Tracks and artist Albums append Last.fm's native rows. The panel
   reports loading, paused, error and finished states. Last.fm's pagination
   returns if loading fails or is disabled.
+  Scrobbles retain every dated section in page order. A day spanning pages
+  continues under its existing heading; the loading panel follows the final
+  section. Failed or cancelled insertions roll back the complete added page.
 - **Request limits:** one request at a time across this extension's Last.fm
   tabs, at least 1.5 seconds between requests and a 15-second timeout. There
   are no automatic retries. A rate-limit response pauses requests across
@@ -90,13 +93,16 @@ to the browser connection. Opening Last.fm's actual edit dialog and checking
 its album form remain user acceptance items; no live account edits were made.
 
 Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
-`tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`,
+`tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`, `tests/scrobble-sections.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`. Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The scrobble date-section fix starts from `73946315be32a23c6f16c27b98b14cb738f2b3a7`
+(v0.6.1). It changes no preference data or storage format.
 
 The preferences-page/large-XML change starts from `1fd1c718ef1ad3d99f9a991d4c00dd72fb17dc59`
 (v0.6.0) on `preferences-page`. It changes no stored-data format.
