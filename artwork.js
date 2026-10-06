@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (globalThis.LastfmArtwork) return;
   const A = LastfmAdapter, R = LastfmRules, S = LastfmStore;
   let username = '', generation = 0, running = null, queued = false;
   let currentUrl = location.href;

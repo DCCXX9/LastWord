@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.9**.
+Last.fm profile. Installed candidate: **v0.6.10**.
 
 ## Updating this installed copy
 
@@ -9,6 +9,9 @@ Export a JSON backup from **Settings and backup**, then click **Reload** on
 this extension in Supermium's `chrome://extensions` and refresh your Last.fm
 page. Keep this folder in place and keep the existing extension installed.
 Its identity and stored preferences depend on that installation.
+Startup dependencies also load before the idle features, so Reload during an
+in-progress navigation does not leave those features without their shared modules.
+Already-started modules are reused, retaining early cached artwork application.
 
 ## Features
 
@@ -128,7 +131,10 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`, `tests/scrobble-sections.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
-`tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`. Browser checks require Playwright
+`tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
+`tests/startup.cjs`. The startup check reloads the actual extension between
+document_start and document_idle and checks for uncaught errors and storage preservation.
+Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 

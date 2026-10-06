@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (globalThis.LastfmAdapter) return;
 
   const normalize = value => String(value ?? '').trim().normalize('NFC').toLowerCase();
   const baseUrl = () => globalThis.location?.href || 'https://www.last.fm/';

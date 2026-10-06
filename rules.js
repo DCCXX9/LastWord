@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (globalThis.LastfmRules) return;
 
   const TYPES = ['artists', 'albums', 'tracks', 'albumArtists'];
   const normalize = value => String(value ?? '').trim().normalize('NFC').toLowerCase();

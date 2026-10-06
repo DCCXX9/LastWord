@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (globalThis.LastfmStore) return;
 
   const DEFAULT_SETTINGS = Object.freeze({ username: 'DCCXX', infiniteScroll: true });
   const channel = 'lastfm-store-v1';

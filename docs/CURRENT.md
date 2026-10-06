@@ -1,9 +1,27 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.9**, branch preferences-page.
+Installed candidate: **v0.6.10**, branch preferences-page.
+Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Startup correction
+
+Reproduced all four reported errors in the actual unpacked extension by blocking
+a parser script and Reloading after document_start, before document_idle. The
+new extension context ran the idle features without the early shared modules:
+content.js lacked LastfmRules, native-edit.js lacked its rules API, and both
+artwork readers lacked LastfmAdapter. The idle script group now includes its
+shared dependencies and artwork initializer in order. Those four modules return
+when already initialized, retaining early cached covers and avoiding duplicate
+artwork observers. No storage keys, installed path, permissions or identity change.
+
+The new startup browser regression passed after failing with the exact four
+reported exceptions before the correction. It also checks fresh navigation and
+preservation of all saved test storage. Actual-extension artwork and XML/settings
+checks passed, along with rules, adapter and storage suites. The user's signed-in
+profile remains untouched; acceptance follows Reload and refresh when convenient.
 
 ## Scrolling completion correction
 
