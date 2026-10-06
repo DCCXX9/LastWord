@@ -46,6 +46,13 @@ Album-less rows preempt unrelated active history work, retaining the shared
 request throttle. Their cache key has an albumless suffix, so the ranked track's
 all-time album winner is preserved. No existing preference/cache keys are migrated.
 
+v0.6.7 waits for validated own-library scrobble fields before selecting an artwork
+cache key. Rows may be parsed in stages; seeing an image is not evidence that its
+form is complete. Existing image observations are reconsidered when later nodes
+change their classification, and the final source startup rescans completed rows.
+Known covers apply directly on metadata arrival; discovery remains queued only
+for unknown/stale records. A staged-row rendering-frame test enforces this boundary.
+
 ## 30 September 2026: coordinated local preferences
 
 A Manifest V3 service worker is the sole writer of rules/settings. Each queued

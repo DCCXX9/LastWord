@@ -32,17 +32,20 @@
     const link = original.link;
     if (link?.isConnected) link.href = cover.url;
   }
+  function restore(image) {
+    const original = originals.get(image);
+    if (!original) return;
+    for (const [name, value] of Object.entries(original.attrs)) {
+      if (value === null) image.removeAttribute(name); else image.setAttribute(name, value);
+    }
+    if (original.link) original.link.setAttribute('href', original.href);
+    originals.delete(image);
+  }
   function reset() {
     generation++; running?.controller.abort();
     observer?.disconnect(); observed.clear(); jobs.clear();
     globalThis.LastfmArtworkSource?.clear();
-    for (const [image, original] of originals) {
-      for (const [name, value] of Object.entries(original.attrs)) {
-        if (value === null) image.removeAttribute(name); else image.setAttribute(name, value);
-      }
-      if (original.link) original.link.setAttribute('href', original.href);
-    }
-    originals.clear();
+    for (const image of originals.keys()) restore(image);
   }
   function visible(job) {
     return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
@@ -96,15 +99,25 @@
     }
     for (const row of document.querySelectorAll('tr.chartlist-row')) {
       const image = row.querySelector('.chartlist-image img');
-      if (!image || observed.has(image)) continue;
+      if (!image) continue;
       let item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(value => value?.type === 'tracks');
       if (!item) continue;
       const form = row.querySelector('form[data-edit-scrobble]');
       const fields = form && A.editRow(form, location.href, username, true);
+      // At document_start the image/link can arrive before the native form.
+      // Do not enqueue an unclassified scrobble or bypass its album-less cache.
+      if (A.libraryView(location.href) === 'scrobbles' && !fields) continue;
       const albumless = fields && !fields.album.trim() && !fields.albumArtist.trim() &&
         R.normalize(fields.artist) === R.normalize(item.artist) && R.normalize(fields.track) === R.normalize(item.name);
       if (albumless) item = { ...item, albumless: true };
       const key = keyFor(item);
+      const previous = observed.get(image);
+      if (previous && previous.job === jobs.get(key)) continue;
+      if (previous) {
+        previous.job.images.delete(image); observer.unobserve(image); observed.delete(image);
+        if (running?.job === previous.job && !visible(previous.job)) running.controller.abort();
+        restore(image);
+      }
       if (!jobs.has(key)) {
         const saved = cache.get(key);
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000;
@@ -157,7 +170,7 @@
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, { childList: true, subtree: true }); scan(); } });
   addEventListener('popstate', scan);
-  globalThis.LastfmArtwork = Object.freeze({ start: pump, status: () => ({
+  globalThis.LastfmArtwork = Object.freeze({ start: scan, status: () => ({
     cacheReady, cachedTracks: cache.size, cacheError: cacheError || null,
     visibleImages: [...observed.values()].filter(value => value.visible).length,
     jobs: Object.fromEntries(['waiting', 'loading', 'complete', 'unavailable'].map(state =>

@@ -1,7 +1,7 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.6**, branch `preferences-page`.
-Focused correction baseline: `8f5765b` (v0.6.5).
+Installed candidate: **v0.6.7**, branch `preferences-page`.
+Focused correction baseline: `1978e17` (v0.6.6).
 Artwork feature baseline: `74ce8ba796c9d39e8c42a7a18060969935cd33c1` (v0.6.2).
 
 ## Scope
@@ -93,7 +93,23 @@ despite an unrelated history request deliberately held open. The actual unpacked
 extension requests only Watch Me's album page and no track history, then reloads
 its cached image/link without new requests. The public album overview was read
 in a separate browser and confirmed the expected 9741753a613314214accd15a28eb91da
-cover and normally encoded URL. Signed-in v0.6.6 acceptance is pending the user's test.
+cover and normally encoded URL. The user confirmed v0.6.6 eventually changes
+Watch Me to the correct single cover/link, but it still takes 20–30 seconds.
+
+v0.6.7 corrects a reproduced row-construction race. Image/link nodes can arrive
+before native scrobble fields. The old observer classified them under the normal
+track key and skipped that image on subsequent scans, missing a known album-less
+cache entry. Own-library scrobbles now wait for validated fields, and existing
+images are reclassified when their metadata changes. Source initialization scans
+the completed rows before pumping jobs. Cached images/links are applied directly;
+there is no visibility/network wait for an already-known cover.
+
+Focused actual-extension/artwork/profile/dated-section checks pass. The staged-row
+regression warms the Watch Me cache, delays its form by 300 ms, blocks any repeat
+history request, and asserts the correct cover on the first rendering frame after
+the fields arrive with zero new requests. The old code failed its 1.2-second
+deadline. First uncached covers still require discovery. v0.6.7 live loading speed
+is pending the user's test; saved preferences and cache records are preserved.
 The earlier v0.6.2 per-day scrolling break was accepted live by the user.
 
 Rollback: baseline source above. No saved display preferences/settings were
