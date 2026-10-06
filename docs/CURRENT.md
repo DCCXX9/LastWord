@@ -1,10 +1,36 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.10**, branch preferences-page.
+Installed candidate: **v0.6.11**, branch preferences-page.
+Placeholder correction baseline: e6d87ff (v0.6.10).
 Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Generic cover correction
+
+Public Dean Blunt rows confirm the generic image hash
+4128a6eb29f94943c9d206c08e625904 inside span.cover-art for lucre 5/6.
+The actual lucre 5 public history contains 18 LUCRE plays, repeating the same
+edit-scrobble ID across different timestamp titles. The current reader was run
+against that real DOM and selected LUCRE (18/18); its cover input came from the
+public artist overview's LUCRE row, not a signed-in cover fetch.
+
+Generic covers are now rejected by source selection and ignored when reading
+the separate artwork cache. Their track image is hidden while awaiting discovery;
+they have priority over ordinary uncached track jobs. Real black album artwork
+remains valid. Successful replacements convert non-clickable cover spans to
+album links. Profile changes restore the original markup and visibility.
+Failed shared counts fall back to individual history; aborts and rate limits
+still stop requests. Native timestamps distinguish repeated edit IDs across pages.
+The selected album's primary/sharing images are used, excluding Similar Albums.
+If no genuine album image is available, the slot stays empty; no image is invented.
+
+Focused placeholder, artwork, album totals, actual-extension artwork, startup,
+adapter and artwork-storage checks pass. Tests cover stale generic cache entries,
+span restoration, multi-page repeated IDs, missing artwork and rate-limit boundaries.
+No preference/settings/undo/scan keys are changed or cleared. Signed-in acceptance
+remains with Reload and refresh when convenient.
 
 ## Startup correction
 

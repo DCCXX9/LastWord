@@ -109,6 +109,14 @@
     if (!pairs.album || !pairs.artist || !pairs.albumArtist) return null;
     return pairs;
   }
+  function coverImage(value) {
+    try {
+      const url = new URL(value);
+      // Last.fm's generic music-note image, observed on the user's LUCRE rows.
+      return url.protocol === 'https:' && url.hostname === 'lastfm-img.freetls.fastly.net' &&
+        !/\/4128a6eb29f94943c9d206c08e625904\.[^/]+$/i.test(url.pathname) ? url.href : null;
+    } catch { return null; }
+  }
   globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, libraryView,
-    nextPage, editRow, editPairs });
+    nextPage, editRow, editPairs, coverImage });
 })();

@@ -24,8 +24,10 @@
     const links = [...cell.querySelectorAll('a[href]')];
     const album = links.length === 1 ? A.musicItem(links[0], base) : null;
     if (links.length && album?.type !== 'albums' || !links.length && cell.textContent.trim()) return null;
+    const time = row.querySelector('.chartlist-timestamp time[datetime]')?.getAttribute('datetime') ||
+      row.querySelector('.chartlist-timestamp [title]')?.getAttribute('title');
     return { artist: track.artist, track: track.name, album: album?.name || '',
-      albumArtist: album?.artist || '', timestamp: 'id:' + id };
+      albumArtist: album?.artist || '', timestamp: time || 'id:' + id };
   }
 
   async function albumCover(artist, album, username, signal) {
@@ -39,15 +41,12 @@
         }
         // The signed-in primary cover reflects the user's preferred artwork.
         // Similar Albums also uses cover-art, so only the first main cover is used.
-        const primary = page.doc.querySelector('.cover-art img');
-        const value = primary?.getAttribute('data-src') || primary?.getAttribute('src') ||
-          page.doc.querySelector('meta[property="og:image"]')?.content;
-        let image;
-        try { image = new URL(value); } catch { throw new Error('This album has no available cover.'); }
-        if (image.protocol !== 'https:' || image.hostname !== 'lastfm-img.freetls.fastly.net') {
-          throw new Error('This album has no verified Last.fm cover.');
-        }
-        return { artist, album, image: image.href, url: page.url };
+        const primary = [...page.doc.querySelectorAll('.cover-art img')]
+          .find(image => !image.closest('aside,.similar-albums'));
+        const image = [primary?.getAttribute('data-src'), primary?.getAttribute('src'),
+          page.doc.querySelector('meta[property="og:image"]')?.content].map(A.coverImage).find(Boolean);
+        if (!image) throw new Error('This album has no available cover.');
+        return { artist, album, image, url: page.url };
       });
       albumImages.set(key, pending);
       // An aborted viewport lookup can be attempted again when it becomes visible.
@@ -59,7 +58,12 @@
   }
 
   async function resolve(item, username, signal) {
-    const shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal);
+    let shared;
+    try { shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal); }
+    catch (error) {
+      if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
+      // The bounded aggregate is an optimization; the track history is still authoritative.
+    }
     if (shared) return shared;
     const base = `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(item.artist)}/_/${encode(item.name)}`;
     const albums = new Map(), timestamps = new Set();
@@ -99,8 +103,7 @@
           throw new Error('This track’s scrobble album fields could not be verified.');
         }
         const album = fields.album.trim(), artist = album ? fields.albumArtist.trim() || fields.artist.trim() : item.artist;
-        const id = row.getAttribute('data-edit-scrobble-id');
-        const stamp = JSON.stringify([/^[a-f0-9]{32}$/i.test(id || '') ? 'id:' + id : fields.timestamp, norm(album), norm(artist)]);
+        const stamp = JSON.stringify([hidden?.timestamp || fields.timestamp, norm(album), norm(artist)]);
         if (timestamps.has(stamp)) throw new Error('This track’s history overlapped during lookup. Refresh to try again.');
         pageStamps.add(stamp);
         const key = JSON.stringify([norm(artist), norm(album)]);

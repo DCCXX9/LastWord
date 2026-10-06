@@ -16,21 +16,33 @@
   function remember(image) {
     if (!originals.has(image)) originals.set(image, {
       attrs: Object.fromEntries(imageAttrs.map(name => [name, image.getAttribute(name)])),
-      link: image.closest('a[href]'), href: image.closest('a[href]')?.getAttribute('href')
+      link: image.closest('a[href]'), href: image.closest('a[href]')?.getAttribute('href'),
+      wrapper: image.parentElement?.matches('span.cover-art') ? image.parentElement : null,
+      replacement: null, visibility: image.style.getPropertyValue('visibility'),
+      visibilityPriority: image.style.getPropertyPriority('visibility')
     });
   }
   function apply(image, cover) {
     if (!image.isConnected || !own()) return;
+    if (!A.coverImage(cover.image)) return;
     remember(image);
     const original = originals.get(image);
     const size = /\/i\/u\/(\d+(?:s|x\d+))\//.exec(original.attrs.src || original.attrs['data-src'] || '')?.[1];
     const source = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     image.src = source; image.setAttribute('data-src', source);
+    if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
+    else image.style.removeProperty('visibility');
     image.alt = 'Cover for ' + cover.album + ' by ' + cover.artist;
     image.title = cover.fallback ? 'Personal cover: matching artist/title album page'
       : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)';
-    const link = original.link;
+    if (!original.link && original.wrapper?.isConnected) {
+      const link = document.createElement('a');
+      for (const attr of original.wrapper.attributes) link.setAttribute(attr.name, attr.value);
+      link.append(...original.wrapper.childNodes);
+      original.wrapper.replaceWith(link); original.replacement = link;
+    }
+    const link = original.link || original.replacement;
     if (link?.isConnected) link.href = cover.url;
   }
   function restore(image) {
@@ -40,6 +52,12 @@
       if (value === null) image.removeAttribute(name); else image.setAttribute(name, value);
     }
     if (original.link) original.link.setAttribute('href', original.href);
+    if (original.replacement?.isConnected) {
+      original.wrapper.append(...original.replacement.childNodes);
+      original.replacement.replaceWith(original.wrapper);
+    }
+    if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
+    else image.style.removeProperty('visibility');
     originals.delete(image);
   }
   function reset() {
@@ -69,7 +87,7 @@
     }
     // Album-less scrobbles need a title-album fallback. Give those visible rows
     // priority without changing the all-time album counting or request throttle.
-    const job = waiting.find(job => job.albumless) || waiting[0];
+    const job = waiting.find(job => job.albumless) || waiting.find(job => job.placeholder) || waiting[0];
     if (!job) return;
     const controller = new AbortController(), current = generation;
     running = { job, controller }; job.state = 'loading';
@@ -96,7 +114,16 @@
   }
   function scan() {
     if (currentUrl !== location.href) { reset(); currentUrl = location.href; }
-    if (!own() || !cacheReady) return;
+    if (!own()) return;
+    for (const row of document.querySelectorAll('tr.chartlist-row')) {
+      if (![...row.querySelectorAll('.chartlist-name a[href]')].some(link => A.musicItem(link)?.type === 'tracks')) continue;
+      const image = row.querySelector('.chartlist-image img');
+      if (!image) continue;
+      if (!A.coverImage(image.getAttribute('data-src') || image.getAttribute('src'))) {
+        remember(image); image.style.setProperty('visibility', 'hidden');
+      }
+    }
+    if (!cacheReady) return;
     for (const [image] of originals) if (!image.isConnected) originals.delete(image);
     for (const [image, value] of observed) if (!image.isConnected) {
       observer.unobserve(image); observed.delete(image); value.job.images.delete(image);
@@ -128,7 +155,8 @@
         // verified once against album totals/native scrobble metadata.
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 &&
           (item.albumless || saved.cover.sourceVersion === 2);
-        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless });
+        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
+          placeholder: !A.coverImage(image.getAttribute('data-src') || image.getAttribute('src')) });
       }
       const job = jobs.get(key); job.images.add(image);
       observed.set(image, { job, visible: false }); observer.observe(image);
@@ -163,12 +191,13 @@
     username = state.settings.username;
     if (changed || !cacheReady) {
       cacheReady = false; cache.clear();
+      scan();
       const current = generation;
       if (A.ownProfile(location.href, username)) {
         try {
           const records = await S.readArtwork();
           if (current !== generation) return;
-          for (const record of records) cache.set(record.key, record);
+          for (const record of records) if (A.coverImage(record.cover.image)) cache.set(record.key, record);
         } catch (error) { cacheError = error.message; }
       }
       if (current !== generation) return;

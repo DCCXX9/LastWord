@@ -23,13 +23,12 @@
       if (item.type === 'tracks' && R.normalize(item.artist) === R.normalize(artist.artist)) totals.set(trackKey(item), n);
       if (item.type !== 'albums') continue;
       const img = row.querySelector('.chartlist-image img');
-      let image;
-      try { image = new URL(img?.getAttribute('data-src') || img?.getAttribute('src')); } catch { continue; }
-      if (image.protocol !== 'https:' || image.hostname !== 'lastfm-img.freetls.fastly.net') continue;
+      const image = A.coverImage(img?.getAttribute('data-src')) || A.coverImage(img?.getAttribute('src'));
+      if (!image) continue;
       const key = albumKey(item, username);
       if (seen.has(key)) continue;
       seen.add(key);
-      albums.push({ ...item, image: image.href, url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
+      albums.push({ ...item, image, url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
     }
     return albums.length && totals.size ? { albums: albums.slice(0, 5), totals } : null;
   }

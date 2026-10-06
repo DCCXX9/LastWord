@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.10**.
+Last.fm profile. Installed candidate: **v0.6.11**.
 
 ## Updating this installed copy
 
@@ -22,12 +22,20 @@ Already-started modules are reused, retaining early cached artwork application.
   Silentó / Watch Me (Whip / Nae Nae)). Album-artist tags select compilation covers.
   The signed-in album overview's primary cover supplies your starred artwork.
   Both the thumbnail and cover link update, retaining native thumbnail size.
+  Generic music-note covers are hidden during lookup and never accepted as a
+  resolved cover. Previously cached generic images are re-resolved. Placeholder
+  spans become album links once the chosen cover is available; profile changes
+  restore the original markup. If the selected album has no available artwork,
+  its image slot remains empty. Similar Albums artwork is excluded.
   On an all-time artist overview, shared album track totals resolve several
   tracks in one request. The album's already-loaded row supplies its cover;
   track-row video stills/compilation images are never used to choose an album.
   Proven tracks update progressively while other requests are still pending.
   This optimization checks at most five albums/two pages each. Unresolved tracks
   use their individual history, including the native scrobble album column.
+  A failed aggregate also uses the individual history, unless loading is cancelled
+  or Last.fm has asked for a rate-limit pause. Repeated edit IDs are distinguished
+  by native scrobble timestamps when counting across pages.
   Lookups run one track at a time, only while visible, using the shared request
   throttle and rate-limit pause. A provable winner stops the track-history lookup
   early. A separate bounded local cache reuses resolved covers across visits.
@@ -132,7 +140,7 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
-`tests/startup.cjs`. The startup check reloads the actual extension between
+`tests/artwork-placeholder.cjs`, `tests/startup.cjs`. The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation.
 Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
