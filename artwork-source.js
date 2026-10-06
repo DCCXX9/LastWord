@@ -16,6 +16,17 @@
     }
     return total;
   }
+  function renderedRow(row, base, expected) {
+    const track = A.musicItem(row.querySelector('.chartlist-name a[href]'), base);
+    const id = row.getAttribute('data-edit-scrobble-id'), cell = row.querySelector('.chartlist-album');
+    if (track?.type !== 'tracks' || norm(track.artist) !== norm(expected.artist) || norm(track.name) !== norm(expected.name) ||
+        !/^[a-f0-9]{32}$/i.test(id || '') || !cell) return null;
+    const links = [...cell.querySelectorAll('a[href]')];
+    const album = links.length === 1 ? A.musicItem(links[0], base) : null;
+    if (links.length && album?.type !== 'albums' || !links.length && cell.textContent.trim()) return null;
+    return { artist: track.artist, track: track.name, album: album?.name || '',
+      albumArtist: album?.artist || '', timestamp: 'id:' + id };
+  }
 
   async function albumCover(artist, album, username, signal) {
     const url = `${location.origin}/music/${encode(artist)}/${encode(album)}`;
@@ -48,6 +59,8 @@
   }
 
   async function resolve(item, username, signal) {
+    const shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal);
+    if (shared) return shared;
     const base = `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(item.artist)}/_/${encode(item.name)}`;
     const albums = new Map(), timestamps = new Set();
     let url = base, total = null, scanned = 0, winner;
@@ -62,27 +75,32 @@
       const count = totalScrobbles(page.doc);
       if (total !== null && total !== count) throw new Error('This track’s history changed during lookup. Refresh to try again.');
       total = count;
-      const forms = [...page.doc.querySelectorAll('table.chartlist tr.chartlist-row form[data-edit-scrobble]')];
-      if (!forms.length && total) throw new Error('This track’s scrobble album fields were unavailable.');
+      const rows = [...page.doc.querySelectorAll('table.chartlist tr.chartlist-row')];
+      if (!rows.length && total) throw new Error('This track’s scrobble album fields were unavailable.');
       const pageStamps = new Set();
-      for (const form of forms) {
+      for (const row of rows) {
+        const form = row.querySelector('form[data-edit-scrobble]');
         // Confirmed on the signed-in Watch Me history: album-less rows omit
         // BOTH album inputs. Normalize that read-only representation locally;
         // retain strict validation when only one field is missing.
         let source = form;
-        if (!form.querySelector('[name="album_name"],[name="album_artist_name"]')) {
+        if (form && !form.querySelector('[name="album_name"],[name="album_artist_name"]')) {
           source = form.cloneNode(true);
           for (const name of ['album_name', 'album_artist_name']) {
             const input = page.doc.createElement('input'); input.name = name; input.value = '';
             source.append(input);
           }
         }
-        const fields = A.editRow(source, page.url, username);
+        const hidden = source && A.editRow(source, page.url, username);
+        const fields = renderedRow(row, page.url, item) || hidden;
+        if (fields && hidden && norm(hidden.artist) === norm(item.artist) && norm(hidden.track) === norm(item.name) &&
+            norm(hidden.album) === norm(fields.album) && hidden.albumArtist.trim()) fields.albumArtist = hidden.albumArtist;
         if (!fields || norm(fields.artist) !== norm(item.artist) || norm(fields.track) !== norm(item.name)) {
           throw new Error('This track’s scrobble album fields could not be verified.');
         }
         const album = fields.album.trim(), artist = album ? fields.albumArtist.trim() || fields.artist.trim() : item.artist;
-        const stamp = JSON.stringify([fields.timestamp, norm(album), norm(artist)]);
+        const id = row.getAttribute('data-edit-scrobble-id');
+        const stamp = JSON.stringify([/^[a-f0-9]{32}$/i.test(id || '') ? 'id:' + id : fields.timestamp, norm(album), norm(artist)]);
         if (timestamps.has(stamp)) throw new Error('This track’s history overlapped during lookup. Refresh to try again.');
         pageStamps.add(stamp);
         const key = JSON.stringify([norm(artist), norm(album)]);
@@ -108,13 +126,15 @@
     const fallback = !winner?.album;
     const artist = fallback ? item.artist : winner.artist;
     const album = fallback ? item.name : winner.album;
-    return { ...await albumCover(artist, album, username, signal), fallback, scanned, total };
+    return { ...await albumCover(artist, album, username, signal), fallback, scanned, total, sourceVersion: 2 };
   }
   async function forBlankScrobble(item, username, signal) {
     check(signal);
     return { ...await albumCover(item.artist, item.name, username, signal),
-      fallback: true, scanned: 0, total: 0 };
+      fallback: true, scanned: 0, total: 0, sourceVersion: 2 };
   }
-  globalThis.LastfmArtworkSource = Object.freeze({ resolve, forBlankScrobble, clear: () => albumImages.clear() });
+  globalThis.LastfmArtworkSource = Object.freeze({ resolve, forBlankScrobble, clear: () => {
+    albumImages.clear(); globalThis.LastfmArtworkAlbums?.clear();
+  } });
   globalThis.LastfmArtwork?.start();
 })();

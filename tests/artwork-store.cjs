@@ -14,6 +14,8 @@ const cover = { artist: 'Artist', album: 'Album', image: 'https://lastfm-img.fre
  assert.ok(records[0].checkedAt > 0);
  await w.request('artwork-put', { item: { artist: 'Artist', name: 'Track', albumless: true }, cover: { ...cover, album: 'Track', url: 'https://www.last.fm/music/Artist/Track' } }, own);
  assert.equal((await w.request('artwork-read', {}, own)).length,3,'album-less row covers must not overwrite the all-time winner cache for the same track');
+ await w.request('artwork-put',{item:{artist:'Artist',name:'Other'},cover:{...cover,sourceVersion:2}},own);
+ assert.equal((await w.request('artwork-read',{},own)).find(r=>r.item.name==='Other').cover.sourceVersion,2,'new selection verification must survive persistent cache writes');
  for (const key of Object.keys(initial)) assert.deepEqual(w.data[key], initial[key], 'cache writes must preserve ' + key);
  await assert.rejects(w.request('artwork-read', {}, friend), /connected/);
  await assert.rejects(w.request('artwork-put', { item: { artist: 'Artist', name: 'Track' }, cover: { ...cover, image: 'https://evil.test/image.jpg' } }, own), /cover/);

@@ -50,6 +50,14 @@
   function visible(job) {
     return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
   }
+  function finish(job, cover) {
+    if (job.state === 'complete' && job.cover?.image === cover.image && job.cover?.url === cover.url &&
+        job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
+    job.cover = cover; job.state = 'complete';
+    cache.set(keyFor(job.item), { cover, checkedAt: Date.now() });
+    for (const image of job.images) apply(image, cover);
+    S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
+  }
   async function pump() {
     if (!cacheReady || !own() || !globalThis.LastfmArtworkSource ||
         !globalThis.LastfmPages || LastfmPages.status().rateLimited) return;
@@ -72,12 +80,7 @@
     try {
       const cover = await (job.albumless ? LastfmArtworkSource.forBlankScrobble : LastfmArtworkSource.resolve)(job.item, username, controller.signal);
       if (current !== generation || controller.signal.aborted || !own()) return;
-      job.cover = cover; job.state = 'complete';
-      const key = keyFor(job.item);
-      cache.set(key, { cover, checkedAt: Date.now() });
-      for (const image of job.images) apply(image, cover);
-      // Saving a disposable cache must never prevent the cover from being shown.
-      S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
+      finish(job, cover);
     } catch (error) {
       if (current !== generation) return;
       job.state = error.name === 'AbortError' ? 'waiting' : 'unavailable';
@@ -120,12 +123,20 @@
       }
       if (!jobs.has(key)) {
         const saved = cache.get(key);
-        const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000;
+        // Existing images remain visible while older selection results are
+        // verified once against album totals/native scrobble metadata.
+        const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 &&
+          (item.albumless || saved.cover.sourceVersion === 2);
         jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless });
       }
       const job = jobs.get(key); job.images.add(image);
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
+    }
+    for (const job of jobs.values()) {
+      if (job.albumless || job.state === 'loading') continue;
+      const known = globalThis.LastfmArtworkAlbums?.peek(job.item, username);
+      if (known) finish(job, known);
     }
     pump();
   }

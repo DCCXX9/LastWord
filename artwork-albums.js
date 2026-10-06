@@ -1,0 +1,108 @@
+(() => {
+  'use strict';
+  const A = LastfmAdapter, R = LastfmRules;
+  const records = new Map();
+  const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
+  const trackKey = item => JSON.stringify([R.normalize(item.artist), R.normalize(item.name)]);
+  const albumKey = (album, username) => JSON.stringify([R.normalize(username), R.normalize(album.artist), R.normalize(album.name)]);
+  function count(value) {
+    const text = String(value ?? '').trim();
+    const number = Number(text.replace(/[,\s]/g, ''));
+    return /^\d[\d,\s]*$/.test(text) && Number.isSafeInteger(number) ? number : null;
+  }
+  function context(username) {
+    const url = new URL(location.href), artist = A.musicItem(url.href);
+    if (url.search || !A.ownProfile(url.href, username) ||
+        A.libraryView(url.href) !== 'artistScrobbles' || artist?.type !== 'artists') return null;
+    const albums = [], totals = new Map(), seen = new Set();
+    for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
+      const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(Boolean);
+      if (!item) continue;
+      const n = count(row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value'));
+      if (n === null) continue;
+      if (item.type === 'tracks' && R.normalize(item.artist) === R.normalize(artist.artist)) totals.set(trackKey(item), n);
+      if (item.type !== 'albums') continue;
+      const img = row.querySelector('.chartlist-image img');
+      let image;
+      try { image = new URL(img?.getAttribute('data-src') || img?.getAttribute('src')); } catch { continue; }
+      if (image.protocol !== 'https:' || image.hostname !== 'lastfm-img.freetls.fastly.net') continue;
+      const key = albumKey(item, username);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      albums.push({ ...item, image: image.href, url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
+    }
+    return albums.length && totals.size ? { albums: albums.slice(0, 5), totals } : null;
+  }
+  function proven(item, username, data) {
+    const key = trackKey(item), total = data.totals.get(key);
+    if (!total) return null;
+    const ranked = [], available = data.albums.filter(album => records.get(albumKey(album, username))?.counts);
+    for (const album of available) ranked.push({ album, count: records.get(albumKey(album, username)).counts.get(key) || 0 });
+    ranked.sort((a,b) => b.count-a.count);
+    const scanned = ranked.reduce((n, entry) => n+entry.count, 0), remaining = total-scanned;
+    if (remaining < 0 || !ranked[0]?.count || ranked[0].count <= (ranked[1]?.count || 0)+remaining) return null;
+    const album = ranked[0].album;
+    return { artist: album.artist, album: album.name, image: album.image, url: album.url,
+      fallback: false, scanned, total, sourceVersion: 2 };
+  }
+  function peek(item, username) {
+    const data = context(username);
+    return data ? proven(item, username, data) : null;
+  }
+  async function read(album, username, signal) {
+    const key = albumKey(album, username);
+    if (!records.has(key)) {
+      const record = { counts: null };
+      records.set(key, record);
+      record.pending = (async () => {
+        const totals = new Map();
+        let url = `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(album.artist)}/${encode(album.name)}`;
+        let total = null, scanned = 0;
+        for (let pageNumber = 1; url; pageNumber++) {
+          const page = await LastfmPages.get(url, { signal }), returned = A.musicItem(page.url);
+          if (returned?.type !== 'albums' || R.normalize(returned.artist) !== R.normalize(album.artist) ||
+              R.normalize(returned.name) !== R.normalize(album.name)) throw new Error('Last.fm returned a different album library.');
+          const displays = [...page.doc.querySelectorAll('.col-main .metadata-display')];
+          const n = displays.length === 1 ? count(displays[0].textContent) : null;
+          if (n === null || total !== null && total !== n) throw new Error('The album library total could not be verified.');
+          total = n;
+          for (const row of page.doc.querySelectorAll('table.chartlist tr.chartlist-row')) {
+            const track = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link, page.url)).find(i => i?.type === 'tracks');
+            const plays = count(row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value'));
+            if (!track || plays === null || totals.has(trackKey(track))) throw new Error('The album track totals could not be verified.');
+            totals.set(trackKey(track), plays); scanned += plays;
+          }
+          if (scanned > total) throw new Error('The album track totals changed during lookup.');
+          const next = A.nextPage(page.doc, page.url);
+          if (next && Number(new URL(next).searchParams.get('page')) !== pageNumber+1) throw new Error('The album library pagination could not be verified.');
+          // This is a bounded optimization, not another large library scan.
+          // Long album lists remain unresolved here; the track-history reader
+          // can prove that individual track without crawling the whole album.
+          if (next && pageNumber >= 2) return;
+          url = next;
+        }
+        if (scanned !== total) throw new Error('The complete album library could not be verified.');
+        record.counts = totals;
+        // Several visible tracks can now have proven winners, even while the
+        // original track still needs another album's counts.
+        globalThis.LastfmArtwork?.start();
+      })();
+      record.pending.catch(error => {
+        if (error.name === 'AbortError' && records.get(key) === record) records.delete(key);
+      });
+    }
+    await records.get(key).pending;
+  }
+  async function resolve(item, username, signal) {
+    const data = context(username);
+    if (!data?.totals.has(trackKey(item))) return null;
+    for (const album of data.albums) {
+      if (signal?.aborted) throw new DOMException('Artwork lookup cancelled.', 'AbortError');
+      const known = proven(item, username, data);
+      if (known) return known;
+      await read(album, username, signal);
+    }
+    return proven(item, username, data);
+  }
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peek, clear: () => records.clear() });
+})();

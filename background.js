@@ -238,7 +238,8 @@ importScripts('rules.js', 'store.js');
         ...(item.albumless === true ? ['albumless'] : [])]),
       username, item: { artist: item.artist, name: item.name, ...(item.albumless === true ? { albumless: true } : {}) },
       cover: { artist: cover.artist, album: cover.album, image: image.href, url: url.href,
-        fallback: cover.fallback, scanned: cover.scanned, total: cover.total }, checkedAt: Date.now() };
+        fallback: cover.fallback, scanned: cover.scanned, total: cover.total,
+        ...(cover.sourceVersion === 2 ? { sourceVersion: 2 } : {}) }, checkedAt: Date.now() };
   }
   async function execute(message, sender) {
     const stored = await chrome.storage.local.get(null);

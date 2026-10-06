@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.7**.
+Last.fm profile. Installed candidate: **v0.6.8**.
 
 ## Updating this installed copy
 
@@ -19,11 +19,19 @@ Its identity and stored preferences depend on that installation.
   Silentó / Watch Me (Whip / Nae Nae)). Album-artist tags select compilation covers.
   The signed-in album overview's primary cover supplies your starred artwork.
   Both the thumbnail and cover link update, retaining native thumbnail size.
+  On an all-time artist overview, shared album track totals resolve several
+  tracks in one request. The album's already-loaded row supplies its cover;
+  track-row video stills/compilation images are never used to choose an album.
+  Proven tracks update progressively while other requests are still pending.
+  This optimization checks at most five albums/two pages each. Unresolved tracks
+  use their individual history, including the native scrobble album column.
   Lookups run one track at a time, only while visible, using the shared request
   throttle and rate-limit pause. A provable winner stops the track-history lookup
   early. A separate bounded local cache reuses resolved covers across visits.
   Cached images and album links apply during page loading; fresh records avoid
   lookup requests for 24 hours. Older records remain visible while refreshed.
+  Older normal-track selections are verified once by the updated reader without
+  clearing their images or any saved display preferences.
   An uncached track still needs a signed-in history/album lookup.
   Returning to a resolved page reuses its in-memory result immediately. Visible
   album-less scrobbles have lookup priority over other uncached tracks.
@@ -119,7 +127,7 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`, `tests/scrobble-sections.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
-`tests/artwork-store.cjs`, `tests/artwork-extension.cjs`. Browser checks require Playwright
+`tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`. Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 

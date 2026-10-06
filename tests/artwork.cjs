@@ -18,7 +18,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
  try {
   const page=await browser.newPage();
   const myron={artist:'Lil Uzi Vert',name:'Myron'}, mixed={artist:'Artist',name:'Mixed'}, blank={artist:'Silentó',name:'Watch Me (Whip / Nae Nae)'};
-  const compilation={artist:'Singer',name:'Compilation track'}, incomplete={artist:'Artist',name:'Incomplete'}, tied={artist:'Artist',name:'Tied'}, malformed={artist:'Artist',name:'Malformed'};
+  const compilation={artist:'Singer',name:'Compilation track'}, incomplete={artist:'Artist',name:'Incomplete'}, tied={artist:'Artist',name:'Tied'}, malformed={artist:'Artist',name:'Malformed'}, carti={artist:'Playboi Carti',name:'2024'};
   const calls=[];
   let holdMixed = false;
   const histories={
@@ -29,7 +29,9 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
    [compilation.name]:[history(compilation,3,[['Mix','Various Artists',3],['Mix','Various Artists',2],['Solo','Singer',1]])],
    [incomplete.name]:[history(incomplete,7,[['Recent','',3],['Older','',2],['Older','',1]])],
    [tied.name]:[history(tied,4,[['Latest','',4],['Other','',3],['Other','',2],['Latest','',1]])],
-   [malformed.name]:[history(malformed,1,[['Album','',1]]).replace('name="album_artist_name"','name="unexpected_field"')]
+   [malformed.name]:[history(malformed,1,[['Album','',1]]).replace('name="album_artist_name"','name="unexpected_field"')],
+   // Captured public layout: album column + stable scrobble ids, no edit forms.
+   '2024':[`<!doctype html><main class="col-main"><p class="metadata-display">63</p><table class="chartlist"><tbody>${Array.from({length:50},(_,i)=>`<tr class="chartlist-row" data-edit-scrobble-id="${i.toString(16).padStart(32,'0')}"><td class="chartlist-name"><a href="/music/Playboi+Carti/_/2024">2024</a></td><td class="chartlist-album"><a href="/music/Playboi+Carti/MUSIC">MUSIC</a></td></tr>`).join('')}</tbody></table><nav class="pagination"><a class="pagination-next" href="?page=2">Next</a></nav></main>`]
   };
   await page.route('https://lastfm-img.freetls.fastly.net/**',r=>r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l1sAAAAASUVORK5CYII=','base64')}));
   await page.route('https://www.last.fm/**',r=>{
@@ -59,6 +61,10 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   assert.equal(dominant.artist,'Lil Uzi Vert');
   assert.equal(dominant.image,starred,'use the signed-in primary cover, which may differ from the public sharing image');
   assert.equal(calls.some(url=>url.includes('Myron?page=2')),false,'a mathematically settled majority must not fetch another history page');
+  const music=await page.evaluate(item=>LastfmArtworkSource.resolve(item,'DCCXX'),carti);
+  assert.equal(music.album,'MUSIC','native scrobble album metadata must override the global 2024 title-album image');
+  assert.equal(music.fallback,false);
+  assert.equal(calls.some(url=>url.endsWith('/2024?page=2')),false,'50 of 63 MUSIC plays already prove the winner');
   const older=await page.evaluate(item=>LastfmArtworkSource.resolve(item,'DCCXX'),mixed);
   assert.equal(older.album,'Older','use the all-time winner rather than the most recent album');
   const single=await page.evaluate(item=>LastfmArtworkSource.resolve(item,'DCCXX'),blank);

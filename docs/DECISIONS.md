@@ -53,6 +53,15 @@ change their classification, and the final source startup rescans completed rows
 Known covers apply directly on metadata arrival; discovery remains queued only
 for unknown/stale records. A staged-row rendering-frame test enforces this boundary.
 
+v0.6.8 uses owned album track totals on unfiltered artist overviews to amortize
+discovery across tracks. Complete ranked album lists must sum to their metadata
+total; track winners use the same unaccounted-play bound as the history reader.
+At most five album summaries/two pages per album are checked. Proven tracks publish
+progressively using the own album-row image. Remaining tracks/ties use individual
+history, which now accepts the real native album column and stable scrobble ids.
+No track-row image is evidence of album identity. The sourceVersion 2 marker
+revalidates older normal-track cache results while their pictures stay visible.
+
 ## 30 September 2026: coordinated local preferences
 
 A Manifest V3 service worker is the sole writer of rules/settings. Each queued
