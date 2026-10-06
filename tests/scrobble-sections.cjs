@@ -41,11 +41,11 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
         [30, 20, 19, 18, 10, 9], 'every fetched day must follow the existing days in original page order');
       assert.ok(initialPanelFollows, 'loading panel must follow every initial date section');
       await page.getByRole('button', { name: 'Load next page', exact: true }).click();
-      await page.getByText('You’ve reached the end of this library view.', { exact: true }).waitFor();
+      await page.waitForFunction(() => document.querySelector('nav.pagination').hidden && document.querySelectorAll('[data-test-stamp]').length === 8);
       assert.deepEqual(await page.locator('[data-test-stamp]').evaluateAll(rows => rows.map(row => Number(row.dataset.testStamp))),
         [30, 20, 19, 18, 10, 9, 8, 5]);
       assert.deepEqual(await page.locator('.date-heading').allTextContents(), ['Today', 'Yesterday', '2 Oct 2026', '1 Oct 2026'], 'a day split across pages must keep one heading');
-      assert.ok(await panel.evaluate(panel => Boolean(document.querySelector('[data-test-stamp="5"]').compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING)), 'loading panel must follow the final appended day');
+      assert.equal(await panel.count(), 0, 'the finished history must have no loading panel');
       assert.equal(await page.locator('[data-test-stamp] a').count(), 8, 'native row contents must survive');
       if (view === '/library') {
         fs.mkdirSync(path.join(root, 'test-results'), { recursive: true });
@@ -88,7 +88,8 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
     assert.equal(await page.locator('nav.pagination').evaluate(nav => nav.hidden), false);
     hideOlderDay = false;
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
-    await page.getByText('You’ve reached the end of this library view.', { exact: true }).waitFor();
+    await page.waitForFunction(() => document.querySelector('nav.pagination').hidden && document.querySelectorAll('[data-test-stamp]').length === 5);
+    assert.equal(await page.locator('[data-lfm-ui="scroll"]').count(), 0, 'successful retry must also remove finished controls');
     assert.deepEqual(await page.locator('[data-test-stamp]').evaluateAll(rows => rows.map(row => Number(row.dataset.testStamp))), [30, 20, 19, 18, 10], 'retry must append the same complete page exactly once');
     assert.equal(requested, 3);
     await page.close();

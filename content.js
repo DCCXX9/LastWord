@@ -103,9 +103,13 @@
 
   function renderScroll(state, mode, message) {
     state.mode = mode;
+    if (mode === 'complete') {
+      // Keep the completed state so DOM updates cannot restart page-one links.
+      state.notice.remove();
+      return;
+    }
     state.label.textContent = message;
     state.notice.dataset.state = mode;
-    state.action.hidden = mode === 'complete';
     state.action.textContent = mode === 'loading' ? 'Pause loading'
       : mode === 'error' ? 'Try again'
       : mode === 'paused' ? 'Resume loading' : 'Load next page';
@@ -223,6 +227,8 @@
     }
     if (scroller?.table.isConnected) return;
     stopScroll();
+    // A replaced library container can include copies of our old controls.
+    document.querySelectorAll('[data-lfm-ui="scroll"]').forEach(notice => notice.remove());
     const table = libraryTable();
     if (!table) return;
     const pagination = paginationFor(table);

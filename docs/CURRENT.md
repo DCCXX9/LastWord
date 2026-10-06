@@ -1,8 +1,21 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.8**, branch preferences-page.
+Installed candidate: **v0.6.9**, branch preferences-page.
+Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Scrolling completion correction
+
+The loading panel is removed after the final page, retaining the completed
+scroller state so later DOM changes cannot restart the original pagination.
+A replacement library container discards copied extension controls before
+creating its own panel. Loaded rows and date sections remain intact; pause,
+retry and pagination restoration keep their existing behavior. No storage or
+artwork changes. Focused browser regressions cover all supported library views,
+completed-state mutations, cloned-container redraws, dated sections, cancellation,
+retry, rate limits and profile/preference restoration. Signed-in acceptance remains
+with the user's Reload and test, without Console steps or a reply deadline.
 
 ## Scope and ownership
 

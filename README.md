@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.8**.
+Last.fm profile. Installed candidate: **v0.6.9**.
 
 ## Updating this installed copy
 
@@ -76,7 +76,8 @@ Its identity and stored preferences depend on that installation.
   remains unverified.
 - **Keep scrolling:** Artists, Albums, Tracks, Scrobbles, artist Scrobbles,
   artist Tracks and artist Albums append Last.fm's native rows. The panel
-  reports loading, paused, error and finished states. Last.fm's pagination
+  reports loading, paused and error states, then disappears after the last page.
+  Copied stale controls are removed when a library container is replaced. Last.fm's pagination
   returns if loading fails or is disabled.
   Scrobbles retain every dated section in page order. A day spanning pages
   continues under its existing heading; the loading panel follows the final
