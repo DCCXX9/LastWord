@@ -39,6 +39,13 @@ assert.equal(A.editRow(form(values), base, 'Friend'), null);
 assert.equal(A.editRow(form({ ...values, timestamp: '' }), base, 'DCCXX'), null);
 const missing = { ...values }; delete missing.album_name;
 assert.equal(A.editRow(form(missing), base, 'DCCXX'), null);
+assert.equal(A.editRow(form(missing), base, 'DCCXX', true), null, 'one omitted album field stays invalid');
+delete missing.album_artist_name;
+assert.equal(A.editRow(form(missing), base, 'DCCXX'), null, 'edit callers retain strict defaults');
+assert.equal(A.editRow(form(missing), base, 'DCCXX', true).album, '');
+assert.equal(A.editRow(form(missing), base, 'DCCXX', true).albumArtist, '');
+const duplicate = form(missing); duplicate.elements.push({name:'album_name',value:''},{name:'album_name',value:''});
+assert.equal(A.editRow(duplicate, base, 'DCCXX', true), null, 'duplicate fields are never classified as absent');
 const pairs = Object.fromEntries(Object.entries(values).filter(([name]) => name !== 'timestamp')
   .flatMap(([name, value]) => [[name + '_original', value], [name, value]]));
 assert.equal(A.editPairs(form(pairs)).album.from, '');

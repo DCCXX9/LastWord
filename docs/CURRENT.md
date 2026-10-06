@@ -1,7 +1,7 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.5**, branch `preferences-page`.
-Focused correction baseline: `f63d91d` (v0.6.4).
+Installed candidate: **v0.6.6**, branch `preferences-page`.
+Focused correction baseline: `8f5765b` (v0.6.5).
 Artwork feature baseline: `74ce8ba796c9d39e8c42a7a18060969935cd33c1` (v0.6.2).
 
 ## Scope
@@ -75,7 +75,25 @@ the last artwork error, without track names or security fields.
 Focused artwork, actual-extension, options/popup and dated-section suites pass.
 The actual extension test now checks Watch Me's confirmed omitted-field layout,
 title-album image/link and cached reload within two seconds with zero new requests.
-v0.6.5 remains a candidate for the user's live test; no live success claim is made.
+The user reported Watch Me remained unchanged on v0.6.5. Diagnostics confirmed
+current/connected scripts, no rate pause or artwork/cache errors, six cached tracks,
+160 waiting jobs, one active and four complete: artwork was still backlogged.
+
+v0.6.6 reads a scrobble row's verified native form first. When BOTH album fields
+are blank (including the confirmed both-omitted representation), it requests the
+artist/title album cover directly and cancels an unrelated active history job.
+It does not count that track's history. This is scoped to that album-less row;
+ranked track lists still use the provable all-time album winner. Separate cache
+keys prevent an album-less row from replacing the same track's ranked winner.
+Existing cache keys/preferences/installation identity are preserved.
+
+The 15-suite gate passed after adapter/cache changes. The focused slow-response
+test also passes: a new album-less row updates within its 3-second test deadline
+despite an unrelated history request deliberately held open. The actual unpacked
+extension requests only Watch Me's album page and no track history, then reloads
+its cached image/link without new requests. The public album overview was read
+in a separate browser and confirmed the expected 9741753a613314214accd15a28eb91da
+cover and normally encoded URL. Signed-in v0.6.6 acceptance is pending the user's test.
 The earlier v0.6.2 per-day scrolling break was accepted live by the user.
 
 Rollback: baseline source above. No saved display preferences/settings were

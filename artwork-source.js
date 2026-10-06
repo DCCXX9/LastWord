@@ -110,6 +110,11 @@
     const album = fallback ? item.name : winner.album;
     return { ...await albumCover(artist, album, username, signal), fallback, scanned, total };
   }
-  globalThis.LastfmArtworkSource = Object.freeze({ resolve, clear: () => albumImages.clear() });
+  async function forBlankScrobble(item, username, signal) {
+    check(signal);
+    return { ...await albumCover(item.artist, item.name, username, signal),
+      fallback: true, scanned: 0, total: 0 };
+  }
+  globalThis.LastfmArtworkSource = Object.freeze({ resolve, forBlankScrobble, clear: () => albumImages.clear() });
   globalThis.LastfmArtwork?.start();
 })();

@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.5**.
+Last.fm profile. Installed candidate: **v0.6.6**.
 
 ## Updating this installed copy
 
@@ -27,6 +27,9 @@ Its identity and stored preferences depend on that installation.
   An uncached track still needs a signed-in history/album lookup.
   Returning to a resolved page reuses its in-memory result immediately. Visible
   album-less scrobbles have lookup priority over other uncached tracks.
+  A scrobble with verified blank album and album-artist fields requests the
+  artist/title album cover directly, interrupting unrelated history work. It does
+  not count track history. Its cache is separate from ranked-track album winners.
   Incomplete/unverifiable histories retain the original cover with an explanatory
   hover title. Covers update gradually; background tabs stop looking up artwork.
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose

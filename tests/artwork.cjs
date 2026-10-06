@@ -20,6 +20,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   const myron={artist:'Lil Uzi Vert',name:'Myron'}, mixed={artist:'Artist',name:'Mixed'}, blank={artist:'Silentó',name:'Watch Me (Whip / Nae Nae)'};
   const compilation={artist:'Singer',name:'Compilation track'}, incomplete={artist:'Artist',name:'Incomplete'}, tied={artist:'Artist',name:'Tied'}, malformed={artist:'Artist',name:'Malformed'};
   const calls=[];
+  let holdMixed = false;
   const histories={
    Myron:[history(myron,56,Array.from({length:50},(_,i)=>['LUV vs. the World 2','',1000-i]),2)],
    Mixed:[history(mixed,7,[['Recent','',10],['Recent','',9],['Recent','',8],['Older','',7]],2),history(mixed,7,[['Older','',6],['Older','',5],['Older','',4]])],
@@ -34,10 +35,11 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   await page.route('https://www.last.fm/**',r=>{
    const url=new URL(r.request().url());
    const blankRow = native(blank,'blank').replace('</td></tr>', '<form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Silentó"><input name="track_name" value="Watch Me (Whip / Nae Nae)"><input name="timestamp" value="3"></form></td></tr>');
-   if(url.pathname==='/user/DCCXX/library/tracks') return r.fulfill({contentType:'text/html',body:`<!doctype html><table class="chartlist"><tbody>${native(myron,'a')}${native(myron,'b')}${blankRow}</tbody></table><div style="height:2000px"></div><table class="chartlist"><tbody>${native(mixed,'offscreen')}</tbody></table>`});
+   if(url.pathname==='/user/DCCXX/library/tracks') return r.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><table class="chartlist"><tbody>${native(myron,'a')}${native(myron,'b')}${blankRow}</tbody></table><div style="height:2000px"></div><table class="chartlist"><tbody>${native(mixed,'offscreen')}</tbody></table>`});
    calls.push(url.pathname+url.search);
    if(url.pathname.startsWith('/user/DCCXX/library/music/')) {
     const name=decodeURIComponent(url.pathname.split('/').at(-1)).replaceAll('+',' ');
+    if(holdMixed && name==='Mixed') return; // Simulate a history that is slow to respond.
     const body=histories[name]?.[Number(url.searchParams.get('page')||1)-1];
     return r.fulfill({status:body?200:404,contentType:'text/html',body:body||'Unexpected page'});
    }
@@ -83,7 +85,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   await page.waitForFunction(()=>document.querySelector('[data-case="blank"] img').getAttribute('src')=== 'https://lastfm-img.freetls.fastly.net/i/u/64s/9741753a613314214accd15a28eb91da.jpg');
   assert.equal(calls.slice(callsBefore).filter(url=>url.includes('/_/Myron')).length,1,'two visible rows for one track share a lookup');
   assert.equal(calls.slice(callsBefore).some(url=>url.includes('/_/Mixed')),false,'offscreen covers must not generate history requests');
-  assert.ok(calls.slice(callsBefore).find(url=>url.includes('/library/music/')).includes(encode(blank.name)), 'a visible album-less scrobble must not wait behind unrelated album lookups');
+  assert.equal(calls[callsBefore],'/music/Silent%C3%B3/'+encode(blank.name), 'a verified album-less scrobble must fetch its title album directly before unrelated histories');
   assert.equal(await page.locator('[data-case="a"] img').getAttribute('srcset'),null,'native srcset must not override the personal cover');
   assert.equal(await page.locator('[data-case="a"] img').getAttribute('alt'),'Cover for LUV vs. the World 2 by Lil Uzi Vert');
   assert.equal(await page.locator('[data-case="a"] .chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Lil+Uzi+Vert/LUV+vs.+the+World+2');
@@ -94,6 +96,14 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   });
   await page.waitForFunction(()=>document.querySelector('[data-case="a"] img').src.endsWith('/preferred-artwork.jpg'));
   assert.equal(calls.length,beforeReturn,'returning to an already-resolved page must immediately reuse its cover without rejoining the network queue');
+  holdMixed = true;
+  const pendingHistory = page.waitForRequest(request => request.url().includes('/_/Mixed'));
+  await page.locator('[data-case="offscreen"]').scrollIntoViewIfNeeded();
+  await pendingHistory;
+  const lateRow = native({artist:'Silentó',name:'Late single'},'late').replace('</td></tr>', '<form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input type="hidden" name="artist_name" value="Silentó"><input type="hidden" name="track_name" value="Late single"><input type="hidden" name="timestamp" value="4"></form></td></tr>');
+  await page.evaluate(html => document.querySelector('[data-case="offscreen"]').insertAdjacentHTML('afterend',html),lateRow);
+  await page.waitForFunction(()=>document.querySelector('[data-case="late"] img').src.endsWith('/9741753a613314214accd15a28eb91da.jpg'),null,{timeout:3000});
+  assert.equal(await page.locator('[data-case="late"] .chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Silent%C3%B3/Late+single','a newly visible album-less row must interrupt an unrelated slow history');
   await worker.externalSet({settings:{username:'Friend',infiniteScroll:false}});
   await page.waitForFunction(()=>document.querySelector('[data-case="a"] img').getAttribute('src').endsWith('/wrong.jpg'));
   assert.equal(await page.locator('[data-case="a"] .chartlist-image a').getAttribute('href'),'/music/Wrong/Compilation');

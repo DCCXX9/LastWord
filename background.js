@@ -234,8 +234,9 @@ importScripts('rules.js', 'store.js');
     if (image.protocol !== 'https:' || image.hostname !== 'lastfm-img.freetls.fastly.net' ||
         url.origin !== 'https://www.last.fm' || !url.pathname.startsWith('/music/') ||
         image.href.length > 2000 || url.href.length > 3000) throw new Error('Invalid personal cover.');
-    return { key: JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name)]),
-      username, item: { artist: item.artist, name: item.name },
+    return { key: JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name),
+        ...(item.albumless === true ? ['albumless'] : [])]),
+      username, item: { artist: item.artist, name: item.name, ...(item.albumless === true ? { albumless: true } : {}) },
       cover: { artist: cover.artist, album: cover.album, image: image.href, url: url.href,
         fallback: cover.fallback, scanned: cover.scanned, total: cover.total }, checkedAt: Date.now() };
   }

@@ -8,6 +8,8 @@
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const own = () => A.ownProfile(location.href, username) && !document.hidden;
+  const keyFor = item => JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name),
+    ...(item.albumless ? ['albumless'] : [])]);
   const imageAttrs = ['src', 'srcset', 'data-src', 'data-srcset', 'title', 'alt'];
 
   function remember(image) {
@@ -46,9 +48,13 @@
     return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
   }
   async function pump() {
-    if (running || !cacheReady || !own() || !globalThis.LastfmArtworkSource ||
+    if (!cacheReady || !own() || !globalThis.LastfmArtworkSource ||
         !globalThis.LastfmPages || LastfmPages.status().rateLimited) return;
     const waiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
+    if (running) {
+      if (!running.job.albumless && waiting.some(job => job.albumless)) running.controller.abort();
+      return;
+    }
     // Album-less scrobbles need a title-album fallback. Give those visible rows
     // priority without changing the all-time album counting or request throttle.
     const job = waiting.find(job => job.albumless) || waiting[0];
@@ -57,13 +63,14 @@
     running = { job, controller }; job.state = 'loading';
     startedAt = Date.now();
     for (const image of job.images) {
-      remember(image); if (!job.cover) image.title = 'Finding your most-scrobbled album cover…';
+      remember(image); if (!job.cover) image.title = job.albumless
+        ? 'Finding the matching single cover…' : 'Finding your most-scrobbled album cover…';
     }
     try {
-      const cover = await LastfmArtworkSource.resolve(job.item, username, controller.signal);
+      const cover = await (job.albumless ? LastfmArtworkSource.forBlankScrobble : LastfmArtworkSource.resolve)(job.item, username, controller.signal);
       if (current !== generation || controller.signal.aborted || !own()) return;
       job.cover = cover; job.state = 'complete';
-      const key = JSON.stringify([R.normalize(username), R.normalize(job.item.artist), R.normalize(job.item.name)]);
+      const key = keyFor(job.item);
       cache.set(key, { cover, checkedAt: Date.now() });
       for (const image of job.images) apply(image, cover);
       // Saving a disposable cache must never prevent the cover from being shown.
@@ -90,18 +97,20 @@
     for (const row of document.querySelectorAll('tr.chartlist-row')) {
       const image = row.querySelector('.chartlist-image img');
       if (!image || observed.has(image)) continue;
-      const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(value => value?.type === 'tracks');
+      let item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(value => value?.type === 'tracks');
       if (!item) continue;
-      const key = JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name)]);
+      const form = row.querySelector('form[data-edit-scrobble]');
+      const fields = form && A.editRow(form, location.href, username, true);
+      const albumless = fields && !fields.album.trim() && !fields.albumArtist.trim() &&
+        R.normalize(fields.artist) === R.normalize(item.artist) && R.normalize(fields.track) === R.normalize(item.name);
+      if (albumless) item = { ...item, albumless: true };
+      const key = keyFor(item);
       if (!jobs.has(key)) {
         const saved = cache.get(key);
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000;
-        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: false });
+        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless });
       }
       const job = jobs.get(key); job.images.add(image);
-      const form = row.querySelector('form[data-edit-scrobble]');
-      if (form && !String(form.querySelector('[name="album_name"]')?.value || '').trim() &&
-          !String(form.querySelector('[name="album_artist_name"]')?.value || '').trim()) job.albumless = true;
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
     }

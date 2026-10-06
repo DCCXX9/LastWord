@@ -37,6 +37,15 @@ album-less scrobbles have queue priority; album counting remains authoritative.
 The existing Copy diagnostics button includes artwork/cache counts and errors,
 replacing repeated requests for Console inspection when direct browser access fails.
 
+v0.6.6 distinguishes a verified album-less scrobble row from a ranked track.
+Both blank album fields in the native own-profile form select the title-album
+cover directly, without all-time history counting; both omitted fields are
+accepted only through an explicit read-only adapter option. Other edit callers
+retain strict defaults, and single missing/duplicate fields remain invalid.
+Album-less rows preempt unrelated active history work, retaining the shared
+request throttle. Their cache key has an albumless suffix, so the ranked track's
+all-time album winner is preserved. No existing preference/cache keys are migrated.
+
 ## 30 September 2026: coordinated local preferences
 
 A Manifest V3 service worker is the sole writer of rules/settings. Each queued

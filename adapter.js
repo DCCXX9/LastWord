@@ -73,7 +73,7 @@
     return fields.length === 1 && typeof fields[0].value === 'string'
       ? fields[0].value : null;
   }
-  function editRow(form, base, username) {
+  function editRow(form, base, username, allowOmittedAlbums = false) {
     if (!form.matches('form[data-edit-scrobble]')) return null;
     const action = parse(form.getAttribute('action'), base);
     if (!action || !ownProfile(action.href, username) ||
@@ -82,8 +82,11 @@
     const fields = { artist: 'artist_name', track: 'track_name', album: 'album_name',
       albumArtist: 'album_artist_name', timestamp: 'timestamp' };
     const result = { action: action.href };
+    const omittedAlbums = allowOmittedAlbums && ![...form.elements].some(field =>
+      ['album_name', 'album_artist_name'].includes(field.name));
     for (const [key, name] of Object.entries(fields)) {
       result[key] = value(form, name);
+      if (result[key] === null && omittedAlbums && ['album', 'albumArtist'].includes(key)) result[key] = '';
       if (result[key] === null) return null;
     }
     return result.artist.trim() && result.track.trim() && /^\d+$/.test(result.timestamp)
