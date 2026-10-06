@@ -1,7 +1,8 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.4**, branch `preferences-page`.
-Baseline: `74ce8ba796c9d39e8c42a7a18060969935cd33c1` (v0.6.2).
+Installed candidate: **v0.6.5**, branch `preferences-page`.
+Focused correction baseline: `f63d91d` (v0.6.4).
+Artwork feature baseline: `74ce8ba796c9d39e8c42a7a18060969935cd33c1` (v0.6.2).
 
 ## Scope
 
@@ -58,8 +59,23 @@ the user confirmed contentVersion 0.6.3, ownProfile true and rateLimited false.
 The user confirmed Myron eventually shows the starred LUV cover and selected
 album link. Watch Me was still unchanged: connected/current script, no rate
 pause, waiting behind other visible lookups. Its targeted history inspection
-then established the omitted-fields failure above. The v0.6.4 live check for
-Watch Me and prompt cached repeat visits is pending.
+then established the omitted-fields failure above. The user reported the v0.6.4
+handover still showed the old Watch Me image and Myron took about 20 seconds.
+Its live result is not accepted. The user wants version handovers followed by
+their own test when convenient, with no repeated Console instructions or reply deadlines.
+
+v0.6.5 corrects a reproduced navigation-cache failure: resolved results were
+persisted but never added to the current tab's cache, so back/forward restoration
+rejoined the network queue. The failing test made two extra requests; the fix
+reuses the result with zero requests. Visible album-less scrobbles now receive
+queue priority; the all-time winner proof and shared throttle are unchanged.
+Copy diagnostics includes cache errors/counts, job counts, elapsed lookup time and
+the last artwork error, without track names or security fields.
+
+Focused artwork, actual-extension, options/popup and dated-section suites pass.
+The actual extension test now checks Watch Me's confirmed omitted-field layout,
+title-album image/link and cached reload within two seconds with zero new requests.
+v0.6.5 remains a candidate for the user's live test; no live success claim is made.
 The earlier v0.6.2 per-day scrolling break was accepted live by the user.
 
 Rollback: baseline source above. No saved display preferences/settings were

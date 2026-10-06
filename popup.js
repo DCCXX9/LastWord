@@ -54,7 +54,8 @@
         page: status ? {
           connected: true, ownProfile: !!status.ownProfile,
           view: String(status.view || 'unknown'), scrollState: String(status.scrollState || 'unknown'),
-          rateLimited: !!status.rateLimited, contentVersion: String(status.version || 'unknown')
+          rateLimited: !!status.rateLimited, contentVersion: String(status.version || 'unknown'),
+          artwork: status.artwork || null
         } : { connected: false }
       };
       await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2));

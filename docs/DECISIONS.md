@@ -31,6 +31,12 @@ First uncached resolution still needs server requests. Saved preferences/setting
 installation identity are untouched. Public album reads use a distinct guarded
 page-fetch entry point, available only from the configured profile.
 
+v0.6.5 adds resolved results to the current tab's cache as well as persistent
+storage, so back/forward page restoration cannot requeue a known cover. Visible
+album-less scrobbles have queue priority; album counting remains authoritative.
+The existing Copy diagnostics button includes artwork/cache counts and errors,
+replacing repeated requests for Console inspection when direct browser access fails.
+
 ## 30 September 2026: coordinated local preferences
 
 A Manifest V3 service worker is the sole writer of rules/settings. Each queued

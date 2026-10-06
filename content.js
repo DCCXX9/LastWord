@@ -281,7 +281,7 @@
     return { version: chrome.runtime.getManifest().version, username: settings.username,
       ownProfile: ownProfile(), view: A.libraryView(location.href),
       scrollState: scroller?.mode || (settings.infiniteScroll ? 'unavailable' : 'off'),
-      ...LastfmPages.status() };
+      ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status() };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (message?.type === 'lfm:status') reply(status());

@@ -4,6 +4,7 @@
   let username = '', generation = 0, running = null, queued = false;
   let currentUrl = location.href;
   let observer, cacheReady = false;
+  let cacheError = '', lastError = '', startedAt = 0;
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const own = () => A.ownProfile(location.href, username) && !document.hidden;
@@ -47,10 +48,14 @@
   async function pump() {
     if (running || !cacheReady || !own() || !globalThis.LastfmArtworkSource ||
         !globalThis.LastfmPages || LastfmPages.status().rateLimited) return;
-    const job = [...jobs.values()].find(job => job.state === 'waiting' && visible(job));
+    const waiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
+    // Album-less scrobbles need a title-album fallback. Give those visible rows
+    // priority without changing the all-time album counting or request throttle.
+    const job = waiting.find(job => job.albumless) || waiting[0];
     if (!job) return;
     const controller = new AbortController(), current = generation;
     running = { job, controller }; job.state = 'loading';
+    startedAt = Date.now();
     for (const image of job.images) {
       remember(image); if (!job.cover) image.title = 'Finding your most-scrobbled album cover…';
     }
@@ -58,12 +63,15 @@
       const cover = await LastfmArtworkSource.resolve(job.item, username, controller.signal);
       if (current !== generation || controller.signal.aborted || !own()) return;
       job.cover = cover; job.state = 'complete';
+      const key = JSON.stringify([R.normalize(username), R.normalize(job.item.artist), R.normalize(job.item.name)]);
+      cache.set(key, { cover, checkedAt: Date.now() });
       for (const image of job.images) apply(image, cover);
       // Saving a disposable cache must never prevent the cover from being shown.
-      S.saveArtwork(job.item, cover).catch(error => console.debug('Personal cover cache:', error.message));
+      S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
     } catch (error) {
       if (current !== generation) return;
       job.state = error.name === 'AbortError' ? 'waiting' : 'unavailable';
+      if (error.name !== 'AbortError') lastError = error.message;
       if (error.name !== 'AbortError' && !job.cover) for (const image of job.images) {
         if (image.isConnected) image.title = 'Cover unchanged: ' + error.message;
       }
@@ -88,9 +96,12 @@
       if (!jobs.has(key)) {
         const saved = cache.get(key);
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000;
-        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting' });
+        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: false });
       }
       const job = jobs.get(key); job.images.add(image);
+      const form = row.querySelector('form[data-edit-scrobble]');
+      if (form && !String(form.querySelector('[name="album_name"]')?.value || '').trim() &&
+          !String(form.querySelector('[name="album_artist_name"]')?.value || '').trim()) job.albumless = true;
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
     }
@@ -124,7 +135,7 @@
           const records = await S.readArtwork();
           if (current !== generation) return;
           for (const record of records) cache.set(record.key, record);
-        } catch (error) { console.debug('Personal cover cache:', error.message); }
+        } catch (error) { cacheError = error.message; }
       }
       if (current !== generation) return;
       cacheReady = true;
@@ -137,5 +148,12 @@
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, { childList: true, subtree: true }); scan(); } });
   addEventListener('popstate', scan);
-  globalThis.LastfmArtwork = Object.freeze({ start: pump });
+  globalThis.LastfmArtwork = Object.freeze({ start: pump, status: () => ({
+    cacheReady, cachedTracks: cache.size, cacheError: cacheError || null,
+    visibleImages: [...observed.values()].filter(value => value.visible).length,
+    jobs: Object.fromEntries(['waiting', 'loading', 'complete', 'unavailable'].map(state =>
+      [state, [...jobs.values()].filter(job => job.state === state).length])),
+    activeMilliseconds: running ? Math.max(0, Date.now() - startedAt) : 0,
+    lastError: lastError || null
+  }) });
 })();
