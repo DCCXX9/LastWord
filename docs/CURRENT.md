@@ -1,11 +1,43 @@
 # Current state — 6 October 2026
 
-Installed candidate: **v0.6.11**, branch preferences-page.
+Installed candidate: **v0.6.12**, branch preferences-page.
+Cover recovery baseline: a60f097 (v0.6.11).
 Placeholder correction baseline: e6d87ff (v0.6.10).
 Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Cover recovery across artists
+
+The user reported that the hidden placeholders remained white spaces after waiting,
+on several artists. A failing regression reproduced a genuine resolved cover being
+kept hidden because apply() restored an inherited visibility:hidden style. Resolved
+images now explicitly become visible; profile restoration still returns native styles.
+
+The real public Dean Blunt overview lists LUCRE seventh, with cover
+6da014dd54bb1082a3a51218fcbf7a89. Its owned album page confirms 120 plays,
+including 18 each for lucre 5/6/7, 17 each for 2/3/4 and 15 for 1. The public
+album overview returned HTTP 502 during inspection. Placeholder tracks now skip
+the bounded shared counting optimization and read their individual scrobble history.
+Once that proves the most-used album, an exact matching loaded album-row cover
+can be reused regardless of its position. A public-cover failure can also use
+the exact own-library album header after artist/title/link validation. Cancellation,
+rate pauses, unrelated headers and generic images remain rejected.
+
+The production page reader fetched the real public lucre 5 history and selected
+LUCRE (18/18), reusing the seventh album row. The production UI then applied that
+result as a temporary cache record to the real DOM with an inherited hidden style:
+visibility was visible, naturalWidth 64, and the link pointed to the LUCRE album.
+An inline browser screenshot visually confirmed the yellow LUCRE cover. This
+used a separate signed-out browser and in-memory test storage, not the user's profile.
+
+Eight focused suites passed: artwork, shared totals, placeholders, recovery,
+actual-extension artwork, startup, adapter and artwork storage. Recovery tests
+also use a second artist with several albums, selecting the six-play winner over
+the four-play recent album, and check genuinely loaded linked images. No saved
+preference/settings/undo/scan keys, permissions or installation identity changed.
+Signed-in acceptance is pending the user's Reload and refresh without Console steps.
 
 ## Generic cover correction
 

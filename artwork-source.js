@@ -32,22 +32,46 @@
 
   async function albumCover(artist, album, username, signal) {
     const url = `${location.origin}/music/${encode(artist)}/${encode(album)}`;
+    check(signal);
+    const existing = globalThis.LastfmArtworkAlbums?.coverForAlbum?.(artist, album, username);
+    if (existing) return existing;
     const key = username + ':' + url;
     if (!albumImages.has(key)) {
-      const pending = LastfmPages.getAlbum(url, { signal }).then(page => {
-        const item = A.musicItem(page.url);
-        if (item?.type !== 'albums' || norm(item.artist) !== norm(artist) || norm(item.name) !== norm(album)) {
-          throw new Error('Last.fm returned a different album.');
+      const pending = (async () => {
+        let failure;
+        try {
+          const page = await LastfmPages.getAlbum(url, { signal });
+          const item = A.musicItem(page.url);
+          if (item?.type !== 'albums' || norm(item.artist) !== norm(artist) || norm(item.name) !== norm(album)) {
+            throw new Error('Last.fm returned a different album.');
+          }
+          // The signed-in primary cover reflects the user's preferred artwork.
+          // Similar Albums also uses cover-art, so only the first main cover is used.
+          const primary = [...page.doc.querySelectorAll('.cover-art img')]
+            .find(image => !image.closest('aside,.similar-albums'));
+          const image = [primary?.getAttribute('data-src'), primary?.getAttribute('src'),
+            page.doc.querySelector('meta[property="og:image"]')?.content].map(A.coverImage).find(Boolean);
+          if (!image) throw new Error('This album has no available cover.');
+          return { artist, album, image, url: page.url };
+        } catch (error) {
+          if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
+          failure = error;
         }
-        // The signed-in primary cover reflects the user's preferred artwork.
-        // Similar Albums also uses cover-art, so only the first main cover is used.
-        const primary = [...page.doc.querySelectorAll('.cover-art img')]
-          .find(image => !image.closest('aside,.similar-albums'));
-        const image = [primary?.getAttribute('data-src'), primary?.getAttribute('src'),
-          page.doc.querySelector('meta[property="og:image"]')?.content].map(A.coverImage).find(Boolean);
-        if (!image) throw new Error('This album has no available cover.');
-        return { artist, album, image, url: page.url };
-      });
+        // Recover from a missing public cover using this exact album's own-library header.
+        const libraryUrl = `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(artist)}/${encode(album)}`;
+        const page = await LastfmPages.get(libraryUrl, { signal });
+        const returned = A.musicItem(page.url), header = page.doc.querySelector('.library-header');
+        const link = [...(header?.querySelectorAll('a[href]') || [])]
+          .map(link => A.musicItem(link, page.url)).find(item => item?.type === 'albums');
+        if (!A.ownProfile(page.url, username) || returned?.type !== 'albums' ||
+            norm(returned.artist) !== norm(artist) || norm(returned.name) !== norm(album) ||
+            norm(header?.querySelector('.library-header-title')?.textContent) !== norm(album) ||
+            !link || norm(link.artist) !== norm(artist) || norm(link.name) !== norm(album)) throw failure;
+        const primary = header.querySelector('.library-header-image img');
+        const image = A.coverImage(primary?.getAttribute('data-src')) || A.coverImage(primary?.getAttribute('src'));
+        if (!image) throw failure;
+        return { artist, album, image, url };
+      })();
       albumImages.set(key, pending);
       // An aborted viewport lookup can be attempted again when it becomes visible.
       pending.catch(error => { if (error.name === 'AbortError' && albumImages.get(key) === pending) albumImages.delete(key); });
@@ -59,7 +83,7 @@
 
   async function resolve(item, username, signal) {
     let shared;
-    try { shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal); }
+    try { if (!item.placeholder) shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal); }
     catch (error) {
       if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
       // The bounded aggregate is an optimization; the track history is still authoritative.

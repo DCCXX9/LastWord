@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.11**.
+Last.fm profile. Installed candidate: **v0.6.12**.
 
 ## Updating this installed copy
 
@@ -27,6 +27,12 @@ Already-started modules are reused, retaining early cached artwork application.
   spans become album links once the chosen cover is available; profile changes
   restore the original markup. If the selected album has no available artwork,
   its image slot remains empty. Similar Albums artwork is excluded.
+  Resolved covers explicitly become visible even if an earlier page/script left
+  their image hidden. Placeholder tracks go directly to their own scrobble history.
+  After proving the winner, its matching album-row cover is reused from anywhere
+  in the loaded library. The five-album counting limit does not restrict this reuse.
+  If the public album cover request fails or supplies no artwork, the exact album's
+  own-library header is checked, validating its artist, title and album link.
   On an all-time artist overview, shared album track totals resolve several
   tracks in one request. The album's already-loaded row supplies its cover;
   track-row video stills/compilation images are never used to choose an album.
@@ -140,7 +146,8 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
-`tests/artwork-placeholder.cjs`, `tests/startup.cjs`. The startup check reloads the actual extension between
+`tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`.
+The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation.
 Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.

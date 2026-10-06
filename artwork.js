@@ -31,8 +31,9 @@
     const source = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     image.src = source; image.setAttribute('data-src', source);
-    if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
-    else image.style.removeProperty('visibility');
+    // A previous extension context or native lazy loader may have hidden it.
+    // A verified resolved cover must be visible; restore() still keeps native styles.
+    image.style.setProperty('visibility', 'visible');
     image.alt = 'Cover for ' + cover.album + ' by ' + cover.artist;
     image.title = cover.fallback ? 'Personal cover: matching artist/title album page'
       : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)';
@@ -97,7 +98,8 @@
         ? 'Finding the matching single cover…' : 'Finding your most-scrobbled album cover…';
     }
     try {
-      const cover = await (job.albumless ? LastfmArtworkSource.forBlankScrobble : LastfmArtworkSource.resolve)(job.item, username, controller.signal);
+      const cover = await (job.albumless ? LastfmArtworkSource.forBlankScrobble : LastfmArtworkSource.resolve)(
+        { ...job.item, placeholder: job.placeholder }, username, controller.signal);
       if (current !== generation || controller.signal.aborted || !own()) return;
       finish(job, cover);
     } catch (error) {

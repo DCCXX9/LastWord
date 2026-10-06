@@ -10,6 +10,20 @@
     const number = Number(text.replace(/[,\s]/g, ''));
     return /^\d[\d,\s]*$/.test(text) && Number.isSafeInteger(number) ? number : null;
   }
+  function coverForAlbum(artist, album, username) {
+    if (!A.ownProfile(location.href, username) || !A.libraryView(location.href)) return null;
+    // The five-album counting bound does not limit already-loaded artwork.
+    // Only use this after the individual history has proved the album winner.
+    for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
+      const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link))
+        .find(item => item?.type === 'albums');
+      if (!item || R.normalize(item.artist) !== R.normalize(artist) || R.normalize(item.name) !== R.normalize(album)) continue;
+      const img = row.querySelector('.chartlist-image img');
+      const image = A.coverImage(img?.getAttribute('data-src')) || A.coverImage(img?.getAttribute('src'));
+      if (image) return { artist, album, image, url: `${location.origin}/music/${encode(artist)}/${encode(album)}` };
+    }
+    return null;
+  }
   function context(username) {
     const url = new URL(location.href), artist = A.musicItem(url.href);
     if (url.search || !A.ownProfile(url.href, username) ||
@@ -103,5 +117,5 @@
     }
     return proven(item, username, data);
   }
-  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peek, clear: () => records.clear() });
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peek, coverForAlbum, clear: () => records.clear() });
 })();

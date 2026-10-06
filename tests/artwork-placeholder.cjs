@@ -19,7 +19,7 @@ const history = (name, rows, next) => `<main class="col-main"><p class="metadata
     await page.route('https://lastfm-img.freetls.fastly.net/**', r => r.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l1sAAAAASUVORK5CYII=', 'base64') }));
     await page.route('https://www.last.fm/**', async r => {
       const u = new URL(r.request().url());
-      if (u.pathname === '/user/DCCXX/library/tracks') return r.fulfill({ contentType: 'text/html', body: `<!doctype html><table class="chartlist"><tbody><tr class="chartlist-row"><td class="chartlist-image"><span class="cover-art"><img width="34" height="34" src="${placeholder}"></span></td><td class="chartlist-name"><a href="/music/Dean+Blunt/_/lucre+5">lucre 5</a></td></tr></tbody></table>` });
+      if (u.pathname === '/user/DCCXX/library/tracks') return r.fulfill({ contentType: 'text/html', body: `<!doctype html><table class="chartlist"><tbody><tr class="chartlist-row"><td class="chartlist-image"><span class="cover-art"><img width="34" height="34" style="visibility:hidden" src="${placeholder}"></span></td><td class="chartlist-name"><a href="/music/Dean+Blunt/_/lucre+5">lucre 5</a></td></tr></tbody></table>` });
       requests.push(u.pathname + u.search);
       if (u.pathname.includes('/_/')) {
         const name = decodeURIComponent(u.pathname.split('/').at(-1)).replaceAll('+', ' ');
@@ -76,7 +76,7 @@ const history = (name, rows, next) => `<main class="col-main"><p class="metadata
     await worker.externalSet({ settings: { username: 'Friend', infiniteScroll: false } });
     await page.waitForFunction(src => document.querySelector('.chartlist-image img').src === src, placeholder);
     assert.equal(await page.locator('.chartlist-image a').count(), 0, 'profile changes restore the original span');
-    assert.equal(await page.locator('.chartlist-image img').first().evaluate(i => getComputedStyle(i).visibility), 'visible');
+    assert.equal(await page.locator('.chartlist-image img').first().evaluate(i => getComputedStyle(i).visibility), 'hidden', 'restore the original inline style on profile change');
     assert.deepEqual(worker.data.rules, savedRules);
     console.log('PASS: generic covers are hidden/re-resolved, selected album links replace spans, aggregate errors fall back, repeated ids count correctly, missing artwork is never substituted');
   } finally { release?.(); await browser.close(); }
