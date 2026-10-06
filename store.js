@@ -30,6 +30,8 @@
   globalThis.LastfmStore = Object.freeze({
     DEFAULT_SETTINGS,
     read: () => request('read'),
+    readArtwork: () => request('artwork-read'),
+    saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
     subscribe,
     mutate: operations => request('mutate', { operations }),
     saveSettings: patch => request('settings', { patch }),

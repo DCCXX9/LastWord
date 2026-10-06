@@ -19,12 +19,16 @@
     });
   }
 
-  async function request(url, signal) {
+  async function request(url, signal, album) {
     check(signal);
     const target = new URL(url, location.href);
     const { settings } = await LastfmStore.read();
-    if (target.origin !== location.origin ||
-        !LastfmAdapter.ownProfile(target.href, settings.username)) {
+    const allowed = value => album
+      ? LastfmAdapter.ownProfile(location.href, settings.username) &&
+        new URL(value).origin === location.origin && new URL(value).pathname.startsWith('/music/') &&
+        LastfmAdapter.musicItem(value)?.type === 'albums'
+      : LastfmAdapter.ownProfile(value, settings.username);
+    if (target.origin !== location.origin || !allowed(target.href)) {
       throw new Error('Page loading is available only on your configured profile.');
     }
     const state = await chrome.storage.local.get([PAUSE, LAST]);
@@ -49,7 +53,7 @@
         throw new Error('Last.fm asked for a break. Page loading is paused in all tabs.');
       }
       if (!response.ok) throw new Error(`Last.fm returned HTTP ${response.status}. Loading stopped.`);
-      if (!LastfmAdapter.ownProfile(response.url, settings.username)) {
+      if (!allowed(response.url)) {
         throw new Error('Last.fm redirected away from your library. Check your sign-in.');
       }
       check(signal);
@@ -66,9 +70,9 @@
     }
   }
 
-  function get(url, { signal } = {}) {
+  function get(url, { signal } = {}, album = false) {
     const run = () => navigator.locks.request('lastfm-personal-library:pages',
-      { ...(signal ? { signal } : {}) }, () => request(url, signal));
+      { ...(signal ? { signal } : {}) }, () => request(url, signal, album));
     const result = queue.then(run);
     queue = result.catch(() => {});
     return result;
@@ -88,6 +92,6 @@
     paused = true;
     chrome.storage.local.set({ [PAUSE]: { at: Date.now() } });
   }
-  globalThis.LastfmPages = Object.freeze({ get, resume,
+  globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
     status: () => ({ rateLimited: paused, lastError }) });
 })();

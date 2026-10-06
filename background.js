@@ -98,7 +98,7 @@ importScripts('rules.js', 'store.js');
     const ownProfile = url.origin === 'https://www.last.fm' && !!current.settings.username &&
       R.normalize(user) === R.normalize(current.settings.username);
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
-    if (action === 'mutate' && ownProfile) return;
+    if (['mutate', 'artwork-read', 'artwork-put'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }
 
@@ -221,11 +221,46 @@ importScripts('rules.js', 'store.js');
     return { snapshot: { ...current, rules }, batch: null, reverted, kept };
   }
 
+  const ARTWORK = 'lfmPersonalArtworkCacheV1';
+  function artworkRecord(item, cover, username) {
+    if (!object(item) || !object(cover) ||
+        [item.artist, item.name, cover.artist, cover.album].some(s => typeof s !== 'string' || !s.trim() || s.length > 1000) ||
+        typeof cover.fallback !== 'boolean' || !Number.isSafeInteger(cover.scanned) ||
+        !Number.isSafeInteger(cover.total) || cover.scanned < 0 || cover.total < cover.scanned) {
+      throw new Error('Invalid personal cover.');
+    }
+    let image, url;
+    try { image = new URL(cover.image); url = new URL(cover.url); } catch { throw new Error('Invalid personal cover.'); }
+    if (image.protocol !== 'https:' || image.hostname !== 'lastfm-img.freetls.fastly.net' ||
+        url.origin !== 'https://www.last.fm' || !url.pathname.startsWith('/music/') ||
+        image.href.length > 2000 || url.href.length > 3000) throw new Error('Invalid personal cover.');
+    return { key: JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name)]),
+      username, item: { artist: item.artist, name: item.name },
+      cover: { artist: cover.artist, album: cover.album, image: image.href, url: url.href,
+        fallback: cover.fallback, scanned: cover.scanned, total: cover.total }, checkedAt: Date.now() };
+  }
   async function execute(message, sender) {
     const stored = await chrome.storage.local.get(null);
     const current = snapshot(stored);
     authorize(sender, message.action, current);
     if (message.action === 'read') return current;
+    if (message.action === 'artwork-read') {
+      return (Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : []).filter(record => {
+        try { return R.normalize(record.username) === R.normalize(current.settings.username) &&
+          Number.isFinite(record.checkedAt) && artworkRecord(record.item, record.cover, record.username).key === record.key; }
+        catch { return false; }
+      });
+    }
+    if (message.action === 'artwork-put') {
+      const record = artworkRecord(message.item, message.cover, current.settings.username);
+      const records = Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : [];
+      // A bounded, disposable cache has its own key; preference and undo data are untouched.
+      const next = [record, ...records.filter(r => r?.key !== record.key)].slice(0, 1000);
+      // Bound serialized size as well as record count for unusually long titles.
+      while (next.length > 1 && JSON.stringify(next).length > 500000) next.pop();
+      await chrome.storage.local.set({ [ARTWORK]: next });
+      return record;
+    }
     if (message.action === 'itunes-status') return { batch: batchSummary(journal(stored)) };
     if (message.action === 'itunes-apply') return applyItunes(stored, current, message);
     if (message.action === 'itunes-revert') return revertItunes(stored, current, message);

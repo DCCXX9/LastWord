@@ -1,5 +1,36 @@
 # Architecture decisions
 
+## 6 October 2026: personal track artwork
+
+Artwork uses the configured profile's individual track-history pages, with the
+user-confirmed `.col-main .metadata-display` scrobble total and existing named
+edit-form fields. Album/album-artist pairs are counted without submitting edits.
+The user confirmed that album-less Watch Me history rows omit BOTH album fields.
+The read-only resolver supplies empty values in a detached copy in that case;
+single missing fields remain validation errors and the shared edit adapter stays strict.
+The resolver stops only at complete history or when the leader exceeds the
+runner-up plus every unseen play. Incomplete totals, fields or pagination fail
+without choosing a sampled winner. Ties use the native most-recent history order.
+
+The chosen album's signed-in overview supplies the primary `.cover-art img`,
+respecting preferred artwork; sharing metadata is used if that element is absent.
+Later Similar Albums images are excluded. The user confirmed that their starred
+LUV vs. the World 2 image is also the overview's primary cover. A blank winning
+album uses the artist/track-title album page, confirmed
+for Silentó / Watch Me (Whip / Nae Nae). Album-artist tags override track artist
+for cover lookup when present. The image and its link change together.
+
+One visible-track lookup runs per tab, shares the existing origin lock/throttle
+and persistent rate-limit pause with scrolling, and cancels offscreen/background
+work. Tab-local caches deduplicate tracks/albums. A worker-owned separate cache
+key persists up to 1,000 resolved tracks, bounded to 500,000 JSON characters. It is scoped by
+profile, artist and track, and never writes preference/undo/scan keys. Artwork
+starts at document_start; known images and links apply as rows arrive. Records
+are fresh for 24 hours; stale covers stay visible during a normal queued refresh.
+First uncached resolution still needs server requests. Saved preferences/settings and
+installation identity are untouched. Public album reads use a distinct guarded
+page-fetch entry point, available only from the configured profile.
+
 ## 30 September 2026: coordinated local preferences
 
 A Manifest V3 service worker is the sole writer of rules/settings. Each queued

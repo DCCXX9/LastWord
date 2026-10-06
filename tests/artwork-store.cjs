@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict');
+const { createMockWorker } = require('./harness.cjs');
+const own = { id: 'test', url: 'https://www.last.fm/user/DCCXX/library' };
+const friend = { id: 'test', url: 'https://www.last.fm/user/Friend/library' };
+const cover = { artist: 'Artist', album: 'Album', image: 'https://lastfm-img.freetls.fastly.net/i/u/500x500/cover.jpg', url: 'https://www.last.fm/music/Artist/Album', fallback: false, scanned: 50, total: 56 };
+(async () => {
+ const initial = { rules: { artists: {}, albums: {}, tracks: {}, albumArtists: {} }, settings: { username: 'DCCXX', infiniteScroll: true }, albumlessScan: { nextPage: 94 }, itunesImportUndo: null };
+ const w = createMockWorker(initial);
+ assert.deepEqual(await w.request('artwork-read', {}, own), []);
+ await Promise.all(['Track', 'Other'].map(track => w.request('artwork-put', { item: { artist: 'Artist', name: track }, cover }, own)));
+ const records = await w.request('artwork-read', {}, own);
+ assert.equal(records.length, 2);
+ assert.deepEqual(records[0].cover, cover);
+ assert.ok(records[0].checkedAt > 0);
+ for (const key of Object.keys(initial)) assert.deepEqual(w.data[key], initial[key], 'cache writes must preserve ' + key);
+ await assert.rejects(w.request('artwork-read', {}, friend), /connected/);
+ await assert.rejects(w.request('artwork-put', { item: { artist: 'Artist', name: 'Track' }, cover: { ...cover, image: 'https://evil.test/image.jpg' } }, own), /cover/);
+ assert.equal((await w.request('artwork-read', {}, own)).length, 2);
+ await w.request('settings', { patch: { username: 'Friend' } });
+ assert.deepEqual(await w.request('artwork-read', {}, friend), [], 'cache must be scoped to the connected profile');
+ console.log('PASS: artwork cache serializes writes, validates images and isolates profiles without touching preferences or scan progress');
+})().catch(e => { console.error(e); process.exitCode = 1; });

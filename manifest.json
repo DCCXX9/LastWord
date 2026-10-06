@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Last.fm Personal Library",
-  "version": "0.6.2",
+  "version": "0.6.4",
   "description": "Personal display names and continuous library scrolling.",
   "permissions": ["storage"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [{
     "matches": ["https://www.last.fm/*"],
-    "js": ["rules.js", "store.js", "adapter.js", "pages.js", "content.js", "native-edit.js"],
+    "js": ["rules.js", "store.js", "adapter.js", "artwork.js"],
+    "run_at": "document_start"
+  }, {
+    "matches": ["https://www.last.fm/*"],
+    "js": ["pages.js", "content.js", "native-edit.js", "artwork-source.js"],
     "css": ["content.css", "lfm-ui.css"],
     "run_at": "document_idle"
   }],

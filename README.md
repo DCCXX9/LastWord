@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.2**.
+Last.fm profile. Installed candidate: **v0.6.4**.
 
 ## Updating this installed copy
 
@@ -12,6 +12,21 @@ Its identity and stored preferences depend on that installation.
 
 ## Features
 
+- **Personal track covers:** Visible track rows on your connected profile use
+  the album from your own all-time scrobbles. Where multiple albums were tagged,
+  the most-scrobbled album wins; exact ties use the most recently scrobbled album.
+  A winning blank album uses the public artist/track-title album page (for example,
+  Silentó / Watch Me (Whip / Nae Nae)). Album-artist tags select compilation covers.
+  The signed-in album overview's primary cover supplies your starred artwork.
+  Both the thumbnail and cover link update, retaining native thumbnail size.
+  Lookups run one track at a time, only while visible, using the shared request
+  throttle and rate-limit pause. A provable winner stops the track-history lookup
+  early. A separate bounded local cache reuses resolved covers across visits.
+  Cached images and album links apply during page loading; fresh records avoid
+  lookup requests for 24 hours. Older records remain visible while refreshed.
+  An uncached track still needs a signed-in history/album lookup.
+  Incomplete/unverifiable histories retain the original cover with an explanatory
+  hover title. Covers update gradually; background tabs stop looking up artwork.
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
   a library XML export. Files are read incrementally, with no 50 MB file cap.
   A cancellable progress bar shows the file percentage and songs checked while
@@ -95,11 +110,15 @@ its album form remain user acceptance items; no live account edits were made.
 Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/smoke.cjs`, `tests/album.cjs`, `tests/library-scroll.cjs`, `tests/scrobble-sections.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
-`tests/itunes-store.cjs`, `tests/itunes-ui.cjs`. Browser checks require Playwright
+`tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
+`tests/artwork-store.cjs`, `tests/artwork-extension.cjs`. Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The personal-artwork change starts from `74ce8ba796c9d39e8c42a7a18060969935cd33c1`
+(v0.6.2). Artwork caches exist only in the current tab and do not alter saved rules.
 
 The scrobble date-section fix starts from `73946315be32a23c6f16c27b98b14cb738f2b3a7`
 (v0.6.1). It changes no preference data or storage format.
