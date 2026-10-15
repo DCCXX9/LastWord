@@ -30,12 +30,14 @@ Starting checkpoint: `1f21384`, branch `preferences-page`, v0.6.12.
    one; keep browser tests isolated from the installed user profile.
 5. **Done: v0.6.14 all 25 suites verified, including three unchanged startup retries:** run the combined relevant regression gate once after changes stabilise. Record
    exact results, update the version once, and retain the prior Git checkpoint.
-6. **Next bounded review:** Keep Scrolling off/on and profile round trips after
-   appending rows. Verify that reactivation cannot repeat already loaded pages.
-   The untracked tests/scroll-toggle.cjs belongs to this review and is not yet run.
+6. **Done:** Keep Scrolling off/on and profile round trips after appending rows.
+   A failing regression reproduced duplicate page 2; suspension retains the next
+   page/completion state. Late success/failure callbacks cannot replace newer work.
+   Five focused scrolling/profile suites pass, including the new scroll-toggle test.
 
 Remove or mark reviewed items as they are exhausted. New work requires a concrete
 defect in these existing features; this is not an open-ended feature roadmap.
+All queued items are complete. Continue as a meter-only watcher until reset.
 
 ## Results
 
@@ -62,3 +64,11 @@ defect in these existing features; this is not an open-ended feature roadmap.
   No signed-in acceptance is implied by a retry pass.
 - Usage check at 05:37:15 UTC: 75% used, same reset timestamp. No reset observed.
 - Usage check at 05:56:59 UTC: 85% used, same reset timestamp. No reset observed.
+- Usage check around 06:05 UTC: 87% used, same reset timestamp. No reset observed.
+- v0.6.15: settings/profile reactivation and browser-history restoration retain
+  pagination state. The five-suite scrolling gate passes, including controlled
+  cancelled callbacks that settle after a newer request starts. No user browser
+  storage was accessed. Source rollback checkpoint: c4c0270.
+  Actual unpacked-extension startup passed in 12.4 s on an unchanged retry,
+  following an initial 3-second artist-name timeout with host CPU at 100%.
+  Both logs are retained; assertion deadlines and source were unchanged on retry.

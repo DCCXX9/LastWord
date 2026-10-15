@@ -1,6 +1,7 @@
 # Current state — 15 October 2026
 
-Installed candidate: **v0.6.14**, branch preferences-page.
+Installed candidate: **v0.6.15**, branch preferences-page.
+Scrolling reactivation baseline: c4c0270 (v0.6.14).
 Interaction/history baseline: 7366f06 (v0.6.13).
 Unassisted maintenance baseline: 1f21384 (v0.6.12).
 Cover recovery baseline: a60f097 (v0.6.11).
@@ -10,7 +11,30 @@ Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
 
-## Interaction and browser-history corrections
+## Scrolling reactivation (v0.6.15)
+
+Switching scrolling off/on or reconnecting the same profile used to discard
+pagination progress while retaining appended rows. A failing regression reproduced
+requests 1, 2, 2. Scrolling now suspends its controls/requests while retaining the
+next page and completion state associated with those rows. Reactivation continues
+with page 3; completed views stay complete. Browser-history restoration uses the
+same lifecycle. Each callback checks its own request identity so an obsolete
+success or failure cannot append duplicates or replace newer loading status.
+
+Five focused suites passed: scroll-toggle, scroll-history, library-scroll,
+scrobble-sections and smoke. They cover settings/profile round trips, late
+success/failure cancellation, completion, pagination, dated sections, rate pauses
+and display-name profile isolation. Storage formats and permissions are unchanged.
+These are isolated checks with mocked Last.fm responses, not signed-in acceptance.
+The actual unpacked-extension startup suite also passed on an unchanged retry
+(12.4 s), after its first run timed out at the 3-second artist-name assertion
+while host CPU measured 100%. Both logs are retained in test-results; no assertion
+deadline was relaxed. Preferences survived Reload and fresh navigation.
+
+The bounded maintenance queue is complete. The requested heartbeat remains active
+as a meter-only reset watcher; it will stop/pause itself at the reset boundary.
+
+## Interaction and browser-history corrections (v0.6.14)
 
 Browser-history restoration retained appended rows but discarded the scroller's
 next-page and completed state. A failing lifecycle regression reproduced requests

@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.14**.
+Last.fm profile. Installed candidate: **v0.6.15**.
 
 ## Updating this installed copy
 
@@ -99,6 +99,9 @@ Already-started modules are reused, retaining early cached artwork application.
   Scrobbles retain every dated section in page order. A day spanning pages
   continues under its existing heading; the loading panel follows the final
   section. Failed or cancelled insertions roll back the complete added page.
+  Switching scrolling off/on, reconnecting the same profile or returning with
+  browser Back retains loaded pages and continues from the next unseen page.
+  Finished views remain finished; cancelled requests cannot replace newer work.
 - **Request limits:** one request at a time across this extension's Last.fm
   tabs, at least 1.5 seconds between requests and a 15-second timeout. There
   are no automatic retries. A rate-limit response pauses requests across
@@ -170,7 +173,8 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
 `tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`,
 `tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
-`tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`.
+`tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
+`tests/scroll-toggle.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation.
 Browser checks require Playwright

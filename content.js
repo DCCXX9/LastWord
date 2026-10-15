@@ -116,7 +116,7 @@
     state.notice.setAttribute('aria-busy', String(mode === 'loading'));
   }
 
-  async function appendRows(state, sourceTable, pageUrl) {
+  async function appendRows(state, sourceTable, pageUrl, controller) {
     const added = [], rows = [];
     let lastSection = state.lastSection;
     let copies;
@@ -161,9 +161,9 @@
       added.push(...rows);
     }
     await new Promise(requestAnimationFrame);
-    if (scroller !== state || state.controller?.signal.aborted) {
+    if (scroller !== state || !state.active || state.controller !== controller || controller.signal.aborted) {
       added.forEach(node => node.remove());
-      if (state.controller?.signal.aborted) throw new DOMException('Loading paused.', 'AbortError');
+      if (controller.signal.aborted) throw new DOMException('Loading paused.', 'AbortError');
       return false;
     }
     if (rows.some(row => row.getBoundingClientRect().height === 0)) {
@@ -179,13 +179,14 @@
   }
 
   async function loadMore(state) {
-    if (scroller !== state || state.mode === 'loading' || !state.next ||
+    if (scroller !== state || !state.active || state.mode === 'loading' || !state.next ||
         !ownProfile() || document.hidden) return;
-    state.controller = new AbortController();
+    const controller = new AbortController();
+    state.controller = controller;
     renderScroll(state, 'loading', 'Loading the next library page…');
     try {
-      const page = await LastfmPages.get(state.next, { signal: state.controller.signal });
-      if (scroller !== state || !ownProfile() || state.controller.signal.aborted) return;
+      const page = await LastfmPages.get(state.next, { signal: controller.signal });
+      if (scroller !== state || !state.active || state.controller !== controller || !ownProfile() || controller.signal.aborted) return;
       const url = new URL(page.url);
       if (url.pathname !== new URL(currentUrl).pathname ||
           url.searchParams.get('page') !== new URL(state.next).searchParams.get('page')) {
@@ -193,7 +194,7 @@
       }
       const source = page.doc.querySelectorAll('table.chartlist')[state.tableIndex];
       if (!source) throw new Error('The library layout changed. Use Last.fm’s page links below.');
-      if (!await appendRows(state, source, page.url)) return;
+      if (!await appendRows(state, source, page.url, controller)) return;
       state.pagination.hidden = true;
       state.visited.add(state.next);
       const next = A.nextPage(page.doc, page.url);
@@ -204,7 +205,7 @@
         : 'You’ve reached the end of this library view.');
       if (!state.next) state.observer.disconnect();
     } catch (error) {
-      if (scroller !== state) return;
+      if (scroller !== state || !state.active || state.controller !== controller) return;
       state.pagination.hidden = false;
       renderScroll(state, error.name === 'AbortError' || LastfmPages.status().rateLimited
         ? 'paused' : 'error', error.name === 'AbortError'
@@ -212,20 +213,35 @@
     }
   }
 
-  function stopScroll() {
-    if (!scroller) return;
+  function suspendScroll() {
+    if (!scroller?.active) return;
+    scroller.active = false;
     scroller.controller?.abort();
     scroller.observer.disconnect();
     scroller.notice.remove();
     scroller.pagination.hidden = scroller.wasHidden;
+    if (scroller.mode === 'loading') renderScroll(scroller, 'paused', 'Loading paused. Your loaded rows are still here.');
+  }
+  function stopScroll() {
+    suspendScroll();
     scroller = null;
   }
 
   function startScroll() {
     if (!ownProfile() || !settings.infiniteScroll || !A.libraryView(location.href)) {
-      stopScroll(); return;
+      suspendScroll(); return;
     }
-    if (scroller?.table.isConnected) return;
+    if (scroller?.table.isConnected) {
+      if (!scroller.active) {
+        scroller.active = true;
+        scroller.pagination.hidden = scroller.loaded > 0 || scroller.wasHidden;
+        if (scroller.mode !== 'complete') {
+          (scroller.lastSection || scroller.table).after(scroller.notice);
+          scroller.observer.observe(scroller.notice);
+        }
+      }
+      return;
+    }
     stopScroll();
     // A replaced library container can include copies of our old controls.
     document.querySelectorAll('[data-lfm-ui="scroll"]').forEach(notice => notice.remove());
@@ -247,10 +263,11 @@
     (lastSection || table).after(notice);
     const state = { table, lastSection, pagination, notice, label, action, next,
       wasHidden: pagination.hidden, tableIndex: [...document.querySelectorAll('table.chartlist')].indexOf(table),
-      visited: new Set([location.href]), loaded: 0, controller: null, observer: null, mode: 'ready' };
+      visited: new Set([location.href]), loaded: 0, controller: null, observer: null, mode: 'ready', active: true };
     scroller = state;
     renderScroll(state, 'ready', 'Keep scrolling is ready.');
     action.addEventListener('click', async () => {
+      if (scroller !== state || !state.active) return;
       if (state.mode === 'loading') { state.controller.abort(); return; }
       try {
         if (LastfmPages.status().rateLimited) await LastfmPages.resume();
@@ -286,7 +303,7 @@
   function status() {
     return { version: chrome.runtime.getManifest().version, username: settings.username,
       ownProfile: ownProfile(), view: A.libraryView(location.href),
-      scrollState: scroller?.mode || (settings.infiniteScroll ? 'unavailable' : 'off'),
+      scrollState: settings.infiniteScroll ? (scroller?.active ? scroller.mode : 'unavailable') : 'off',
       ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status() };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
@@ -321,14 +338,13 @@
       if (event.persisted) {
         // The browser retains these rows in its history cache. Keep their next
         // page/completion state so returning cannot append the same page again.
-        scroller?.controller?.abort(); scroller?.observer.disconnect();
+        suspendScroll();
       } else stopScroll();
       observer.disconnect();
     });
     addEventListener('pageshow', event => { if (event.persisted) {
       observer.observe(document.body, { childList: true, characterData: true, subtree: true });
       refresh();
-      if (scroller && scroller.mode !== 'complete') scroller.observer.observe(scroller.notice);
     } });
   }
   init().catch(error => console.error('Last.fm Personal Library:', error.message));
