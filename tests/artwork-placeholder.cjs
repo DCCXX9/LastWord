@@ -47,7 +47,7 @@ const history = (name, rows, next) => `<main class="col-main"><p class="metadata
     assert.equal(await page.locator('.chartlist-image img').evaluate(i => getComputedStyle(i).visibility), 'visible');
     assert.equal(await page.locator('.chartlist-image a').getAttribute('href'), 'https://www.last.fm/music/Dean+Blunt/LUCRE', 'a span placeholder must become a link to the selected album');
     assert.ok(requests.some(u => u.includes('/_/lucre+5')), 'an old cached generic cover must be resolved again');
-    await page.evaluate(() => { LastfmArtworkAlbums = { peek: () => null, resolve: async () => { throw new Error('The shared album totals were unavailable.'); } }; });
+    await page.evaluate(() => { LastfmArtworkAlbums = { peekMany: () => new Map(), resolve: async () => { throw new Error('The shared album totals were unavailable.'); } }; });
     const individual = await page.evaluate(() => LastfmArtworkSource.resolve({ artist: 'Dean Blunt', name: 'Fallback' }, 'DCCXX'));
     assert.equal(individual.album, 'LUCRE', 'a failed aggregate must fall back to the individual scrobble album');
     const beforePause = requests.length;

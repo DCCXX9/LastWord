@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.12**.
+Last.fm profile. Installed candidate: **v0.6.13**.
 
 ## Updating this installed copy
 
@@ -125,6 +125,28 @@ removed following Last.fm's rate limit. Existing saved legacy keys are retained.
 
 ## Verification
 
+Run every suite with `node tests/run.cjs`; use `--list` to see suites, `--unit`
+for the browser-free checks, or supply names such as `artwork-scan settings-drafts`.
+The runner reports every failed suite, continues the remaining suites and exits
+with failure if any check fails or times out. It does not install dependencies
+or use your signed-in browser profile.
+
+On this PC, the existing bundled Playwright runtime and installed Supermium can
+be used from a fresh PowerShell session:
+
+```powershell
+$projectPath = 'C:\Users\jayco\Desktop\lastfm-personal-library\lastfm-personal-library'
+if (!(Test-Path -LiteralPath (Join-Path $projectPath 'manifest.json'))) { throw 'Extension folder missing.' }
+Set-Location -LiteralPath $projectPath
+$env:NODE_PATH = 'C:\Users\jayco\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules'
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = 'C:\Program Files\Supermium\chrome.exe'
+if (!(Test-Path -LiteralPath $env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH)) { throw 'Supermium executable missing.' }
+node tests/run.cjs
+```
+
+Success ends with all suites passed. If any suite fails, retain its named output;
+no reload or account operation is needed for these checks.
+
 The local checks pass in isolated Supermium profiles with website requests
 intercepted. They cover rules, adapter fields, concurrent storage writes,
 profile changes, redirects, native dialog delegation, casing/real edits,
@@ -146,7 +168,8 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
-`tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`.
+`tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`,
+`tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation.
 Browser checks require Playwright

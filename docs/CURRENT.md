@@ -1,12 +1,40 @@
-# Current state — 6 October 2026
+# Current state — 15 October 2026
 
-Installed candidate: **v0.6.12**, branch preferences-page.
+Installed candidate: **v0.6.13**, branch preferences-page.
+Unassisted maintenance baseline: 1f21384 (v0.6.12).
 Cover recovery baseline: a60f097 (v0.6.11).
 Placeholder correction baseline: e6d87ff (v0.6.10).
 Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Unassisted reliability pass
+
+The artwork refresh previously rebuilt the full artist/album context for each
+queued song. A 200-song isolated browser fixture reproduced 1,000 context reads
+over five refreshes, with a 373.1 ms median refresh. The same fixture after batching
+reads that context once per refresh (five reads total), with an 8.8 ms median.
+Rows, covers, exact album proof and the existing network limits are preserved.
+This measures CPU work on the fixture, not first-time cover discovery or signed-in
+loading speed. Progressive album selection still passes its dedicated check.
+
+Settings saves now retain text/checkbox changes entered after the save began,
+with an unsaved note, instead of overwriting the newer draft when the earlier
+save finishes. XML casing-choice redraws retain keyboard focus on the same row.
+Both defects were reproduced with failing browser regressions before correction.
+
+`node tests/run.cjs` provides a combined gate, explicit suite selection, a browser-
+free subset and a suite list. Failure/timeout handling is verified with actual
+child scripts. It never loads the installed signed-in browser profile.
+
+The combined isolated-browser and unit gate passed all 22 suites, including the
+actual unpacked extension, startup timing, artwork, scrolling, settings, storage,
+XML parsing/import/revert and test-runner failure handling. The combined artwork
+fixture measured 10.2 ms per refresh; the earlier paired run measured 8.8 ms.
+Preferences, storage formats, installation
+identity and manifest permissions are unchanged. Rollback source checkpoint:
+1f21384. Scheduled work/reset monitoring is described in MAINTENANCE.md.
 
 ## Cover recovery across artists
 

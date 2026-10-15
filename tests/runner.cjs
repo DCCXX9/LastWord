@@ -1,0 +1,35 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const root = path.resolve(__dirname, '..');
+const cli = (...args) => spawnSync(process.execPath, [path.join(__dirname, 'run.cjs'), ...args], { encoding: 'utf8' });
+
+const listed = cli('--list');
+assert.equal(listed.status, 0, 'the regression runner must list runnable suites without requiring a browser');
+const names = listed.stdout.trim().split(/\r?\n/);
+assert.ok(names.includes('rules') && names.includes('artwork-extension') && names.includes('runner'));
+assert.ok(!names.includes('harness') && !names.includes('run'), 'helpers must not be mistaken for suites');
+assert.equal(cli('--list', 'does-not-exist').status, 2, 'unknown selections must fail before running tests');
+assert.equal(cli('--typo').status, 2, 'misspelled flags must not silently run a different gate');
+assert.equal(cli('--unit', '--list').stdout.includes('artwork-extension'), false);
+assert.equal(cli('--list', 'rules', 'rules').stdout.trim(), 'rules', 'deduplicate explicit suites');
+
+const { runSuites } = require('./run.cjs');
+fs.mkdirSync(path.join(root, 'test-results'), { recursive: true });
+const folder = fs.mkdtempSync(path.join(root, 'test-results', 'runner fixture '));
+const failed = path.join(folder, 'failed fixture.cjs');
+const passed = path.join(folder, 'passed fixture.cjs');
+const slow = path.join(folder, 'slow fixture.cjs');
+const marker = path.join(folder, 'passed.txt');
+fs.writeFileSync(failed, 'process.exitCode = 7;');
+fs.writeFileSync(passed, `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'ran');`);
+fs.writeFileSync(slow, 'setInterval(() => {}, 1000);');
+const results = runSuites([failed, passed], { report: () => {} });
+assert.deepEqual(results.map(result => result.passed), [false, true], 'a failure must be reported while remaining suites still run');
+assert.equal(results[0].status, 7, 'retain the actual child failure code');
+assert.equal(fs.readFileSync(marker, 'utf8'), 'ran', 'execute real scripts, including paths with spaces');
+const timed = runSuites([slow], { timeout: 250, report: () => {} });
+assert.equal(timed[0].passed, false, 'a timeout must never count as success');
+assert.equal(timed[0].error, 'ETIMEDOUT');
+console.log('PASS: suite discovery, explicit selections, unknown flags, path quoting, aggregate failure reporting and timeouts');

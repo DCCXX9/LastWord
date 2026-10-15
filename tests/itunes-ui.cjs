@@ -54,7 +54,10 @@ async function confirm(page, button) {
     await page.locator('#type-filter').selectOption('artists');
     const artist = page.locator('#candidates tr');
     assert.equal(await artist.locator('input').isDisabled(), true, 'variants require a casing choice');
+    await artist.locator('select').focus();
     await artist.locator('select').selectOption('ARTIST');
+    assert.equal(await artist.locator('select').evaluate(select => document.activeElement === select), true,
+      'choosing XML casing must keep keyboard focus on the replacement control');
     assert.equal(await artist.locator('input').isChecked(), false, 'choosing a variant does not overwrite an existing preference');
     await artist.locator('input').check();
     await page.locator('#clear-all').click();

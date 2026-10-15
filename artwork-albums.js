@@ -58,9 +58,14 @@
     return { artist: album.artist, album: album.name, image: album.image, url: album.url,
       fallback: false, scanned, total, sourceVersion: 2 };
   }
-  function peek(item, username) {
+  function peekMany(items, username) {
     const data = context(username);
-    return data ? proven(item, username, data) : null;
+    const covers = new Map();
+    if (data) for (const item of items) {
+      const cover = proven(item, username, data);
+      if (cover) covers.set(item, cover);
+    }
+    return covers;
   }
   async function read(album, username, signal) {
     const key = albumKey(album, username);
@@ -117,5 +122,5 @@
     }
     return proven(item, username, data);
   }
-  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peek, coverForAlbum, clear: () => records.clear() });
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, clear: () => records.clear() });
 })();

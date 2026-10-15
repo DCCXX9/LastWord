@@ -35,7 +35,7 @@
     $('stale-notice').hidden = !stale;
   }
   function cell(row, text) { const node = row.insertCell(); node.textContent = text; return node; }
-  function draw() {
+  function draw(focusEntry) {
     const visible = filtered(), totalPages = Math.max(1, Math.ceil(visible.length / size));
     page = Math.max(1, Math.min(page, totalPages));
     const start = (page - 1) * size;
@@ -57,7 +57,10 @@
         const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = 'Choose casing…'; select.append(placeholder);
         for (const value of entry.variants) { const option = document.createElement('option'); option.value = value; option.textContent = value; select.append(option); }
         select.value = entry.choice; select.disabled = busy;
-        select.addEventListener('change', () => { entry.choice = select.value; entry.selected = false; draw(); });
+        select.addEventListener('change', () => {
+          const focused = document.activeElement === select;
+          entry.choice = select.value; entry.selected = false; draw(focused ? entry : null);
+        });
         preferred.append(select);
       }
       const occurrences = document.createElement('span'); occurrences.className = 'name-count';
@@ -75,6 +78,8 @@
     $('page-label').textContent = 'Page ' + page + ' of ' + totalPages + (visible.length ? ' · ' + (start + 1) + '–' + Math.min(start + size, visible.length) : '');
     $('previous').disabled = page === 1; $('next').disabled = page === totalPages;
     updateSummary();
+    if (focusEntry) [...$('candidates').rows].find(row =>
+      row.dataset.type === focusEntry.type && row.dataset.id === focusEntry.id)?.querySelector('select')?.focus();
   }
   function buildReview(keepChoices = false) {
     const previous = new Map(entries.map(entry => [entry.type + ':' + entry.id, entry.choice]));

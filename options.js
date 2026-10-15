@@ -8,6 +8,7 @@
   let snapshot = { rules: R.empty(), settings: S.DEFAULT_SETTINGS };
   let pendingImport = null;
   let settingsDirty = false;
+  let settingsRevision = 0;
 
   function message(text, error = false) {
     $('message').textContent = text;
@@ -24,17 +25,22 @@
     }
   }
   $('settings-form').addEventListener('input', () => {
+    settingsRevision++;
     settingsDirty = true; $('settings-note').textContent = 'Unsaved changes';
   });
   $('settings-form').addEventListener('submit', async event => {
     event.preventDefault();
+    if ($('save-settings').disabled) return;
     const username = $('username').value.trim();
     if (!/^[^/\s?#]+$/.test(username)) return message('Enter a valid Last.fm username.', true);
+    const revision = settingsRevision;
     $('save-settings').disabled = true;
     try {
       const next = await S.saveSettings({ username, infiniteScroll: $('infinite').checked });
-      settingsDirty = false; accept(next); $('settings-note').textContent = '';
-      message('Settings saved. Your open Last.fm pages will update.');
+      settingsDirty = settingsRevision !== revision;
+      accept(next); $('settings-note').textContent = settingsDirty ? 'Unsaved changes' : '';
+      message(settingsDirty ? 'Settings saved. Your newer changes are still unsaved.'
+        : 'Settings saved. Your open Last.fm pages will update.');
     } catch (error) { message(error.message, true); }
     finally { $('save-settings').disabled = false; }
   });

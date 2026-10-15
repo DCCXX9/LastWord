@@ -164,10 +164,11 @@
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
     }
-    for (const job of jobs.values()) {
-      if (job.albumless || job.state === 'loading') continue;
-      const known = globalThis.LastfmArtworkAlbums?.peek(job.item, username);
-      if (known) finish(job, known);
+    const candidates = [...jobs.values()].filter(job => !job.albumless && job.state !== 'loading');
+    const known = candidates.length && globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username);
+    for (const job of candidates) {
+      const cover = known?.get(job.item);
+      if (cover) finish(job, cover);
     }
     pump();
   }
