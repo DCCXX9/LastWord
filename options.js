@@ -7,6 +7,7 @@
   const count = rules => R.TYPES.reduce((sum, type) => sum + Object.keys(rules[type] || {}).length, 0);
   let snapshot = { rules: R.empty(), settings: S.DEFAULT_SETTINGS };
   let pendingImport = null;
+  let importRevision = 0;
   let settingsDirty = false;
   let settingsRevision = 0;
 
@@ -65,9 +66,11 @@
   $('import-file').addEventListener('change', async event => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const revision = ++importRevision;
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error('Backup is larger than 10 MB.');
       const data = JSON.parse(await file.text());
+      if (revision !== importRevision) return;
       if (data.version !== 1 || !data.rules || typeof data.settings?.username !== 'string' ||
           !/^[^/\s?#]+$/.test(data.settings.username)) throw new Error('This is not a valid Personal Library backup.');
       const cleaned = R.clean(data.rules);
@@ -78,12 +81,13 @@
         }
       }
       const expected = await S.read();
+      if (revision !== importRevision) return;
       pendingImport = { data, expected };
       $('import-summary').textContent = count(cleaned) + ' display preferences for ' + data.settings.username + '.';
       $('import-details').textContent = R.TYPES.map(type => Object.keys(cleaned[type]).length + ' ' + labels[type].toLowerCase() + ' preferences').join(' · ');
       $('import-preview').showModal(); $('cancel-import').focus();
-    } catch (error) { message(error.message, true); }
-    finally { event.target.value = ''; }
+    } catch (error) { if (revision === importRevision) message(error.message, true); }
+    finally { if (revision === importRevision) event.target.value = ''; }
   });
   $('confirm-import').addEventListener('click', async () => {
     if (!pendingImport) return;

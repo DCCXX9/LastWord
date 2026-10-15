@@ -1,6 +1,7 @@
 # Current state — 15 October 2026
 
-Installed candidate: **v0.6.13**, branch preferences-page.
+Installed candidate: **v0.6.14**, branch preferences-page.
+Interaction/history baseline: 7366f06 (v0.6.13).
 Unassisted maintenance baseline: 1f21384 (v0.6.12).
 Cover recovery baseline: a60f097 (v0.6.11).
 Placeholder correction baseline: e6d87ff (v0.6.10).
@@ -9,7 +10,34 @@ Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
 
-## Unassisted reliability pass
+## Interaction and browser-history corrections
+
+Browser-history restoration retained appended rows but discarded the scroller's
+next-page and completed state. A failing lifecycle regression reproduced requests
+1, 2, 2 and duplicate rows after returning. A persisted pagehide now aborts active
+loading and disconnects observation while retaining pagination progress. Returning
+continues with page 3; completed views remain complete. Pending requests can be
+cancelled and resumed without appending a late response or losing existing rows.
+
+Preference Save/Delete/Undo controls now share a busy guard. Keyboard focus returns
+to the relevant row after Save/Cancel, to Undo after Delete, and to the restored row
+after Undo. External updates retain focus on existing row actions. A newer search
+keeps focus when a pending mutation finishes. Storage conflict checks still apply.
+
+Backup previews now belong to the latest selected file. A controlled slow-file
+regression first reproduced an older file replacing the newer preview. Obsolete
+reads and parse errors are ignored; previewing still writes no preferences.
+
+Focused interaction, options, settings, scrolling and dated-section checks pass.
+The combined gate passed 22/25 suites. Album navigation, artwork-extension worker
+startup and the startup-timing suite hit timeouts while the host measured 100% CPU
+and 2.66 GB free memory. Those exact three suites then passed on retry without
+source or timeout changes (album 27.7 s, artwork-extension 23.7 s, startup 14.8 s).
+All 25 suites are verified, retaining the initial 22/25 result and three retries.
+These checks use isolated browser profiles
+and mocked Last.fm responses; signed-in Supermium acceptance is not claimed.
+
+## First unassisted reliability pass (v0.6.13)
 
 The artwork refresh previously rebuilt the full artist/album context for each
 queued song. A 200-song isolated browser fixture reproduced 1,000 context reads

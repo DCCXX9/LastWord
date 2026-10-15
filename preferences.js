@@ -23,6 +23,11 @@
     node.addEventListener('click', action); return node;
   }
   function cell(row, value) { const node = row.insertCell(); node.textContent = value; return node; }
+  function focusRule(type, id, action = 'Edit') {
+    const row = [...document.querySelectorAll('#rules tbody tr')].find(node => node.dataset.type === type && node.dataset.id === id);
+    const control = row && [...row.querySelectorAll('button')].find(node => node.textContent === action && !node.disabled);
+    (control || $('search')).focus();
+  }
   function sortRows(a, b) {
     const aGroup = groupFor(a.type), bGroup = groupFor(b.type);
     return groups.indexOf(aGroup) - groups.indexOf(bGroup) ||
@@ -39,7 +44,7 @@
     input.addEventListener('input', () => { editing.value = input.value; });
     const conflict = !same(snapshot.rules[type][id], editing.original);
     const save = button('Save', saveEdit, 'primary'); save.disabled = conflict || saving;
-    const cancel = button('Cancel', () => { editing = null; redraw(); message('Edit cancelled.'); });
+    const cancel = button('Cancel', () => { editing = null; redraw(); focusRule(type, id); message('Edit cancelled.'); });
     input.addEventListener('keydown', event => {
       if (event.key === 'Enter') { event.preventDefault(); save.click(); }
       if (event.key === 'Escape') cancel.click();
@@ -54,6 +59,9 @@
   function redraw(focusEdit = false) {
     const hadFocus = document.activeElement?.id === 'preferred-edit';
     const selection = hadFocus ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
+    const focusedRow = document.activeElement?.closest('#rules tr');
+    const action = focusedRow && document.activeElement.tagName === 'BUTTON'
+      ? { ...focusedRow.dataset, name: document.activeElement.textContent } : null;
     for (const group of groups) $('rules-' + group).replaceChildren();
     const query = R.normalize($('search').value), filter = $('type-filter').value;
     const rows = [], totals = { artists: 0, albums: 0, tracks: 0 }, shown = { ...totals };
@@ -90,41 +98,62 @@
     $('count').textContent = total.toLocaleString() + (total === 1 ? ' preference' : ' preferences') + ' · ' + visible.toLocaleString() + ' shown';
     $('empty').hidden = visible > 0;
     $('empty').textContent = total ? 'No preferences match your search.' : 'No preferences yet. Edit a display name in your Last.fm library to add one.';
+    $('undo').disabled = saving || !deleted;
     if (focusEdit || hadFocus) {
       const input = $('preferred-edit'); input?.focus();
       if (selection) input?.setSelectionRange(...selection); else if (focusEdit) input?.select();
-    }
+    } else if (action && !saving) focusRule(action.type, action.id, action.name);
   }
   function accept(next) {
     snapshot = next; $('profile-status').textContent = 'Profile: ' + next.settings.username; redraw();
   }
   async function saveEdit() {
     if (!editing || saving) return;
-    const { type, original, value } = editing;
+    const { type, id, original, value } = editing;
+    const returnFocus = !!document.activeElement?.closest('#rules tr');
     saving = true; redraw();
     try {
       const next = await S.mutate([{ op: 'put', type, from: original.from, to: value,
         artist: original.artist || '', expected: original }]);
       editing = null; accept(next); message('Display preference saved.');
     } catch (error) { message(error.message, true); }
-    finally { saving = false; redraw(); }
+    finally {
+      saving = false; redraw();
+      if (returnFocus && document.activeElement === document.body) {
+        if (editing) $('preferred-edit')?.focus(); else focusRule(type, id);
+      }
+    }
   }
   async function removeRule(type, id, rule) {
+    if (saving) return;
+    const returnFocus = !!document.activeElement?.closest('#rules tr');
+    let removed = false;
+    saving = true; redraw();
     try {
       const next = await S.mutate([{ op: 'delete', type, id, expected: rule }]);
-      deleted = { type, id, rule }; accept(next);
+      deleted = { type, id, rule }; removed = true; accept(next);
       $('undo-label').textContent = 'Deleted “' + rule.to + '”.'; $('undo-area').hidden = false;
       message('Preference deleted. You can undo the last deletion.');
     } catch (error) { message(error.message, true); }
+    finally {
+      saving = false; redraw();
+      if (returnFocus && document.activeElement === document.body) {
+        if (removed) $('undo').focus(); else focusRule(type, id, 'Delete');
+      }
+    }
   }
   $('undo').addEventListener('click', async () => {
-    if (!deleted) return;
-    $('undo').disabled = true;
+    if (!deleted || saving) return;
+    const target = deleted, returnFocus = document.activeElement === $('undo');
+    saving = true; redraw();
     try {
-      const next = await S.mutate([{ op: 'restore', ...deleted, expected: null }]);
+      const next = await S.mutate([{ op: 'restore', ...target, expected: null }]);
       deleted = null; $('undo-area').hidden = true; accept(next); message('Preference restored.');
     } catch (error) { message(error.message, true); }
-    finally { $('undo').disabled = false; }
+    finally {
+      saving = false; redraw();
+      if (returnFocus && document.activeElement === document.body) focusRule(target.type, target.id);
+    }
   });
   $('search').addEventListener('input', () => redraw());
   $('type-filter').addEventListener('change', () => redraw());

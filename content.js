@@ -317,9 +317,19 @@
     });
     observer.observe(document.body, { childList: true, characterData: true, subtree: true });
     addEventListener('popstate', refresh);
-    addEventListener('pagehide', () => { stopScroll(); observer.disconnect(); });
-    addEventListener('pageshow', event => { if (event.persisted) { observer.observe(document.body,
-      { childList: true, characterData: true, subtree: true }); refresh(); } });
+    addEventListener('pagehide', event => {
+      if (event.persisted) {
+        // The browser retains these rows in its history cache. Keep their next
+        // page/completion state so returning cannot append the same page again.
+        scroller?.controller?.abort(); scroller?.observer.disconnect();
+      } else stopScroll();
+      observer.disconnect();
+    });
+    addEventListener('pageshow', event => { if (event.persisted) {
+      observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+      refresh();
+      if (scroller && scroller.mode !== 'complete') scroller.observer.observe(scroller.notice);
+    } });
   }
   init().catch(error => console.error('Last.fm Personal Library:', error.message));
 })();

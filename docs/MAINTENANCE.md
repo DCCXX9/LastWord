@@ -21,15 +21,18 @@ Starting checkpoint: `1f21384`, branch `preferences-page`, v0.6.12.
 
 ## Bounded review queue
 
-1. **Settings draft fix verified; preference review continues:** review settings, backup and preference controls for lost drafts,
+1. **Done:** review settings, backup and preference controls for lost drafts,
    double submissions and stale asynchronous results; reproduce before changes.
-2. Review artwork cancellation/profile-switch/navigation boundaries for stale work
+2. **Reviewed; existing focused checks pass:** review artwork cancellation/profile-switch/navigation boundaries for stale work
    or avoidable network requests, preserving exact most-scrobbled album selection.
-3. **XML casing focus fixed and verified; preference controls remain:** review keyboard access/focus and status feedback in existing extension pages.
+3. **Done:** review keyboard access/focus and status feedback in existing extension pages.
 4. **Done:** provide a single repeatable local regression command if the current suite lacks
    one; keep browser tests isolated from the installed user profile.
-5. **22/22 suites passed for v0.6.13:** run the combined relevant regression gate once after changes stabilise. Record
+5. **Done: v0.6.14 all 25 suites verified, including three unchanged startup retries:** run the combined relevant regression gate once after changes stabilise. Record
    exact results, update the version once, and retain the prior Git checkpoint.
+6. **Next bounded review:** Keep Scrolling off/on and profile round trips after
+   appending rows. Verify that reactivation cannot repeat already loaded pages.
+   The untracked tests/scroll-toggle.cjs belongs to this review and is not yet run.
 
 Remove or mark reviewed items as they are exhausted. New work requires a concrete
 defect in these existing features; this is not an open-ended feature roadmap.
@@ -49,3 +52,13 @@ defect in these existing features; this is not an open-ended feature roadmap.
 - No preference, undo or legacy scan records were read from or changed in Jay's
   installed browser. Source storage formats and manifest permissions are unchanged.
 - Usage check at 05:27:56 UTC: 63% used, same reset timestamp. No reset observed.
+- v0.6.14 focused regressions pass: shared busy guards for preference mutations,
+  keyboard focus restoration without stealing newer search focus, latest-file
+  backup previews, and retained browser-history pagination/completion state.
+  All defects were reproduced before correction. Combined gate: 22/25; album,
+  artwork-extension and startup timed out under 100% host CPU/2.66 GB free memory.
+  Those exact three suites passed on retry without source/timeout changes;
+  all 25 suites are verified with the initial failures retained in this record.
+  No signed-in acceptance is implied by a retry pass.
+- Usage check at 05:37:15 UTC: 75% used, same reset timestamp. No reset observed.
+- Usage check at 05:56:59 UTC: 85% used, same reset timestamp. No reset observed.

@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.13**.
+Last.fm profile. Installed candidate: **v0.6.14**.
 
 ## Updating this installed copy
 
@@ -169,7 +169,8 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
 `tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`,
-`tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`.
+`tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
+`tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation.
 Browser checks require Playwright
