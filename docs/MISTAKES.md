@@ -1,5 +1,25 @@
 # Implementation lessons
 
+## Reload timing and inferred album identity (2026-10-15)
+
+The previous startup check assumed Reload during a blocked navigation would
+always inject document_idle afterward. Repeated failures also occurred against
+the untouched 2180539 baseline: the extension world had early dependencies but
+none of the idle features. Treat refreshing Last.fm after Reload as required.
+Keep the no-crash/data-preservation assertion during the race and test actual
+feature activation on the fresh navigation; do not label that race a dependency
+failure or claim a longer timeout proves reliable injection.
+
+A rendered album column can be canonicalized away from the user's raw scrobble
+tags. Artwork must prefer validated native fields and fail on malformed fields
+rather than guess from the visible canonical link. Cached results also need
+protection against a later native lazy-loader rewrite of the image and album link.
+
+Album-less v0.7.0 deliberately separates successful edit capture, optional
+candidate discovery and explicitly enabled future correction. The old full-scan
+failure below is not considered resolved by slower pacing. Batches are limited
+and manually resumed; no unattended full-history run is authorised or verified.
+
 ## Album-less scrobble scan candidate (2026-09-29)
 
 The v0.4.0–0.4.2 candidate was not verified against the signed-in Last.fm

@@ -98,7 +98,7 @@
         const result = await LastfmPages.get(url, { signal: controller.signal });
         if (!ownTrack(result.url)) throw new Error('Last.fm did not return your track history.');
         const matches = [...result.doc.querySelectorAll('form[data-edit-scrobble]')]
-          .map(form => ({ form, fields: A.editRow(form, result.url, username) }))
+          .map(form => ({ form, fields: A.editRow(form, result.url, username, true) }))
           .filter(entry => entry.fields && R.normalize(entry.fields.artist) === R.normalize(item.artist) &&
             R.normalize(entry.fields.track) === R.normalize(item.name));
         const match = matches.find(entry => R.normalize(entry.fields.album) === R.normalize(item.album));
@@ -236,7 +236,7 @@
       return;
     }
     const operations = casingOperations(pairs);
-    if (!operations.length) return;
+    if (!operations.length) { globalThis.LastfmAlbumless?.capture(form); return; }
     event.preventDefault(); event.stopImmediatePropagation(); saveCasing(form, operations);
   }
   function errors(root) {

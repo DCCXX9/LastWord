@@ -1,6 +1,7 @@
 # Current state — 15 October 2026
 
-Installed candidate: **v0.6.15**, branch preferences-page.
+Installed candidate: **v0.7.0**, branch preferences-page.
+Finishing baseline: 2180539 (v0.6.15).
 Scrolling reactivation baseline: c4c0270 (v0.6.14).
 Interaction/history baseline: 7366f06 (v0.6.13).
 Unassisted maintenance baseline: 1f21384 (v0.6.12).
@@ -10,6 +11,60 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Artwork, native editing and album-less rules (v0.7.0)
+
+Jay authorised this follow-up after the earlier allowance-reset work stopped.
+The old reset watcher is paused and was not resumed for this task.
+
+Artwork now counts native scrobble album fields before canonical rendered links.
+The failing regression selected Canonical instead of Personal Album; the corrected
+reader selects the raw scrobbled album. SourceVersion 3 results refresh older normal
+selections without hiding cached covers. Cached images/links do not wait for the
+lookup queue, and a Last.fm lazy-loader rewrite cannot overwrite a resolved result.
+First-time uncached album selection still needs paced server requests. No instant
+cold-load promise or invented replacement for genuinely missing album artwork.
+
+Native Edit track lookup accepts the user-confirmed representation where both
+blank album fields are omitted. It still delegates to Last.fm on the current page,
+keeps the menu action first, and saves casing locally. Single missing fields and
+mismatched identities fail explicitly. Normal edits stay with Last.fm's handler.
+
+Album-less capture, discovery and correction use separate modules and a new
+worker-owned lfmAlbumlessV1 key. Corrections start disabled. Capture reads back the
+exact edited play before remembering a future-only rule. Enabled checks use the
+real native single-play form, preserve artist/title, remove bulk-edit flags, and
+verify both fields afterward. Cross-tab claims persist before writes; uncertain
+writes stop for review and never replay automatically. Old scrobbles are excluded.
+Only a visible own-profile tab checks recent plays, every five minutes. No change
+is made by this extension while the browser is closed.
+
+Discovery prepares selectable candidates in explicit read-only batches of up to
+20 pages, at least 12 seconds apart. Confirmed per-page progress survives pauses;
+empty responses/rate limits stop without retries or skipped pages. The panel has a
+manual network-resume control that starts no work by itself. Existing legacy scan
+records remain inactive and unchanged. No historical crawl or signed-in edit was run.
+
+Focused storage, transport, capture, correction, discovery and UI regressions pass,
+including actual unpacked-extension settings/default-off checks. Combined gate:
+33/34 passed; extension timed out at the 30-second service-worker startup wait.
+That exact suite passed unchanged on retry (14.6 seconds), having also passed the
+preflight gate (27.3 seconds). Initial failure and retry logs are retained in
+test-results/v070-combined.log and v070-extension-retry.log. Host CPU/memory probes
+were unavailable in the sandbox, so load is not claimed as a confirmed cause.
+All 34 suites are verified, including native/local edits, artwork, scrolling,
+storage, XML apply/revert/large-file parsing and test-runner failure handling.
+The long artwork fixture measured an 8.9 ms median refresh with five context reads
+over five refreshes; this is DOM work, not a signed-in network timing claim.
+Signed-in Last.fm dialog/capture/new-play
+acceptance remains pending; the tests use isolated profiles and reconstructed forms.
+
+The startup test exposed a pre-existing Supermium reload race, reproduced against
+the untouched 2180539 source: Reload during navigation can omit document_idle.
+The test now enforces no dependency crash/data loss during that race and verifies
+activation after the supported Last.fm page refresh. It does not claim Reload alone
+reinjects an already open tab. Existing preference, XML undo and legacy keys are not
+migrated, and manifest permissions remain storage-only. Source rollback: 2180539.
 
 ## Scrolling reactivation (v0.6.15)
 
@@ -31,8 +86,8 @@ The actual unpacked-extension startup suite also passed on an unchanged retry
 while host CPU measured 100%. Both logs are retained in test-results; no assertion
 deadline was relaxed. Preferences survived Reload and fresh navigation.
 
-The bounded maintenance queue is complete. The requested heartbeat remains active
-as a meter-only reset watcher; it will stop/pause itself at the reset boundary.
+The bounded maintenance queue completed. Its requested reset watcher subsequently
+observed an advanced reset timestamp and was paused before the v0.7.0 follow-up.
 
 ## Interaction and browser-history corrections (v0.6.14)
 

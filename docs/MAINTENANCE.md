@@ -37,7 +37,16 @@ Starting checkpoint: `1f21384`, branch `preferences-page`, v0.6.12.
 
 Remove or mark reviewed items as they are exhausted. New work requires a concrete
 defect in these existing features; this is not an open-ended feature roadmap.
-All queued items are complete. Continue as a meter-only watcher until reset.
+All queued items completed. The meter subsequently advanced its reset timestamp
+to 1792649583, confirming a reset. The heartbeat was paused. Do not resume it or
+continue spending under the old pre-reset authorisation.
+
+## Separately authorised finishing work
+
+Jay subsequently authorised artwork/native-edit corrections followed by album-less
+rules, unassisted, with one version to Reload and test. See FINISHING.md and CURRENT.md
+for v0.7.0 scope, independent storage, tests and signed-in acceptance limits. This
+does not reactivate the completed reset watcher or its unbounded allowance override.
 
 ## Results
 

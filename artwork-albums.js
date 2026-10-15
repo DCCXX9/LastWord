@@ -56,7 +56,7 @@
     if (remaining < 0 || !ranked[0]?.count || ranked[0].count <= (ranked[1]?.count || 0)+remaining) return null;
     const album = ranked[0].album;
     return { artist: album.artist, album: album.name, image: album.image, url: album.url,
-      fallback: false, scanned, total, sourceVersion: 2 };
+      fallback: false, scanned, total, sourceVersion: 3 };
   }
   function peekMany(items, username) {
     const data = context(username);

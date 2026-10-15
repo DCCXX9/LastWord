@@ -33,6 +33,7 @@
     read: () => request('read'),
     readArtwork: () => request('artwork-read'),
     saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
+    albumless: (username, op, values = {}) => request('albumless', { username, op, ...values }),
     subscribe,
     mutate: operations => request('mutate', { operations }),
     saveSettings: patch => request('settings', { patch }),

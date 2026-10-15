@@ -1,5 +1,44 @@
 # Architecture decisions
 
+## 15 October 2026: finishing artwork, native editing and album-less rules
+
+Scrobble edit fields are the artwork authority when available, ahead of rendered
+canonical album links. Malformed native fields do not fall through to a guessed
+album. Selection records carry sourceVersion 3; older records remain visible while
+revalidated. Resolved image/link attributes are repaired locally when Last.fm's
+lazy loader overwrites them, without rescanning every row for each attribute change.
+
+Both omitted album fields are the already observed native representation of a
+blank scrobble. Native track lookup and album-less readers opt into that adapter
+case explicitly; one missing field or duplicate fields remain errors.
+
+Album-less rules have a new worker-owned `lfmAlbumlessV1` key, scoped by profile.
+No legacy data is migrated. Capture, historical discovery, candidate review and
+real future corrections are separate operations. Corrections default off and
+require explicit enablement in their settings page. Each rule's saved timestamp
+excludes earlier plays, even when discovery found the track in old history.
+
+Unlike normal user-driven editing, the opted-in future-rule engine submits a
+single-play native Last.fm form. It first obtains the actual dialog, validates
+all original/current pairs against the fetched play, clears only album fields,
+removes bulk/rule flags, and reads back the exact play. It never invents a Save
+Edit payload from a row or bypasses the shared network queue. Native manual edits
+remain delegated to Last.fm; casing-only changes remain local.
+
+An origin correction lock plus durable worker claim prevents cross-tab duplicate
+submissions. Unknown write outcomes remain reserved/uncertain and cannot replay
+automatically after closing a tab. Failures disable corrections for explicit
+review. The browser must have a visible matching profile tab; this is not a remote
+scrobbling service. Checks run every five minutes, continuing at most three pages.
+
+Historical discovery is limited to explicit read-only batches of 20 pages with
+12-second minimum pacing and saved per-page progress. It only prepares candidates;
+the user chooses which become future rules. No full-history scan was run or
+automated. Empty responses and rate limits stop without retries or skipped pages.
+The prior rate-limit lesson still applies: batching is a limit, not a guarantee
+that Last.fm will accept repeated scanning. Existing legacy scan progress remains
+untouched and inactive. Real signed-in capture/correction remain unverified.
+
 ## 6 October 2026: personal track artwork
 
 Artwork uses the configured profile's individual track-history pages, with the
@@ -7,7 +46,8 @@ user-confirmed `.col-main .metadata-display` scrobble total and existing named
 edit-form fields. Album/album-artist pairs are counted without submitting edits.
 The user confirmed that album-less Watch Me history rows omit BOTH album fields.
 The read-only resolver supplies empty values in a detached copy in that case;
-single missing fields remain validation errors and the shared edit adapter stays strict.
+single missing fields remain validation errors and the shared edit adapter keeps
+strict defaults, with explicit support for both omitted fields at callers above.
 The resolver stops only at complete history or when the leader exceeds the
 runner-up plus every unseen play. Incomplete totals, fields or pagination fail
 without choosing a sampled winner. Ties use the native most-recent history order.
@@ -73,7 +113,8 @@ The shared adapter owns Last.fm URL parsing and named native form contracts.
 Content owns display replacements/scrolling; native-edit owns menu/dialog
 integration; settings/popup use the same storage API. Pages are fetched through
 a bounded queue using an origin lock shared across tabs, with persistent
-rate-limit stop. The extension never submits real scrobble edits itself.
+rate-limit stop. Normal manual editing stays with Last.fm's handler. The explicitly
+enabled album-less engine is the single-play exception documented above.
 
 Actual native dialog behavior still needs signed-in acceptance. Reconstructed
 fixtures and isolated extension tests are recorded as distinct evidence.

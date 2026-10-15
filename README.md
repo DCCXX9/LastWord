@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.6.15**.
+Last.fm profile. Installed candidate: **v0.7.0**.
 
 ## Updating this installed copy
 
@@ -9,8 +9,8 @@ Export a JSON backup from **Settings and backup**, then click **Reload** on
 this extension in Supermium's `chrome://extensions` and refresh your Last.fm
 page. Keep this folder in place and keep the existing extension installed.
 Its identity and stored preferences depend on that installation.
-Startup dependencies also load before the idle features, so Reload during an
-in-progress navigation does not leave those features without their shared modules.
+Startup dependencies also load before the idle features. Supermium can omit the
+later scripts if Reload happens during navigation, so refresh Last.fm after Reload.
 Already-started modules are reused, retaining early cached artwork application.
 
 ## Features
@@ -49,6 +49,8 @@ Already-started modules are reused, retaining early cached artwork application.
   lookup requests for 24 hours. Older records remain visible while refreshed.
   Older normal-track selections are verified once by the updated reader without
   clearing their images or any saved display preferences.
+  Native edit fields take priority over canonical/redirected album links. A page's
+  lazy loader cannot replace an already resolved image or its album link.
   An uncached track still needs a signed-in history/album lookup.
   Returning to a resolved page reuses its in-memory result immediately. Visible
   album-less scrobbles have lookup priority over other uncached tracks.
@@ -123,8 +125,42 @@ Already-started modules are reused, retaining early cached artwork application.
   Copy diagnostics with version, feature status and counts. It excludes
   scrobble titles, form values and security tokens.
 
-The full-history album-less scanner and automatic scrobble corrections remain
-removed following Last.fm's rate limit. Existing saved legacy keys are retained.
+## Album-less rules
+
+Open **Settings and backup → Album-less tracks**. Export JSON first, review your
+rules, then explicitly enable future corrections. They start disabled. Existing
+display preferences, XML undo and old scan records are preserved in their own keys;
+the new page does not migrate or activate legacy rules/progress.
+
+- In Last.fm's normal track editor, clear both album fields and tick the new
+  **Remember blank album and album artist…** box before Save Edit. The extension
+  saves a rule only after reading back that exact play with both fields blank.
+  A rejected/unconfirmed edit saves no rule. Alternatively, add an artist/track
+  manually in Album-less rules.
+- Rules match artist and track ignoring case. Only plays timestamped after the
+  rule was saved qualify. Corrections use Last.fm's native named form, remove
+  bulk/automatic-edit flags, retain artist/title, and verify the exact play after
+  saving. Older scrobbles are never corrected by these rules.
+- Keep a visible tab on your connected Last.fm profile. Recent plays are checked
+  every five minutes, at most three library pages per check. Catch-up progress
+  persists between checks. This browser extension cannot correct plays while
+  Supermium is closed or all matching tabs are hidden.
+- **Open discovery and recent-play checks** offers read-only discovery, up to
+  20 pages per manually started batch, at least 12 seconds apart. It pauses after
+  each batch or unexpected response and never skips a page or retries itself.
+  Review the distinct candidates and tick tracks before remembering rules.
+  **Review loaded plays** needs no extra page requests. A 4,332-page library
+  remains expensive; this is not an unattended full-history crawler.
+- All requests share the artwork/scrolling network lock and persistent rate-limit
+  stop. After a break, **Resume requests after a break** clears the stop without
+  starting discovery. Last.fm has not certified any request rate as safe.
+- A durable attempt record prevents duplicate saves across tabs/reloads. An
+  uncertain write disables corrections and is never replayed automatically.
+  Review its exact play before allowing another attempt. Disabling or deleting
+  a rule affects future processing; it does not reverse a confirmed Last.fm edit.
+
+No signed-in edits or whole-library scans were performed while building v0.7.0.
+The normal dialog and one future-play correction remain live acceptance checks.
 
 ## Verification
 
@@ -174,14 +210,22 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`,
 `tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
 `tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
-`tests/scroll-toggle.cjs`.
+`tests/scroll-toggle.cjs`, `tests/artwork-authority.cjs`, `tests/native-submit.cjs`,
+`tests/albumless-store.cjs`, `tests/albumless-transport.cjs`, `tests/albumless-flow.cjs`,
+`tests/albumless-capture.cjs`, `tests/albumless-scan.cjs`, `tests/albumless-ui.cjs`.
 The startup check reloads the actual extension between
-document_start and document_idle and checks for uncaught errors and storage preservation.
+document_start and document_idle and checks for uncaught errors and storage preservation,
+then verifies that the required Last.fm refresh activates the features. Reloading
+an extension alone does not guarantee that an already open page receives its scripts.
 Browser checks require Playwright
 and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The v0.7.0 finishing work starts from `2180539` (v0.6.15). Source rollback leaves
+the separate `lfmAlbumlessV1` records and all earlier storage intact. Disable future
+corrections before returning to an older source version; no stored data needs clearing.
 
 The personal-artwork change starts from `74ce8ba796c9d39e8c42a7a18060969935cd33c1`
 (v0.6.2). Artwork caches exist only in the current tab and do not alter saved rules.

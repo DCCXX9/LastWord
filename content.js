@@ -304,7 +304,8 @@
     return { version: chrome.runtime.getManifest().version, username: settings.username,
       ownProfile: ownProfile(), view: A.libraryView(location.href),
       scrollState: settings.infiniteScroll ? (scroller?.active ? scroller.mode : 'unavailable') : 'off',
-      ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status() };
+      ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status(),
+      albumless: globalThis.LastfmAlbumless?.status() };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (message?.type === 'lfm:status') reply(status());

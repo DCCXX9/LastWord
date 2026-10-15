@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
-const unit = new Set(['rules', 'storage', 'itunes-store', 'artwork-store', 'runner']);
+const unit = new Set(['rules', 'storage', 'itunes-store', 'artwork-store', 'albumless-store', 'runner']);
 
 function runSuites(files, { timeout = 180000, report = console.log } = {}) {
   return files.map(file => {

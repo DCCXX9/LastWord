@@ -1,6 +1,6 @@
 /* The worker is the sole writer of preferences. Every operation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js');
+importScripts('rules.js', 'store.js', 'albumless-store.js');
 
 (() => {
   'use strict';
@@ -90,7 +90,7 @@ importScripts('rules.js', 'store.js');
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html'].includes(url.pathname);
     if (extension) return;
     const match = url.pathname.match(/^\/user\/([^/]+)(?:\/|$)/i);
     let user = '';
@@ -98,7 +98,7 @@ importScripts('rules.js', 'store.js');
     const ownProfile = url.origin === 'https://www.last.fm' && !!current.settings.username &&
       R.normalize(user) === R.normalize(current.settings.username);
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
-    if (['mutate', 'artwork-read', 'artwork-put'].includes(action) && ownProfile) return;
+    if (['mutate', 'artwork-read', 'artwork-put', 'albumless'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }
 
@@ -239,12 +239,14 @@ importScripts('rules.js', 'store.js');
       username, item: { artist: item.artist, name: item.name, ...(item.albumless === true ? { albumless: true } : {}) },
       cover: { artist: cover.artist, album: cover.album, image: image.href, url: url.href,
         fallback: cover.fallback, scanned: cover.scanned, total: cover.total,
-        ...(cover.sourceVersion === 2 ? { sourceVersion: 2 } : {}) }, checkedAt: Date.now() };
+        ...([2, 3].includes(cover.sourceVersion) ? { sourceVersion: cover.sourceVersion } : {}) }, checkedAt: Date.now() };
   }
   async function execute(message, sender) {
     const stored = await chrome.storage.local.get(null);
     const current = snapshot(stored);
     authorize(sender, message.action, current);
+    if (message.action === 'albumless') return LastfmAlbumlessStore.execute(message, current, stored,
+      sender.url === `chrome-extension://${chrome.runtime.id}/albumless.html`);
     if (message.action === 'read') return current;
     if (message.action === 'artwork-read') {
       return (Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : []).filter(record => {

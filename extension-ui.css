@@ -74,6 +74,9 @@ dialog .button-group { justify-content: flex-end; margin-top: 24px; }
 .popup-page .message:empty { display: none; }
 .preferences-back { display: inline-block; color: #666; text-decoration: none; margin-bottom: 20px; }
 .preferences-back:hover { text-decoration: underline; }
+.albumless-candidates { max-height: 400px; overflow-y: auto; margin-top: 16px; }
+#correction-status, #scan-summary { margin-top: 12px; }
+#attempts p { margin-top: 12px; }
 .preferences-page .filters { margin-bottom: 0; }
 .preferences-page .message:empty { display: none; }
 .preference-group .section-header { margin-bottom: 18px; }

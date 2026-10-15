@@ -30,13 +30,14 @@
     const size = /\/i\/u\/(\d+(?:s|x\d+))\//.exec(original.attrs.src || original.attrs['data-src'] || '')?.[1];
     const source = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
-    image.src = source; image.setAttribute('data-src', source);
+    const attr = (name, value) => { if (image.getAttribute(name) !== value) image.setAttribute(name, value); };
+    attr('src', source); attr('data-src', source);
     // A previous extension context or native lazy loader may have hidden it.
     // A verified resolved cover must be visible; restore() still keeps native styles.
-    image.style.setProperty('visibility', 'visible');
-    image.alt = 'Cover for ' + cover.album + ' by ' + cover.artist;
-    image.title = cover.fallback ? 'Personal cover: matching artist/title album page'
-      : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)';
+    if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
+    attr('alt', 'Cover for ' + cover.album + ' by ' + cover.artist);
+    attr('title', cover.fallback ? 'Personal cover: matching artist/title album page'
+      : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)');
     if (!original.link && original.wrapper?.isConnected) {
       const link = document.createElement('a');
       for (const attr of original.wrapper.attributes) link.setAttribute(attr.name, attr.value);
@@ -44,7 +45,7 @@
       original.wrapper.replaceWith(link); original.replacement = link;
     }
     const link = original.link || original.replacement;
-    if (link?.isConnected) link.href = cover.url;
+    if (link?.isConnected && link.href !== cover.url) link.href = cover.url;
   }
   function restore(image) {
     const original = originals.get(image);
@@ -156,7 +157,7 @@
         // Existing images remain visible while older selection results are
         // verified once against album totals/native scrobble metadata.
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 &&
-          (item.albumless || saved.cover.sourceVersion === 2);
+          (item.albumless || saved.cover.sourceVersion === 3);
         jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
           placeholder: !A.coverImage(image.getAttribute('data-src') || image.getAttribute('src')) });
       }
@@ -184,10 +185,20 @@
     if (running && !visible(running.job)) running.controller.abort();
     pump();
   }, { rootMargin: '100px 0px' });
+  const mutationOptions = { childList: true, subtree: true, attributes: true,
+    attributeFilter: ['src', 'data-src', 'srcset', 'data-srcset', 'href', 'style'] };
   const mutations = new MutationObserver(records => {
+    // Last.fm's lazy loader can rewrite a cached image after document_start.
+    // Repair only affected resolved images; do not rescan the table per attribute.
+    if (own() && currentUrl === location.href) for (const record of records) {
+      if (record.type !== 'attributes') continue;
+      const image = record.target.matches('img') ? record.target : record.target.querySelector('img');
+      const job = observed.get(image)?.job;
+      if (job?.cover) apply(image, job.cover);
+    }
     if (records.some(record => [...record.addedNodes].some(node => node.nodeType === 1))) schedule();
   });
-  mutations.observe(document, { childList: true, subtree: true });
+  mutations.observe(document, mutationOptions);
   const accept = async state => {
     const changed = username !== state.settings.username;
     if (changed || !A.ownProfile(location.href, state.settings.username)) reset();
@@ -212,7 +223,7 @@
   S.read().then(accept).catch(error => console.error('Last.fm personal covers:', error.message));
   addEventListener('visibilitychange', () => { if (document.hidden) running?.controller.abort(); else scan(); });
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
-  addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, { childList: true, subtree: true }); scan(); } });
+  addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, mutationOptions); scan(); } });
   addEventListener('popstate', scan);
   globalThis.LastfmArtwork = Object.freeze({ start: scan, status: () => ({
     cacheReady, cachedTracks: cache.size, cacheError: cacheError || null,

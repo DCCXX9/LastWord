@@ -19,11 +19,15 @@
     });
   }
 
-  async function request(url, signal, album) {
+  async function request(url, signal, album, { minInterval = 1500, form, beforeSend } = {}) {
     check(signal);
     const target = new URL(url, location.href);
     const { settings } = await LastfmStore.read();
-    const allowed = value => album
+    const edit = Boolean(form);
+    const editPath = value => new URL(value).origin === location.origin &&
+      /^\/user\/[^/]+\/library\/edit-track$/.test(new URL(value).pathname) &&
+      LastfmAdapter.ownProfile(value, settings.username);
+    const allowed = value => edit ? editPath(value) : album
       ? LastfmAdapter.ownProfile(location.href, settings.username) &&
         new URL(value).origin === location.origin && new URL(value).pathname.startsWith('/music/') &&
         LastfmAdapter.musicItem(value)?.type === 'albums'
@@ -31,10 +35,31 @@
     if (target.origin !== location.origin || !allowed(target.href)) {
       throw new Error('Page loading is available only on your configured profile.');
     }
+    let body;
+    if (edit) {
+      if (!LastfmAdapter.ownProfile(location.href, settings.username) || form.method !== 'post') {
+        throw new Error('Open your connected profile before editing a scrobble.');
+      }
+      body = new URLSearchParams(new FormData(form));
+      if (body.getAll('csrfmiddlewaretoken').length !== 1 || !body.get('csrfmiddlewaretoken')) {
+        throw new Error('Last.fm’s edit security field is unavailable. Open its normal edit dialog.');
+      }
+      const submit = form.querySelector('[name="submit"]');
+      if (submit && !body.has('submit')) body.set('submit', submit.value || submit.textContent.trim());
+    }
     const state = await chrome.storage.local.get([PAUSE, LAST]);
     paused = Boolean(state[PAUSE]);
     if (paused) throw new Error('Last.fm asked for a break. Page loading is paused.');
-    await wait(Math.min(1500, Math.max(0, 1500 - (Date.now() - (state[LAST] || 0)))), signal);
+    const interval = Math.min(60000, Math.max(1500, Number(minInterval) || 1500));
+    await wait(Math.min(interval, Math.max(0, interval - (Date.now() - (state[LAST] || 0)))), signal);
+    if (edit) {
+      const latest = await LastfmStore.read();
+      if (latest.settings.username !== settings.username || !LastfmAdapter.ownProfile(location.href, settings.username)) {
+        throw new Error('Your connected profile changed. The edit was cancelled.');
+      }
+    }
+    await beforeSend?.();
+    check(signal);
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
@@ -43,10 +68,20 @@
     const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
     try {
       const response = await fetch(target.href, {
-        credentials: 'same-origin', signal: controller.signal
+        credentials: 'same-origin', signal: controller.signal,
+        ...(edit ? {method:'POST',body,headers:{'X-Requested-With':'XMLHttpRequest'}} : {})
       });
       const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
+      let markup = html;
+      if (response.status !== 429 && response.headers.get('content-type')?.includes('application/json')) {
+        try {
+          const data = JSON.parse(html);
+          markup = [data.html, data.content, data.form].find(value => typeof value === 'string') || '';
+          const hasErrors = value => value && (typeof value !== 'object' || Object.keys(value).length > 0);
+          if (hasErrors(data.error) || hasErrors(data.errors)) throw new Error('Last.fm rejected the edit.');
+        } catch (error) { throw new Error(error.message || 'Last.fm returned an unreadable edit response.'); }
+      }
+      const doc = new DOMParser().parseFromString(markup, 'text/html');
       if (response.status === 429 || warning.test(doc.body?.textContent || '')) {
         paused = true;
         await chrome.storage.local.set({ [PAUSE]: { at: Date.now() } });
@@ -70,9 +105,10 @@
     }
   }
 
-  function get(url, { signal } = {}, album = false) {
+  function get(url, options = {}, album = false) {
+    const { signal } = options;
     const run = () => navigator.locks.request('lastfm-personal-library:pages',
-      { ...(signal ? { signal } : {}) }, () => request(url, signal, album));
+      { ...(signal ? { signal } : {}) }, () => request(url, signal, album, options));
     const result = queue.then(run);
     queue = result.catch(() => {});
     return result;
@@ -93,5 +129,6 @@
     chrome.storage.local.set({ [PAUSE]: { at: Date.now() } });
   }
   globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
+    edit: (form, options = {}) => get(form.action, { ...options, form }),
     status: () => ({ rateLimited: paused, lastError }) });
 })();

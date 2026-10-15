@@ -73,8 +73,9 @@
         return { artist, album, image, url };
       })();
       albumImages.set(key, pending);
-      // An aborted viewport lookup can be attempted again when it becomes visible.
-      pending.catch(error => { if (error.name === 'AbortError' && albumImages.get(key) === pending) albumImages.delete(key); });
+      // Failed requests are not album facts. Another track may retry this album
+      // later; the shared page queue still enforces pacing and rate-limit stops.
+      pending.catch(() => { if (albumImages.get(key) === pending) albumImages.delete(key); });
     }
     const result = await albumImages.get(key);
     check(signal);
@@ -108,21 +109,10 @@
       const pageStamps = new Set();
       for (const row of rows) {
         const form = row.querySelector('form[data-edit-scrobble]');
-        // Confirmed on the signed-in Watch Me history: album-less rows omit
-        // BOTH album inputs. Normalize that read-only representation locally;
-        // retain strict validation when only one field is missing.
-        let source = form;
-        if (form && !form.querySelector('[name="album_name"],[name="album_artist_name"]')) {
-          source = form.cloneNode(true);
-          for (const name of ['album_name', 'album_artist_name']) {
-            const input = page.doc.createElement('input'); input.name = name; input.value = '';
-            source.append(input);
-          }
-        }
-        const hidden = source && A.editRow(source, page.url, username);
-        const fields = renderedRow(row, page.url, item) || hidden;
-        if (fields && hidden && norm(hidden.artist) === norm(item.artist) && norm(hidden.track) === norm(item.name) &&
-            norm(hidden.album) === norm(fields.album) && hidden.albumArtist.trim()) fields.albumArtist = hidden.albumArtist;
+        // Native edit fields describe the user's actual scrobble. A rendered
+        // link can point at Last.fm's canonical/redirected album instead.
+        const hidden = form && A.editRow(form, page.url, username, true);
+        const fields = hidden || (!form && renderedRow(row, page.url, item));
         if (!fields || norm(fields.artist) !== norm(item.artist) || norm(fields.track) !== norm(item.name)) {
           throw new Error('This track’s scrobble album fields could not be verified.');
         }
@@ -153,12 +143,12 @@
     const fallback = !winner?.album;
     const artist = fallback ? item.artist : winner.artist;
     const album = fallback ? item.name : winner.album;
-    return { ...await albumCover(artist, album, username, signal), fallback, scanned, total, sourceVersion: 2 };
+    return { ...await albumCover(artist, album, username, signal), fallback, scanned, total, sourceVersion: 3 };
   }
   async function forBlankScrobble(item, username, signal) {
     check(signal);
     return { ...await albumCover(item.artist, item.name, username, signal),
-      fallback: true, scanned: 0, total: 0, sourceVersion: 2 };
+      fallback: true, scanned: 0, total: 0, sourceVersion: 3 };
   }
   globalThis.LastfmArtworkSource = Object.freeze({ resolve, forBlankScrobble, clear: () => {
     albumImages.clear(); globalThis.LastfmArtworkAlbums?.clear();
