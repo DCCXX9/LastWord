@@ -21,6 +21,9 @@ const root = path.resolve(__dirname,'..');
   const first=await browser.newPage();
   const second=await browser.newPage();
   await Promise.all([first.goto(`chrome-extension://${id}/options.html`),second.goto(`chrome-extension://${id}/options.html`)]);
+  await first.locator('#profile-status').filter({hasText:'Not connected'}).waitFor();
+  await first.getByLabel('Last.fm username').fill('DCCXX');
+  await first.getByRole('button',{name:'Connect profile',exact:true}).click();
   await first.locator('#profile-status').filter({hasText:'DCCXX'}).waitFor();
   await Promise.all([
    first.evaluate(()=>LastfmStore.mutate([{op:'put',type:'artists',from:'Bladee',to:'BLADEE'}])),
@@ -34,7 +37,7 @@ const root = path.resolve(__dirname,'..');
   assert.equal(Object.keys(data.rules.artists).length,2);
   const albumless=await browser.newPage();
   await albumless.goto(`chrome-extension://${id}/albumless.html`);
-  await albumless.getByText('Future corrections disabled.',{exact:true}).waitFor();
+  await albumless.getByText('Automatic corrections are unavailable in this beta. Saved rules are preserved.',{exact:true}).waitFor();
   assert.equal(await worker.evaluate(async()=>Object.hasOwn(await chrome.storage.local.get(null),'lfmAlbumlessV1')),false,'opening the new page performs no migration or storage write');
   await albumless.getByLabel('Artist',{exact:true}).fill('Albumless artist');
   await albumless.getByLabel('Track',{exact:true}).fill('Albumless song');

@@ -12,7 +12,7 @@ const fields=(original=true)=>`<input name="csrfmiddlewaretoken" value="test-onl
    return r.fulfill({contentType:'text/html',body:`<div class="popup_content"><form method="post" action="/user/DCCXX/library/edit-track">${fields()}<input type="checkbox" name="create_automatic_edit_rule"><button type="submit">Save Edit</button></form></div>`});
   });
   await p.goto('https://www.last.fm/user/DCCXX/library');
-  const w=await mockExtension(p,{settings:{username:'DCCXX',infiniteScroll:false}});
+  const w=await mockExtension(p,{settings:{username:'DCCXX',infiniteScroll:false}},{experimentalAlbumless:true});
   await p.evaluate(()=>document.addEventListener('submit',e=>e.preventDefault()));
   await loadScripts(p,['rules.js','store.js','adapter.js','pages.js','albumless-reader.js','albumless-engine.js','native-edit.js']);
   const remember=p.locator('[data-lfm-remember-albumless]');await remember.waitFor();

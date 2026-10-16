@@ -4,7 +4,7 @@ const own={id:'test',url:'https://www.last.fm/user/DCCXX/library'};
 const settings={username:'DCCXX',infiniteScroll:true};
 (async()=>{
  const legacy={albumlessRules:{old:{since:1}},albumlessScan:{nextPage:94},itunesImportUndo:null,rules:{artists:{},albums:{},tracks:{},albumArtists:{}}};
- const w=createMockWorker({settings,...legacy});
+ const w=createMockWorker({settings,...legacy},{experimentalAlbumless:true});
  const req=(op,values={},sender=own)=>w.request('albumless',{op,username:'DCCXX',...values},sender);
  const initial=await req('read');
  assert.equal(initial.enabled,false); assert.deepEqual(initial.rules,{});assert.equal(w.writes,0);

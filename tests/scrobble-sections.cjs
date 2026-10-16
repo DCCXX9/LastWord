@@ -29,7 +29,7 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
       // Control loading through the public button so assertions don't depend on
       // the observer entering/leaving the viewport between rapid test requests.
       await page.evaluate(() => { window.IntersectionObserver = class { observe() {} disconnect() {} }; });
-      const worker = await mockExtension(page);
+      const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
       await loadScripts(page, scripts);
       await page.getByRole('button', { name: 'Load next page', exact: true }).waitFor();
       const lastInitialRow = page.locator('[data-test-stamp="19"]');
@@ -68,7 +68,7 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
     });
     await page.goto('https://www.last.fm/user/DCCXX/library');
     await page.evaluate(() => { window.IntersectionObserver = class { observe() {} disconnect() {} }; });
-    await mockExtension(page);
+    await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
     await loadScripts(page, scripts);
     await page.getByRole('button', { name: 'Load next page', exact: true }).waitFor();
     await page.evaluate(() => {

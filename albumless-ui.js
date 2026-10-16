@@ -21,9 +21,10 @@
   function render() {
     if(!state)return;
     $('profile-status').textContent='Profile: '+username;
-    $('correction-status').textContent=state.lastError?'Paused: '+state.lastError:state.enabled?'Future corrections enabled.':'Future corrections disabled.';
-    $('toggle-corrections').textContent=state.enabled?'Disable future corrections':'Enable future corrections';
-    $('toggle-corrections').disabled=busy;
+    const available=S.FEATURES.automaticCorrections;
+    $('correction-status').textContent=!available?'Automatic corrections are unavailable in this beta. Saved rules are preserved.':state.lastError?'Paused: '+state.lastError:state.enabled?'Future corrections enabled.':'Future corrections disabled.';
+    $('toggle-corrections').textContent=!available?'Automatic corrections unavailable':state.enabled?'Disable future corrections':'Enable future corrections';
+    $('toggle-corrections').disabled=busy||!available;
     $('library-link').href=`https://www.last.fm/user/${encode(username)}/library#lfm-albumless`;
     const count=Object.keys(state.rules).length;
     $('rule-count').textContent=count+(count===1?' rule':' rules');ruleRows();
@@ -46,17 +47,18 @@
       const line=document.createElement('p'),link=document.createElement('a'),button=document.createElement('button');
       link.href=`https://www.last.fm/user/${encode(username)}/library/music/+noredirect/${encode(a.artist)}/_/${encode(a.track)}`;
       link.target='_blank';link.rel='noopener';link.textContent=`${a.artist} — ${a.track} (${new Date(Number(a.timestamp)*1000).toLocaleString()})`;
-      button.type='button';button.textContent='Allow another attempt';button.disabled=busy;
+      button.type='button';button.textContent=available?'Allow another attempt':'Retries unavailable in beta';button.disabled=busy||!available;
       button.addEventListener('click',()=>{if(confirm('Check this exact play on Last.fm first. Allow one new attempt only if both album fields still need clearing?'))void mutate(scoped=>scoped('dismiss-attempt',{id,token:a.token}),'A new attempt is allowed. Enable future corrections when ready.');});
       line.append(link,' ',button);$('attempts').append(line);
     }
   }
   async function refresh() {
     const current=++revision;
-    try {const snapshot=await S.read(),user=snapshot.settings.username;const next=await S.albumless(user,'read');if(current!==revision)return;if(user!==username)selected.clear();username=user;state=next;render();}
+    try {const snapshot=await S.read(),user=snapshot.settings.username;if(!user){username='';state=null;$('profile-status').textContent='Not connected';message('Connect your Last.fm profile in Settings first.',true);return;}const next=await S.albumless(user,'read');if(current!==revision)return;if(user!==username)selected.clear();username=user;state=next;render();}
     catch(error){message(error.message,true);}
   }
   async function mutate(operation,success) {
+    if(!username||!state)return message('Connect your Last.fm profile in Settings first.',true);
     if(busy)return;busy=true;render();
     const user=username;
     try {state=await operation((op,values)=>S.albumless(user,op,values));message(success);}

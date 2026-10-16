@@ -24,9 +24,9 @@ const dialog=(stamp,wrong=false)=>`<div class="popup_content"><form method="post
   });
   const rule={artist:'Artist',track:'Song',since:now-300};
   const initial={revision:0,enabled:true,rules:{'["artist","song"]':rule},attempts:{},lastError:'',scan:{next:1,total:null,candidates:{},complete:false},check:{next:1,watermark:now-300,target:0}};
-  const worker=createMockWorker({settings:{username:user,infiniteScroll:false},albumlessScan:{nextPage:94},lfmAlbumlessV1:{version:1,profiles:{dccxx:initial}}});
+  const worker=createMockWorker({settings:{username:user,infiniteScroll:false},albumlessScan:{nextPage:94},lfmAlbumlessV1:{version:1,profiles:{dccxx:initial}}},{experimentalAlbumless:true});
   for(const p of pages){
-   await p.goto(base);await mockExtension(p,{}, {worker});
+   await p.goto(base);await mockExtension(p,{}, {worker,experimentalAlbumless:true});
    await loadScripts(p,['rules.js','store.js','adapter.js','albumless-reader.js']);
    // Network pacing itself is checked separately by albumless-transport. Keep
    // the actual DOM contracts, FormData payloads, fetch and worker in this test.

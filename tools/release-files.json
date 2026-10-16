@@ -1,0 +1,10 @@
+[
+  "manifest.json", "background.js", "rules.js", "store.js", "adapter.js",
+  "content.js", "content.css", "pages.js", "native-edit.js", "lfm-ui.css",
+  "artwork.js", "artwork-source.js", "artwork-albums.js",
+  "albumless-store.js", "albumless-reader.js", "albumless-engine.js", "albumless-scan.js",
+  "albumless.html", "albumless-ui.js", "options.html", "options.js",
+  "popup.html", "popup.js", "preferences.html", "preferences.js", "extension-ui.css",
+  "itunes.html", "itunes.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html",
+  "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png"
+]

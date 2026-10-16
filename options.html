@@ -12,12 +12,17 @@
     <span id="profile-status" class="badge">Loading profile…</span>
   </header>
   <main>
+    <section id="setup-notice" class="card setup-notice" aria-labelledby="setup-heading" hidden>
+      <p class="eyebrow">Welcome · Public beta</p><h2 id="setup-heading">Start with your Last.fm profile</h2>
+      <p>Enter your username below. Display preferences and scrolling will apply only to that profile. Your Last.fm password is never needed here.</p>
+      <p>Then import an iTunes library XML or manage your display names. <a href="help.html">Read the quick start →</a></p>
+    </section>
     <section class="card" aria-labelledby="profile-heading">
       <h2 id="profile-heading">Profile &amp; scrolling</h2>
       <p class="subtle">Preferences apply only to your profile in this browser.</p>
       <form id="settings-form">
         <div class="settings-fields">
-          <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" required></div>
+          <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="username-help" required><p id="username-help" class="subtle">Username only, without the profile URL.</p></div>
           <label class="check-label"><input id="infinite" type="checkbox"> Keep scrolling through library pages</label>
         </div>
         <button id="save-settings" class="primary" type="submit">Save settings</button>
@@ -35,7 +40,7 @@
     </section>
     <section class="card" aria-labelledby="albumless-heading">
       <h2 id="albumless-heading">Album-less tracks</h2>
-      <p class="subtle">Remember blank album fields for future plays and review tracks discovered in your own library.</p>
+      <p class="subtle">Review saved album-less rules. Automatic scrobble corrections are unavailable in this beta.</p>
       <p class="settings-link"><a href="albumless.html">Manage album-less rules →</a></p>
     </section>
     <section class="card backup-card" aria-labelledby="backup-heading">
@@ -44,6 +49,7 @@
     </section>
     <p id="message" class="message" role="status" aria-live="polite" tabindex="-1"></p>
   </main>
+  <footer class="app-footer"><span class="beta-label">v0.8.0 beta</span><a href="help.html">Help &amp; limitations</a><a href="privacy.html">Privacy</a><span>Independent extension · Not affiliated with Last.fm</span></footer>
   <dialog id="import-preview" aria-labelledby="import-heading">
     <h2 id="import-heading">Review this backup</h2>
     <p id="import-summary"></p><p id="import-details" class="subtle"></p>

@@ -2,4 +2,5 @@
 test-results/
 node_modules/
 *.log
+dist/
 

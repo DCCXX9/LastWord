@@ -12,12 +12,16 @@
   function render(next) {
     snapshot = next;
     const count = Object.values(next.rules).reduce((n, group) => n + Object.keys(group).length, 0);
-    $('profile').textContent = next.settings.username;
+    $('profile').textContent = next.settings.username || 'Not connected';
+    $('options').textContent = next.settings.username ? 'Settings & backup' : 'Connect your profile';
     $('count').textContent = String(count);
     $('scroll').textContent = next.settings.infiniteScroll === false ? 'Off' :
       status?.ownProfile ? (scrollLabels[status.scrollState] || 'On') : 'On for your library';
     $('status-dot').dataset.state = '';
-    if (!status) {
+    if (!next.settings.username) {
+      $('active-status').textContent = 'Connect your profile';
+      $('page-detail').textContent = 'Enter your Last.fm username in Settings to get started. Your password is not needed.';
+    } else if (!status) {
       $('active-status').textContent = 'Waiting for your library';
       $('page-detail').textContent = 'Open your Last.fm profile. If it is already open, refresh that tab after reloading the extension.';
     } else if (status.rateLimited) {

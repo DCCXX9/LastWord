@@ -68,7 +68,7 @@ const profileSender = { id: 'test', url: 'https://www.last.fm/user/DCCXX/library
   const fresh = await worker.request('backup');
   assert.equal(fresh.settings.infiniteScroll, false, 'export must use current storage');
   const initial = createMockWorker();
-  assert.deepEqual((await initial.request('read')).settings, { username: 'DCCXX', infiniteScroll: true });
+  assert.deepEqual((await initial.request('read')).settings, { username: '', infiniteScroll: true });
   assert.equal(initial.writes, 0, 'startup defaults must not migrate or initialize storage');
   assert.deepEqual(initial.data, {});
   console.log('PASS: serialized writes, conflict-safe undo/import, atomic validation, fresh backup, legacy data and profile boundaries');

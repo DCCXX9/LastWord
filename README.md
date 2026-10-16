@@ -1,7 +1,19 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.7.0**.
+Last.fm profile. Installed candidate: **v0.8.0 beta**.
+
+## Public beta candidate
+
+Fresh installations start disconnected and open profile setup. Existing saved
+profiles and records are retained. Automatic album-less corrections and native
+rule capture are unavailable in this beta, including for previously enabled
+records. Manual Last.fm editing and local display preferences remain available.
+
+The local ZIP, original store assets, static download site and submission draft
+are prepared by `tools/package-beta.cjs`. See [release/PUBLISHING.md](release/PUBLISHING.md)
+for delivery, publication gates and the one Reload test. Nothing has been publicly
+uploaded or submitted; signed-in acceptance is still pending.
 
 ## Updating this installed copy
 
@@ -82,7 +94,7 @@ Already-started modules are reused, retaining early cached artwork application.
   ignoring case; they do not map different spellings or renamed artists.
 
 - **Personal display names:** case-sensitive preferred names for artists,
-  albums and tracks, applied only to your configured profile (default DCCXX).
+  albums and tracks, applied only to your explicitly configured profile.
   Links, library headings and rows update immediately when preferences change.
 - **Native editing:** Edit track is first in album-track menus. It checks at
   most three track-history pages, then delegates to Last.fm's native dialog
@@ -125,42 +137,27 @@ Already-started modules are reused, retaining early cached artwork application.
   Copy diagnostics with version, feature status and counts. It excludes
   scrobble titles, form values and security tokens.
 
-## Album-less rules
+## Album-less rules in this beta
 
-Open **Settings and backup → Album-less tracks**. Export JSON first, review your
-rules, then explicitly enable future corrections. They start disabled. Existing
-display preferences, XML undo and old scan records are preserved in their own keys;
-the new page does not migrate or activate legacy rules/progress.
+Automatic correction and capture are unavailable in v0.8.0, even if saved records
+from an earlier version were enabled. They cannot reserve or submit a correction.
+Existing records are preserved without migration. The retained experimental
+algorithm is tested separately with an explicit test-only override; those checks
+do not mean that beta automation is available or signed-in verified.
 
-- In Last.fm's normal track editor, clear both album fields and tick the new
-  **Remember blank album and album artist…** box before Save Edit. The extension
-  saves a rule only after reading back that exact play with both fields blank.
-  A rejected/unconfirmed edit saves no rule. Alternatively, add an artist/track
-  manually in Album-less rules.
-- Rules match artist and track ignoring case. Only plays timestamped after the
-  rule was saved qualify. Corrections use Last.fm's native named form, remove
-  bulk/automatic-edit flags, retain artist/title, and verify the exact play after
-  saving. Older scrobbles are never corrected by these rules.
-- Keep a visible tab on your connected Last.fm profile. Recent plays are checked
-  every five minutes, at most three library pages per check. Catch-up progress
-  persists between checks. This browser extension cannot correct plays while
-  Supermium is closed or all matching tabs are hidden.
-- **Open discovery and recent-play checks** offers read-only discovery, up to
-  20 pages per manually started batch, at least 12 seconds apart. It pauses after
-  each batch or unexpected response and never skips a page or retries itself.
-  Review the distinct candidates and tick tracks before remembering rules.
-  **Review loaded plays** needs no extra page requests. A 4,332-page library
-  remains expensive; this is not an unattended full-history crawler.
-- All requests share the artwork/scrolling network lock and persistent rate-limit
-  stop. After a break, **Resume requests after a break** clears the stop without
-  starting discovery. Last.fm has not certified any request rate as safe.
-- A durable attempt record prevents duplicate saves across tabs/reloads. An
-  uncertain write disables corrections and is never replayed automatically.
-  Review its exact play before allowing another attempt. Disabling or deleting
-  a rule affects future processing; it does not reverse a confirmed Last.fm edit.
+Open **Settings and backup → Album-less tracks** to review/search/delete saved
+rules or add a track for later use. Export JSON before modifying saved records.
+A saved rule does not change any Last.fm play in this version.
 
-No signed-in edits or whole-library scans were performed while building v0.7.0.
-The normal dialog and one future-play correction remain live acceptance checks.
+Optional read-only discovery checks at most 20 pages per manually started batch,
+at least 12 seconds apart. It pauses on unexpected responses or rate limits and
+never skips a page or retries itself. Review the distinct candidates before
+remembering them. **Review loaded plays** needs no extra page requests. A large
+library remains expensive; this is not an unattended full-history crawler.
+Requests share the artwork/scrolling lock and persistent rate-limit stop.
+
+Normal scrobble edits still use Last.fm's editor when you explicitly submit it.
+No signed-in edits or whole-library scans were performed during beta preparation.
 
 ## Verification
 
@@ -212,7 +209,8 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
 `tests/scroll-toggle.cjs`, `tests/artwork-authority.cjs`, `tests/native-submit.cjs`,
 `tests/albumless-store.cjs`, `tests/albumless-transport.cjs`, `tests/albumless-flow.cjs`,
-`tests/albumless-capture.cjs`, `tests/albumless-scan.cjs`, `tests/albumless-ui.cjs`.
+`tests/albumless-capture.cjs`, `tests/albumless-scan.cjs`, `tests/albumless-ui.cjs`,
+`tests/beta-store.cjs`, `tests/beta-onboarding.cjs`, `tests/release.cjs`, `tests/release-site.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation,
 then verifies that the required Last.fm refresh activates the features. Reloading
@@ -222,6 +220,11 @@ and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The v0.8.0 beta starts from `7de6c8d` (v0.7.0). Its source changes do not migrate
+user data. Returning to an earlier version can reactivate a previously enabled
+automation record: disable corrections in that version before browsing Last.fm.
+Export JSON first; do not uninstall the extension or clear storage.
 
 The v0.7.0 finishing work starts from `2180539` (v0.6.15). Source rollback leaves
 the separate `lfmAlbumlessV1` records and all earlier storage intact. Disable future

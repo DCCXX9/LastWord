@@ -8,7 +8,8 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
 });
 (async()=>{
  const rules=empty(); rules.artists['["bladee"]']={from:'Bladee',to:'BLADEE'};
- const worker=createMockWorker({rules,legacyScan:{page:93}});
+ const settings={username:'DCCXX',infiniteScroll:true};
+ const worker=createMockWorker({settings,rules,legacyScan:{page:93}});
  const apply=entries=>worker.request('itunes-apply',{entries,username:'DCCXX'});
  const result=await apply([entry('bladee',rules.artists['["bladee"]']),entry('ecco2k'),entry('Hold Me',null,'tracks','Ecco2k')]);
  assert.equal(result.applied,3);
@@ -52,9 +53,9 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
  assert.equal(Object.keys(fresh.data.rules.tracks).length,2500);
  await worker.request('replace',{backup,expectedSnapshot:await worker.request('read')});
  assert.equal((await worker.request('itunes-status')).batch,null,'full restore also invalidates an existing active undo action');
- const failure=createMockWorker();
+ const failure=createMockWorker({settings});
  failure.chrome.storage.local.set=async()=>{throw new Error('QUOTA_BYTES quota exceeded');};
  await assert.rejects(failure.request('itunes-apply',{entries:[entry('Test')],username:'DCCXX'}),/storage/);
- assert.deepEqual(failure.data,{},'failed storage write leaves rules and undo untouched');
+ assert.deepEqual(failure.data,{settings},'failed storage write leaves rules and undo untouched');
  console.log('PASS: exact casing, atomic import, persistent selective revert, later edits, conflicts, 2500 tracks, backup and quota failure');
 })().catch(error=>{console.error(error);process.exitCode=1});

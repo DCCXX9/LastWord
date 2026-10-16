@@ -1,6 +1,7 @@
-# Current state — 15 October 2026
+# Current state — 17 October 2026
 
-Installed candidate: **v0.7.0**, branch preferences-page.
+Installed candidate: **v0.8.0 beta**, branch preferences-page.
+Beta preparation baseline: 7de6c8d (v0.7.0).
 Finishing baseline: 2180539 (v0.6.15).
 Scrolling reactivation baseline: c4c0270 (v0.6.14).
 Interaction/history baseline: 7366f06 (v0.6.13).
@@ -11,6 +12,45 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Public beta candidate (v0.8.0)
+
+Jay authorised unassisted beta preparation with one version to Reload and test;
+he will arrange the developer account. No public upload or submission was made.
+
+Fresh installs now start disconnected and offer profile setup; existing settings
+still retain DCCXX or the user's configured profile. XML selection waits for a
+profile. Existing preferences, XML undo, artwork and legacy discovery records
+are not migrated or reset. Automatic album-less correction and native capture
+are unavailable in this beta. Both content and worker guards enforce this even
+when an older saved enabled flag is true; saved records remain reviewable.
+
+Original icons, local Help/Privacy, beta/version links, store text and three
+1280 × 800 UI screenshots with fictional metadata are prepared. The static
+download/privacy site is assembled in dist/site, with no external dependencies.
+It was visually checked at desktop/mobile widths. Runtime distribution uses
+an explicit 36-file allowlist, manifest at the ZIP root and per-file SHA-256.
+The ZIP was independently expanded by Windows and every file hash verified.
+The extracted package passed an actual isolated-extension installation check.
+
+Combined gate: 36/38 passed initially. Artwork-extension and one library-scroll
+fixture still assumed the old DCCXX default and timed out while disconnected.
+Both fixtures now explicitly configure their intended profile and passed the
+focused two-suite check; scroll-history fixtures were updated on the same basis
+before their combined-run check. All 38 suites are verified. Initial failures
+remain in test-results/v080-combined.log; focused and extracted-package logs are
+v080-fixture-check.log and v080-extracted-install.log. Experimental album-less
+algorithm tests explicitly override the beta gate in the test harness only.
+
+Delivery: dist/lastfm-personal-library-0.8.0-beta.zip and matching checksum/audit;
+release/PUBLISHING.md, STORE-LISTING.md and NOTES.md describe the handover.
+The checksum is e1465f04d4bf25fcaf9b31cf691f76e391558d72d0d784701c3d8e7754617397.
+Website address, real publisher/support information, live acceptance and store
+submission remain publication gates. Jay's signed-in browser/storage was not
+accessed. Export JSON, Reload the existing extension, then refresh Last.fm.
+Cold artwork still needs paced requests; native editing/artwork need live testing.
+Source rollback is 7de6c8d; an older enabled correction flag can become active
+again in that version, so review/disable it before browsing after a rollback.
 
 ## Artwork, native editing and album-less rules (v0.7.0)
 

@@ -49,6 +49,10 @@
     const state=validate(has(root.profiles,user) ? structuredClone(root.profiles[user]) : empty());
     const {op}=message;
     if(op==='read') return state;
+    if (!LastfmStore.FEATURES.automaticCorrections &&
+        (op === 'reserve' || op === 'configure' && message.enabled === true)) {
+      throw new Error('Automatic scrobble corrections are unavailable in this beta. Saved rules are preserved.');
+    }
     if (['configure','delete','dismiss-attempt'].includes(op) && !extensionPage) {
       throw new Error('Use the album-less settings page for this action.');
     }

@@ -20,7 +20,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
     return route.fulfill({contentType:'text/html',body:html(next?2:1,!next)});
    });
    await page.goto('https://www.last.fm/user/DCCXX'+view);
-   const worker = await mockExtension(page);
+   const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
    await loadScripts(page,scripts);
    await page.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===2)
      .catch(async error => { console.error(view, await page.locator('body').innerText()); throw error; });
@@ -39,7 +39,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
   await redraw.route('https://www.last.fm/**',route=>route.fulfill({contentType:'text/html',body:html(1)}));
   await redraw.goto('https://www.last.fm/user/DCCXX/library/albums');
   await redraw.evaluate(()=>{window.IntersectionObserver=class {observe(){} disconnect(){}};});
-  await mockExtension(redraw);
+  await mockExtension(redraw, {settings:{username:'DCCXX',infiniteScroll:true}});
   await loadScripts(redraw,scripts);
   await redraw.getByRole('button',{name:'Load next page',exact:true}).waitFor();
   await redraw.evaluate(()=>{
@@ -59,7 +59,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
    return route.fulfill({contentType:'text/html',body:html(1)});
   });
   await page.goto('https://www.last.fm/user/DCCXX/library');
-  const worker = await mockExtension(page);
+  const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
   await loadScripts(page,scripts);
   await page.getByText(/Last.fm asked for a break/).waitFor();
   assert.equal(requests,1);

@@ -1,0 +1,65 @@
+# Public beta preparation
+
+Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
+Candidate: v0.8.0 beta. One candidate for Jay's Reload and the public package.
+
+## Scope
+
+- Fresh installs start disconnected. Connecting a profile activates only its own
+  pages; existing configured profiles, rules, XML undo and scan records survive.
+- Package display names, XML review/apply/revert, scrolling and personal artwork.
+  Normal edits still use Last.fm. Automatic album-less scrobble corrections are
+  unavailable in this beta, including for previously enabled saved records.
+  Preserve those records for later review; do not migrate or erase them.
+- Add original icons, local help/privacy pages, store copy, actual settings/XML
+  screenshots with fictional demo metadata, a small promotional image and a
+  static beta download page. No Last.fm logos, third-party cover art or analytics.
+- Build an explicit allowlist ZIP with manifest at its root, verify its contents
+  and SHA-256, and test the extracted package in an isolated browser profile.
+
+Owners: defaults/worker, settings/popup/import UI, beta automation guards,
+manifest/assets/help/privacy, release tools/site, affected tests and docs.
+No public upload, account submission, purchase, new permissions, signed-in writes,
+user profile file access, broad history scan or licence grant is authorised here.
+
+## Acceptance
+
+1. Fresh install has no profile, writes no initial data and changes no Last.fm page.
+2. Explicit profile setup enables its pages and never friends' profiles.
+3. Existing stored data survives update/navigation unchanged; JSON export remains
+   available. No change to the installed path, extension key or permission set.
+4. Saved enabled automation cannot start a correction or reserve a write in beta.
+5. Package references are complete, runtime code is local and private working
+   files, tests, logs, browser state, backups and user XML are excluded.
+6. Focused regressions, one combined gate, extracted-package install and visual
+   checks pass. Signed-in Last.fm remains Jay's final acceptance check.
+
+## Delivery
+
+Local candidate and release materials only. Website/privacy URL, support channel,
+publisher details, live acceptance and store submission remain publication gates.
+Do not invent a publisher identity or claim a public URL already exists.
+
+## Verified candidate
+
+- 38 suites verified: initial combined 36/38, then two corrected fixture checks
+  passed. The failures relied on the removed implicit DCCXX default; profile
+  setup is now explicit in those fixtures. No runtime default was restored.
+- Fresh actual-extension setup, own/friend isolation, XML gating and preserved
+  previously enabled/legacy records pass. No automatic requests or POSTs occur.
+- Independent Windows ZIP extraction verifies the exact 36-file set and all
+  file/ZIP SHA-256 values. Actual extracted-package onboarding/isolation and
+  preservation checks pass in a separate disposable browser profile.
+- Local screenshots, original icons/promotional tile and assembled site were
+  inspected. Site/privacy checks cover 1280px and 390px widths, all local links,
+  image loading, horizontal fit and absence of external requests.
+- ZIP: 233,863 bytes; SHA-256
+  `e1465f04d4bf25fcaf9b31cf691f76e391558d72d0d784701c3d8e7754617397`.
+- Nothing was published. No user storage was inspected/cleared/migrated and no
+  signed-in scrobble edit or full-history scan was performed. The isolated checks
+  do not certify the current signed-in Last.fm layout or account flows.
+
+Logs remain under ignored test-results. Runtime package and site are under
+ignored dist; regenerate with tools/package-beta.cjs. Source rollback: 7de6c8d.
+An older saved enabled automation flag may reactivate on rollback; review it in
+that older version before browsing. Current beta guards leave it inert.

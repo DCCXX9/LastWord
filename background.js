@@ -30,7 +30,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
 
   function validSettings(value) {
     if (!object(value) || typeof value.username !== 'string' ||
-        !/^[^/\\\s?#]+$/.test(value.username) ||
+        !/^(?:[^/\\\s?#]+)?$/.test(value.username) ||
         typeof value.infiniteScroll !== 'boolean' ||
         Object.keys(value).some(key => !owns(defaults, key))) {
       throw new Error('Enter a valid Last.fm username and scrolling setting.');
@@ -245,6 +245,9 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
     const stored = await chrome.storage.local.get(null);
     const current = snapshot(stored);
     authorize(sender, message.action, current);
+    if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put', 'albumless'].includes(message.action)) {
+      throw new Error('Connect your Last.fm profile in Settings first.');
+    }
     if (message.action === 'albumless') return LastfmAlbumlessStore.execute(message, current, stored,
       sender.url === `chrome-extension://${chrome.runtime.id}/albumless.html`);
     if (message.action === 'read') return current;
@@ -312,5 +315,12 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
     queue = pending.catch(() => {});
     pending.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
     return true;
+  });
+  // Only a fresh installation opens setup. Updates never interrupt existing tabs
+  // or initialise/migrate saved settings, rules, XML undo or discovery records.
+  chrome.runtime.onInstalled?.addListener(async details => {
+    if (details.reason !== 'install') return;
+    const stored = await chrome.storage.local.get('settings');
+    if (!stored.settings?.username) await chrome.runtime.openOptionsPage();
   });
 })();

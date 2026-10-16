@@ -19,7 +19,7 @@ const row = `<tr class="chartlist-row"><td class="chartlist-image"><a href="/mus
       return route.fulfill({ body:`<div class="cover-art"><img src="${image}"></div>` });
     });
     await page.goto(url);
-    await mockExtension(page);
+    await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
     await page.evaluate(() => { let t=Date.now(); Date.now=()=>t+=2000; });
     await loadScripts(page,['rules.js','store.js','adapter.js','pages.js','artwork-source.js']);
     const selected = await page.evaluate(item=>LastfmArtworkSource.resolve(item,'DCCXX'),item);

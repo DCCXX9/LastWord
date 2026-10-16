@@ -22,7 +22,7 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
       window.IntersectionObserver = class { observe() {} disconnect() {} };
       let time = Date.now(); Date.now = () => time += 2000;
     });
-    const worker = await mockExtension(page, { albumlessScanDraft: { pages: 93 } });
+    const worker = await mockExtension(page, { settings:{username:'DCCXX',infiniteScroll:true}, albumlessScanDraft: { pages: 93 } });
     await loadScripts(page, scripts);
     await page.getByRole('button', { name: 'Load next page', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 2 &&
@@ -58,7 +58,7 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
       window.IntersectionObserver = class { observe() {} disconnect() {} };
       let time = Date.now(); Date.now = () => time += 2000;
     });
-    await mockExtension(pending);
+    await mockExtension(pending, {settings:{username:'DCCXX',infiniteScroll:true}});
     await loadScripts(pending, scripts);
     await pending.getByRole('button', { name: 'Load next page', exact: true }).click();
     await pending.waitForRequest(request => request.url().includes('page=2'));

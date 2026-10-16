@@ -17,7 +17,10 @@
   }
   function accept(next) {
     snapshot = next;
-    $('profile-status').textContent = 'Profile: ' + next.settings.username;
+    const connected = !!next.settings.username;
+    $('profile-status').textContent = connected ? 'Profile: ' + next.settings.username : 'Not connected';
+    $('setup-notice').hidden = connected;
+    $('save-settings').textContent = connected ? 'Save settings' : 'Connect profile';
     const total = count(next.rules);
     $('count').textContent = total.toLocaleString() + (total === 1 ? ' preference' : ' preferences');
     if (!settingsDirty) {
@@ -33,7 +36,7 @@
     event.preventDefault();
     if ($('save-settings').disabled) return;
     const username = $('username').value.trim();
-    if (!/^[^/\s?#]+$/.test(username)) return message('Enter a valid Last.fm username.', true);
+    if (!/^[^/\\\s?#]+$/.test(username)) return message('Enter your Last.fm username, rather than a profile URL.', true);
     const revision = settingsRevision;
     $('save-settings').disabled = true;
     try {

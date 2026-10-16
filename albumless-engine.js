@@ -1,6 +1,11 @@
 (() => {
   'use strict';
   const A=LastfmAdapter, S=LastfmStore, D=LastfmAlbumlessReader;
+  if (!S.FEATURES.automaticCorrections) {
+    globalThis.LastfmAlbumless=Object.freeze({capture() {},checkNow:async()=>{},
+      status:()=>({available:false,checking:false,message:'Automatic corrections are unavailable in this beta.'})});
+    return;
+  }
   const INTERVAL=12000;
   let username='', generation=0, running=null, lastMessage='', currentUrl=location.href;
   const captures=new WeakMap();

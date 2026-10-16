@@ -14,7 +14,7 @@
   }
   function setBusy(value) {
     busy = value;
-    $('xml-file').disabled = value || !snapshot;
+    $('xml-file').disabled = value || !snapshot?.settings.username;
     for (const id of ['refresh-review', 'select-filtered', 'clear-filtered', 'select-all', 'clear-all', 'revert']) $(id).disabled = value;
     $('apply').disabled = value || stale || !selected().length;
   }
@@ -107,7 +107,8 @@
   async function refreshSaved() {
     const [next, status] = await Promise.all([S.read(), S.itunesStatus()]);
     snapshot = next; showBatch(status.batch);
-    $('profile-status').textContent = 'Profile: ' + snapshot.settings.username;
+    $('profile-status').textContent = snapshot.settings.username ? 'Profile: ' + snapshot.settings.username : 'Not connected';
+    if (!snapshot.settings.username) message('Connect your Last.fm profile in Settings before importing XML.', true);
   }
   function showIssues(scan) {
     $('issues-list').replaceChildren();
@@ -213,7 +214,8 @@
     } finally { setBusy(false); if (result) draw(); }
   });
   S.subscribe(next => {
-    snapshot = next; $('profile-status').textContent = 'Profile: ' + next.settings.username;
+    snapshot = next; $('profile-status').textContent = next.settings.username ? 'Profile: ' + next.settings.username : 'Not connected';
+    setBusy(busy);
     if (result && !busy) {
       stale = reviewProfile !== next.settings.username || entries.some(entry => !equal(entry.expected, next.rules[entry.type]?.[entry.id]));
       updateSummary();

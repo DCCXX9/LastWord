@@ -50,6 +50,15 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 17 October, separately authorised public beta preparation: v0.8.0 starts fresh
+  installs disconnected, retains existing data and hard-disables corrections/
+  capture without migrating saved records. Local help/privacy, original assets,
+  store materials, static site and a verified 36-file ZIP are ready. All 38
+  suites are verified (36 initial passes plus two explicit-profile fixture
+  corrections), with an independent extracted-package check. Signed-in testing
+  and public publisher/support URLs remain pending. See BETA.md and CURRENT.md.
+  The old maintenance/reset heartbeat remains paused; no new queue was opened.
+
 - v0.6.13: settings saves preserve edits typed while the earlier save finishes.
   A failing browser regression reproduced the lost text/checkbox draft first.
 - Artwork refreshes share one artist/album context read. A paired 200-song fixture
