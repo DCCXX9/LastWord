@@ -1,4 +1,18 @@
-# v0.8.1 beta candidate
+# v0.8.2 beta candidate
+
+Artist Tracks correction prepared from `c4ef360` (v0.8.1 beta) in the existing
+installed folder. Artwork lookup now accepts a native tagged album when its
+album-artist field is omitted, using the track artist in that case. Raw tags
+still take precedence over redirected album links, and the most-scrobbled
+album wins across releases. Native edit validation is unchanged.
+
+The regression covers a blank rank-42 cover on an artist's full Tracks list,
+later appended rows, mixed album counts, correct cover links and cached revisits.
+This is a reproduced parser defect, not confirmation of Jay's current signed-in
+markup: public read-only inspection returned Last.fm's Client Challenge. One
+Reload and normal page refresh remains the live acceptance check.
+
+## Included v0.8.1 changes
 
 Album-view correction prepared from `b391802` (v0.8.0 beta) on
 `preferences-page`, in the existing installed folder.

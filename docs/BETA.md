@@ -1,7 +1,34 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.8.1 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.8.2 beta. One candidate for Jay's Reload and the public package.
+
+## v0.8.2 artist Tracks follow-up
+
+Baseline c4ef360 (v0.8.1 beta), initially clean installed checkout. Scope:
+read-only native album parsing, a full artist Tracks regression, version labels,
+release notes and regenerated package. Native write validation stays strict.
+The regression failed with the exact scrobble-field verification error before
+the correction and passes afterward, covering rank 42 and a later appended row.
+The test also checks raw tag authority, mixed album counts, painted covers and
+album links, duplicate-field refusal, unchanged preferences and cached revisits.
+Public responses were Client Challenges; actual signed-in markup is unverified.
+
+All 40 suites verified: combined 39/40, then the artwork suite passed its focused
+rerun after its obsolete missing-album-artist negative fixture was changed to a
+missing-album fixture. The missing-album refusal still passes; the new positive
+artist Tracks regression and all other combined suites passed. Logs:
+test-results/v082-combined.log, v082-artwork-contract.log and
+v082-artist-tracks.log (initial failure: v082-before.log).
+Windows independently extracted and verified all 36 files against the audit
+and tested source. ZIP: 236,622 bytes; SHA-256
+`028024b41dc85f11da6b3c01f8d391b6d8fb46dca02b6aef371565a05f745516`.
+Report: test-results/v082-package-verification.json.
+The extracted package passed actual isolated-extension onboarding, profile
+isolation, preserved-record and no-automatic-write checks (1/1 suite). Log:
+test-results/v082-extracted-install.log.
+No user data was accessed or migrated; no signed-in writes or public upload.
+Rollback source: c4ef360.
 
 ## v0.8.1 album-view follow-up
 

@@ -29,6 +29,17 @@
     return { artist: track.artist, track: track.name, album: album?.name || '',
       albumArtist: album?.artist || '', timestamp: time || 'id:' + id };
   }
+  function taggedRow(form, base, username) {
+    const fields = A.editRow(form, base, username, true);
+    if (fields) return fields;
+    // Artwork can read a tagged album without an album-artist tag. Validate a
+    // detached copy so write callers and the page's native form remain strict.
+    const names = [...form.elements].map(field => field.name);
+    if (names.filter(name => name === 'album_name').length !== 1 || names.includes('album_artist_name')) return null;
+    const copy = form.cloneNode(true), empty = copy.ownerDocument.createElement('input');
+    empty.name = 'album_artist_name'; empty.value = ''; copy.append(empty);
+    return A.editRow(copy, base, username, true);
+  }
 
   async function albumCover(artist, album, username, signal) {
     const url = `${location.origin}/music/${encode(artist)}/${encode(album)}`;
@@ -111,7 +122,7 @@
         const form = row.querySelector('form[data-edit-scrobble]');
         // Native edit fields describe the user's actual scrobble. A rendered
         // link can point at Last.fm's canonical/redirected album instead.
-        const hidden = form && A.editRow(form, page.url, username, true);
+        const hidden = form && taggedRow(form, page.url, username);
         const fields = hidden || (!form && renderedRow(row, page.url, item));
         if (!fields || norm(fields.artist) !== norm(item.artist) || norm(fields.track) !== norm(item.name)) {
           throw new Error('This track’s scrobble album fields could not be verified.');

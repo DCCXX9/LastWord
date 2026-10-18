@@ -1,6 +1,7 @@
 # Current state — 18 October 2026
 
-Installed candidate: **v0.8.1 beta**, branch preferences-page.
+Installed candidate: **v0.8.2 beta**, branch preferences-page.
+Artist Tracks correction baseline: c4ef360 (v0.8.1 beta).
 Album-view correction baseline: b391802 (v0.8.0 beta).
 Beta preparation baseline: 7de6c8d (v0.7.0).
 Finishing baseline: 2180539 (v0.6.15).
@@ -13,6 +14,36 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Artist Tracks artwork (v0.8.2)
+
+Jay reported a blank FiGure5 [INTERLUDE] cover on Homixide Gang's full Tracks
+list despite 12 scrobbles tagged I5U5WE5. Public page inspection returned a
+Client Challenge. A targeted regression reproduces the parser's rejection
+when a native album tag is present but the album-artist tag is omitted.
+
+Read-only lookup now validates a detached form copy with an empty album artist,
+then uses the track artist for the tagged album. Raw tags remain authoritative;
+malformed/duplicate fields still fail and native edit validation is unchanged.
+The regression verifies rank 42, a later appended mixed-album row, actual image
+loading and links, shared cover reuse, preference preservation and a cached
+offscreen revisit without requests. Album-view behavior remains unchanged.
+
+All 40 suites verified: the combined run passed 39/40; artwork's old negative
+fixture still required the now-optional album-artist tag. That fixture now omits
+the album tag instead, retaining the missing-album refusal check. Its focused
+rerun passed (1/1). The new artist Tracks regression passed before that rerun;
+all other combined suites, including actual extension injection, passed.
+Independent Windows extraction verified all 36 runtime files against the audit
+and tested source. ZIP: 236,622 bytes; SHA-256
+028024b41dc85f11da6b3c01f8d391b6d8fb46dca02b6aef371565a05f745516.
+Logs: test-results/v082-before.log, v082-artist-tracks.log, v082-combined.log,
+v082-artwork-contract.log and v082-package-verification.json.
+The extracted ZIP passed actual isolated-extension onboarding, profile/record
+preservation and no-automatic-write checks (1/1 suite); log:
+test-results/v082-extracted-install.log.
+Signed-in acceptance remains pending; no Console diagnostics are requested.
+Rollback source: c4ef360. No identity, permissions or storage formats changed.
 
 ## Album-view artwork (v0.8.1)
 

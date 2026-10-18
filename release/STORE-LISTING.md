@@ -1,4 +1,4 @@
-# Store listing draft · v0.8.1 beta
+# Store listing draft · v0.8.2 beta
 
 Prepared for review, not submitted. Publisher account, public URLs and support
 details must be supplied before publication. Do not enter invented details.
@@ -46,7 +46,7 @@ Independent project. Not affiliated with or endorsed by Last.fm or Apple.
 
 ## Assets
 
-- Extension ZIP: `dist/lastfm-personal-library-0.8.1-beta.zip`
+- Extension ZIP: `dist/lastfm-personal-library-0.8.2-beta.zip`
 - Icon: `release/assets/icon128.png` (128 × 128 PNG)
 - Small promotional tile: `release/assets/promo440.png` (440 × 280 PNG)
 - Screenshots: `release/assets/setup.png`, `preferences.png`, `xml-review.png`

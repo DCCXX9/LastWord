@@ -2,26 +2,28 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.8.1 beta**. Keep it in place.
+The installed folder already contains **v0.8.2 beta**. Keep it in place.
 
 1. Export JSON from the extension's Settings and backup page.
 2. Click Reload on the existing extension card in `chrome://extensions`.
 3. Refresh Last.fm once. Do not uninstall or load a second folder.
-4. Open your DANGEROUS SUMMER album library page. Its track covers and their
-   links should all match the album header without waiting for history lookups.
+4. Open Homixide Gang's full library Tracks list and scroll to FiGure5
+   [INTERLUDE]. Its cover and image link should use I5U5WE5. Other tracks use
+   their own most-scrobbled albums, including rows loaded further down.
 
 No Console commands are needed. A screenshot or ordinary description of any
 remaining problem is enough. Cold artwork still needs Last.fm requests; this
-candidate reuses an album view's existing header immediately, while other new
-track covers can still require requests. Signed-in results
+candidate repairs an artwork parser rejection when album-artist tags are omitted.
+Album views still reuse their header immediately; new track covers can require
+requests, while saved winners apply without discovery. Signed-in results
 are not certified by the isolated regression tests.
 
 ## Prepared local outputs
 
 | Output | Path relative to project |
 | --- | --- |
-| Upload / download ZIP | `dist/lastfm-personal-library-0.8.1-beta.zip` |
-| ZIP checksum | `dist/lastfm-personal-library-0.8.1-beta.zip.sha256` |
+| Upload / download ZIP | `dist/lastfm-personal-library-0.8.2-beta.zip` |
+| ZIP checksum | `dist/lastfm-personal-library-0.8.2-beta.zip.sha256` |
 | Per-file audit | `dist/package-manifest.json` |
 | Static website including download and privacy page | `dist/site/` |
 | Store copy and review instructions | `release/STORE-LISTING.md` |

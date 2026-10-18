@@ -29,7 +29,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
    [compilation.name]:[history(compilation,3,[['Mix','Various Artists',3],['Mix','Various Artists',2],['Solo','Singer',1]])],
    [incomplete.name]:[history(incomplete,7,[['Recent','',3],['Older','',2],['Older','',1]])],
    [tied.name]:[history(tied,4,[['Latest','',4],['Other','',3],['Other','',2],['Latest','',1]])],
-   [malformed.name]:[history(malformed,1,[['Album','',1]]).replace('name="album_artist_name"','name="unexpected_field"')],
+   [malformed.name]:[history(malformed,1,[['Album','',1]]).replace('name="album_name"','name="unexpected_field"')],
    // Captured public layout: album column + stable scrobble ids, no edit forms.
    '2024':[`<!doctype html><main class="col-main"><p class="metadata-display">63</p><table class="chartlist"><tbody>${Array.from({length:50},(_,i)=>`<tr class="chartlist-row" data-edit-scrobble-id="${i.toString(16).padStart(32,'0')}"><td class="chartlist-name"><a href="/music/Playboi+Carti/_/2024">2024</a></td><td class="chartlist-album"><a href="/music/Playboi+Carti/MUSIC">MUSIC</a></td></tr>`).join('')}</tbody></table><nav class="pagination"><a class="pagination-next" href="?page=2">Next</a></nav></main>`]
   };
@@ -79,7 +79,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   const missing=await page.evaluate(async item=>{try{await LastfmArtworkSource.resolve(item,'DCCXX');return '';}catch(e){return e.message;}},incomplete);
   assert.match(missing,/complete track history/,'an incomplete history must never be treated as an all-time winner');
   const bad=await page.evaluate(async item=>{try{await LastfmArtworkSource.resolve(item,'DCCXX');return '';}catch(e){return e.message;}},malformed);
-  assert.match(bad,/album fields/,'missing source fields must never be guessed from a global image');
+  assert.match(bad,/album fields/,'a missing album tag with an album-artist field must never be guessed from a global image');
   const beforeAbort=calls.length;
   const aborted=await page.evaluate(async item=>{const c=new AbortController();c.abort();try{await LastfmArtworkSource.resolve(item,'DCCXX',c.signal);return '';}catch(e){return e.name;}},myron);
   assert.equal(aborted,'AbortError'); assert.equal(calls.length,beforeAbort);
