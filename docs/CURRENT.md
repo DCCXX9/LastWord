@@ -16,6 +16,28 @@ Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
 
+## Unresolved live artwork follow-up
+
+Jay still sees blank covers around ranks 42/53/55/57 after infinite scrolling.
+Investigation baseline: 8beff8c. No runtime correction or new release is claimed.
+The actual-extension scrolling fixture now uses 101 distinct uncached tracks
+instead of one repeated cached track. It exercises ordinary competing jobs as
+well as the initial/imported placeholders and temporary-response recovery.
+The focused actual-extension test passed (1/1, 35.165 seconds); log:
+test-results/v084-uncached-scrolling.log. This does not reproduce the live fault.
+
+The public full Tracks page is accessible and supplies the generic placeholder
+for FiGure5 [INTERLUDE]. In its real CSS the hidden image remains a 32px box and
+IntersectionObserver reports it intersecting, ruling out that simple visibility
+hypothesis. Public history and artist-detail fetches return HTTP 600; they do not
+show the signed-in failure. Native Computer Use lists Supermium but window
+binding fails: "window id ... no longer belongs to Chrome; current owner is
+Chrome". No native app input was sent. Jay asked us to collect the popup result
+ourselves; the alternate browser connection also failed to answer within a
+bounded 20-second check. No additional Console/reload homework is requested.
+Runtime work waits for direct evidence of the failing queue/reader step.
+Signed-in acceptance is open; installed runtime remains v0.8.3.
+
 ## Scrolling/artwork recovery (v0.8.3)
 
 Jay reports blanks after infinite scrolling starts. The real page-2/page-3

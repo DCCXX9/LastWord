@@ -11,7 +11,7 @@ const cover = 'https://lastfm-img.freetls.fastly.net/i/u/64s/preferred-i5u5we5.j
 const names = new Map([[42,'FiGure5 [INTERLUDE]'],[53,'Versus'],[55,'PB&J'],[57,'SOBER'],[101,'Final track']]);
 const encode = value => encodeURIComponent(value).replace(/%20/g,'+');
 const track = name => '/music/Homixide+Gang/_/'+encode(name);
-const row = rank => `<tr class="chartlist-row" style="height:50px"><td>${rank}</td><td class="chartlist-image"><span class="cover-art"><img loading="lazy" width="34" height="34" src="${names.has(rank)?placeholder:cover}"></span></td><td class="chartlist-name"><a href="${track(names.get(rank)||'Known song')}">${names.get(rank)||'Known song'}</a></td><td>12</td></tr>`;
+const row = rank => `<tr class="chartlist-row" style="height:50px"><td>${rank}</td><td class="chartlist-image"><span class="cover-art"><img loading="lazy" width="34" height="34" src="${names.has(rank)?placeholder:cover}"></span></td><td class="chartlist-name"><a href="${track(names.get(rank)||('Uncached song '+rank))}">${names.get(rank)||('Uncached song '+rank)}</a></td><td>12</td></tr>`;
 const list = page => `<!doctype html><main class="col-main"><table class="chartlist"><tbody>${Array.from({length:page===3?1:50},(_,i)=>row((page-1)*50+i+1)).join('')}</tbody></table><nav class="pagination">${page<3?`<a class="pagination-next" href="?page=${page+1}">Next</a>`:''}</nav></main>`;
 const history = name => `<main class="col-main"><p class="metadata-display">12</p><table class="chartlist"><tbody>${Array.from({length:12},(_,i)=>`<tr class="chartlist-row"><td><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Homixide Gang"><input name="track_name" value="${name}"><input name="album_name" value="I5U5WE5"><input name="timestamp" value="${1000+i}"></form></td></tr>`).join('')}</tbody></table></main>`;
 (async()=>{
@@ -41,7 +41,9 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   while(!(setup=browser.pages().find(p=>p.url()===setupUrl))&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
   assert.ok(setup,'fresh extension setup must finish before fixture navigation');
   await setup.locator('#profile-status').filter({hasText:'Not connected'}).waitFor();
-  await worker.evaluate(data=>chrome.storage.local.set(data),{settings,rules,lfmPersonalArtworkCacheV1:[{key:JSON.stringify(['dccxx','homixide gang','known song']),username:'DCCXX',item:{artist:'Homixide Gang',name:'Known song'},cover:{artist:'Homixide Gang',album:'I5U5WE5',image:cover,url:origin+'/music/Homixide+Gang/I5U5WE5',fallback:false,scanned:12,total:12,sourceVersion:3},checkedAt:Date.now()}]});
+  // Every row is a distinct uncached track, so imported placeholders compete
+  // with ordinary visible tracks in the real paced request queue.
+  await worker.evaluate(data=>chrome.storage.local.set(data),{settings,rules});
   const before=await worker.evaluate(()=>chrome.storage.local.get(['settings','rules']));
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+libraryPath);
@@ -60,8 +62,9 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   await page.waitForFunction(()=>!document.querySelector('.lfm-scroll-status'));
   assert.deepEqual(requests.filter(x=>x.startsWith('list')),['list?page=2','list?page=3']);
   assert.equal(historyAttempts,2,'one transient failure receives one paced recovery attempt');
+  assert.ok(requests.some(x=>x.includes('/_/Uncached+song+')),'ordinary uncached tracks must exercise the competing artwork queue');
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(['settings','rules'])),before);
   assert.deepEqual(errors,[]);
-  console.log('PASS: actual unpacked extension recovers a temporary history failure during page-2/page-3 scrolling; initial/imported rows paint their tagged album and link; completed controls disappear');
+  console.log('PASS: actual unpacked extension handles 101 distinct uncached tracks, a temporary history failure, page-2/page-3 insertion, painted initial/imported covers and album links; completed controls disappear');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
