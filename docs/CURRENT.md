@@ -1,6 +1,7 @@
-# Current state — 17 October 2026
+# Current state — 18 October 2026
 
-Installed candidate: **v0.8.0 beta**, branch preferences-page.
+Installed candidate: **v0.8.1 beta**, branch preferences-page.
+Album-view correction baseline: b391802 (v0.8.0 beta).
 Beta preparation baseline: 7de6c8d (v0.7.0).
 Finishing baseline: 2180539 (v0.6.15).
 Scrolling reactivation baseline: c4c0270 (v0.6.14).
@@ -12,6 +13,34 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Album-view artwork (v0.8.1)
+
+Jay reported inconsistent track covers on his DANGEROUS SUMMER album library
+page. General per-track discovery was running without an album-view override.
+A regression reproduced different-release covers and blank placeholders.
+
+Exact own album views now verify the header's public album link against the URL,
+then reuse its real cover for every main-column track row and image link, before
+cache readiness or network scheduling. Guest artists, late rows and native lazy
+rewrites are covered. Header preferred-cover changes refresh the rows. These
+view-specific covers do not write the global winner cache or any preferences.
+Artist/general lists retain most-scrobbled-album selection. Other profiles and
+sidebars stay native. Missing or mismatched headers cannot supply another album.
+
+Focused album-view and actual unpacked-extension checks pass. Combined gate:
+39/39 suites passed, including native editing, artwork/cache isolation, XML,
+scrolling, beta defaults/guards, packaging and startup. Independent Windows ZIP
+extraction verified all 36 files against both the audit and tested source.
+The ZIP is 235,934 bytes, SHA-256
+8f0b03f295cb61b6f7af4be91d78095d6bdb1627067b4471b6702272ec0e9de9.
+The extracted package passed actual isolated-extension onboarding, profile
+isolation, preserved-record and no-automatic-write checks (1/1 suite).
+Live public inspection returned Last.fm's Client Challenge; reconstructed fixtures
+do not certify the current signed-in layout. Jay's one Reload and refresh remains
+final acceptance. Logs: test-results/v081-combined.log, v081-focused.log,
+v081-package-verification.json and v081-extracted-install.log.
+Source rollback: b391802. No storage formats, identity or permissions changed.
 
 ## Public beta candidate (v0.8.0)
 

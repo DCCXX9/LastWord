@@ -1,4 +1,4 @@
-# Store listing draft · v0.8.0 beta
+# Store listing draft · v0.8.1 beta
 
 Prepared for review, not submitted. Publisher account, public URLs and support
 details must be supplied before publication. Do not enter invented details.
@@ -28,6 +28,8 @@ files are processed on your device and are not uploaded to the developer.
 
 This is a beta. Personal track covers and native editing are included for testing.
 Covers use your most-scrobbled album for the track and update the album link too.
+On a specific album's library page, all tracks use that album's existing header
+cover and link without history lookups.
 Cached covers are reused; new selections require Last.fm requests and can take
 time. Missing artwork and changes to Last.fm's pages can prevent a result.
 Normal scrobble edits use Last.fm's editor and require the appropriate Last.fm
@@ -44,7 +46,7 @@ Independent project. Not affiliated with or endorsed by Last.fm or Apple.
 
 ## Assets
 
-- Extension ZIP: `dist/lastfm-personal-library-0.8.0-beta.zip`
+- Extension ZIP: `dist/lastfm-personal-library-0.8.1-beta.zip`
 - Icon: `release/assets/icon128.png` (128 × 128 PNG)
 - Small promotional tile: `release/assets/promo440.png` (440 × 280 PNG)
 - Screenshots: `release/assets/setup.png`, `preferences.png`, `xml-review.png`

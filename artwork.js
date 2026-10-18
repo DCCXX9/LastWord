@@ -8,6 +8,7 @@
   let cacheError = '', lastError = '', startedAt = 0;
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
+  const albumImages = new Map();
   const own = () => A.ownProfile(location.href, username) && !document.hidden;
   const keyFor = item => JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name),
     ...(item.albumless ? ['albumless'] : [])]);
@@ -36,7 +37,8 @@
     // A verified resolved cover must be visible; restore() still keeps native styles.
     if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
     attr('alt', 'Cover for ' + cover.album + ' by ' + cover.artist);
-    attr('title', cover.fallback ? 'Personal cover: matching artist/title album page'
+    attr('title', cover.context ? 'Personal cover: ' + cover.album + ' (this album view)'
+      : cover.fallback ? 'Personal cover: matching artist/title album page'
       : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)');
     if (!original.link && original.wrapper?.isConnected) {
       const link = document.createElement('a');
@@ -64,7 +66,7 @@
   }
   function reset() {
     generation++; running?.controller.abort();
-    observer?.disconnect(); observed.clear(); jobs.clear();
+    observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear();
     globalThis.LastfmArtworkSource?.clear();
     for (const image of originals.keys()) restore(image);
   }
@@ -115,18 +117,46 @@
       pump();
     }
   }
+  function albumContext() {
+    // Album-view rows belong to this album even when another release wins the
+    // track's all-time totals. Do not save these view-specific covers as winners.
+    if (!/^\/user\/[^/]+\/library\/music\/(?:\+noredirect\/)?[^/]+\/[^/]+\/?$/.test(location.pathname)) return null;
+    const item = A.musicItem(location.href);
+    if (item?.type !== 'albums') return null;
+    const root = document.querySelector('.col-main'), header = root?.querySelector('.library-header');
+    const link = [...(header?.querySelectorAll('a[href]') || [])].find(link => {
+      const album = A.musicItem(link);
+      return album?.type === 'albums' && new URL(link.href).pathname.startsWith('/music/') &&
+        R.normalize(album.artist) === R.normalize(item.artist) && R.normalize(album.name) === R.normalize(item.name);
+    });
+    const primary = header?.querySelector('.library-header-image img');
+    const image = A.coverImage(primary?.getAttribute('data-src')) || A.coverImage(primary?.getAttribute('src'));
+    // Keep the album scope while its header is still arriving. A general track
+    // cache or queued history lookup must not replace the selected album.
+    return { root, cover: link && image ? { artist: item.artist, album: item.name, image, url: link.href, context: true } : null };
+  }
   function scan() {
     if (currentUrl !== location.href) { reset(); currentUrl = location.href; }
     if (!own()) return;
+    const album = albumContext();
+    for (const [image] of albumImages) if (!image.isConnected || !album?.cover || !album.root?.contains(image)) {
+      albumImages.delete(image); restore(image);
+    }
     for (const row of document.querySelectorAll('tr.chartlist-row')) {
       if (![...row.querySelectorAll('.chartlist-name a[href]')].some(link => A.musicItem(link)?.type === 'tracks')) continue;
       const image = row.querySelector('.chartlist-image img');
       if (!image) continue;
+      if (album) {
+        if (album.cover && album.root?.contains(row)) {
+          albumImages.set(image, album.cover); apply(image, album.cover);
+        }
+        continue;
+      }
       if (!A.coverImage(image.getAttribute('data-src') || image.getAttribute('src'))) {
         remember(image); image.style.setProperty('visibility', 'hidden');
       }
     }
-    if (!cacheReady) return;
+    if (album || !cacheReady) return;
     for (const [image] of originals) if (!image.isConnected) originals.delete(image);
     for (const [image, value] of observed) if (!image.isConnected) {
       observer.unobserve(image); observed.delete(image); value.job.images.delete(image);
@@ -193,10 +223,11 @@
     if (own() && currentUrl === location.href) for (const record of records) {
       if (record.type !== 'attributes') continue;
       const image = record.target.matches('img') ? record.target : record.target.querySelector('img');
-      const job = observed.get(image)?.job;
-      if (job?.cover) apply(image, job.cover);
+      const cover = albumImages.get(image) || observed.get(image)?.job.cover;
+      if (cover) apply(image, cover);
     }
-    if (records.some(record => [...record.addedNodes].some(node => node.nodeType === 1))) schedule();
+    if (records.some(record => record.type === 'attributes' && record.target.closest('.library-header') ||
+      [...record.addedNodes].some(node => node.nodeType === 1))) schedule();
   });
   mutations.observe(document, mutationOptions);
   const accept = async state => {

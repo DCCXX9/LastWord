@@ -1,7 +1,35 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Candidate: v0.8.0 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.8.1 beta. One candidate for Jay's Reload and the public package.
+
+## v0.8.1 album-view follow-up
+
+Baseline b391802 (v0.8.0 beta), initially clean installed checkout. Scope:
+artwork album context, failing regression plus unpacked-extension integration,
+version labels, release notes and regenerated package. No user storage access,
+scrobble edits, full-history scans, account operations or public upload.
+
+The new regression fails before the fix and passes afterward. Selected album
+header covers/links apply with a stalled cache and no history requests. Guest
+artists, late rows, preferred-cover changes, lazy-loader repairs, restoration,
+sidebar/friend isolation and mismatched-header refusal are covered. The actual
+unpacked extension also proves a selected album overrides an existing global
+winner without changing that winner or requesting metadata, and the artist
+page still uses its saved winner afterward. Focused gate: 2/2 passed.
+
+Combined gate: 39/39 suites passed. Windows independently expanded the new ZIP
+and verified all 36 file hashes against the audit and tested source. ZIP:
+235,934 bytes; SHA-256
+`8f0b03f295cb61b6f7af4be91d78095d6bdb1627067b4471b6702272ec0e9de9`.
+The extracted package passed actual isolated-extension onboarding, profile
+isolation, preserved-record and no-automatic-write checks (1/1 suite). Signed-in
+Supermium acceptance remains pending; the public album page returned a Client
+Challenge during read-only inspection. Source rollback: b391802. Logs:
+test-results/v081-combined.log, v081-focused.log, v081-package-verification.json
+and v081-extracted-install.log.
+
+## Original v0.8.0 preparation
 
 ## Scope
 

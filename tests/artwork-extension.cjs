@@ -11,6 +11,8 @@ const singleAlbum = '/music/Silent%C3%B3/Watch+Me+(Whip+%2F+Nae+Nae)';
 const artistLibrary = '/user/DCCXX/library/music/Playboi+Carti';
 const ownedMusic = '/user/DCCXX/library/music/+noredirect/Playboi+Carti/Music';
 const musicImage = 'https://lastfm-img.freetls.fastly.net/i/u/64s/2fcb1df976faa7f06b07553484d4cd6d.jpg';
+const albumView = '/user/DCCXX/library/music/Playboi+Carti/Another+Album';
+const albumViewImage = 'https://lastfm-img.freetls.fastly.net/i/u/64s/another-album.jpg';
 const cartiRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/_/2024').replace('>Track</a>','>2024</a>').replace('</td></tr>','</td><td class="chartlist-bar"><span data-stat-value="63"></span></td></tr>');
 const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/Music').replace('>Track</a>','>Music</a>').replace('https://lastfm-img.freetls.fastly.net/i/u/64s/wrong.jpg',musicImage).replace('</td></tr>','</td><td class="chartlist-bar"><span data-stat-value="63"></span></td></tr>');
 (async()=>{
@@ -29,6 +31,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
    if(url.hostname!=='www.last.fm') return route.abort();
    if(url.pathname.endsWith('/library/tracks')) return route.fulfill({contentType:'text/html',body:`<!doctype html><h1>Tracks</h1><table class="chartlist"><tbody>${row}</tbody></table>`});
    if(url.pathname===artistLibrary) return route.fulfill({contentType:'text/html',body:`<!doctype html><main class="col-main"><table class="chartlist"><tbody>${musicRow}</tbody></table><table class="chartlist"><tbody>${cartiRow}</tbody></table></main>`});
+   if(url.pathname===albumView) return route.fulfill({contentType:'text/html',body:`<!doctype html><main class="col-main"><header class="library-header"><span class="library-header-image"><img src="${albumViewImage.replace('/64s/','/avatar70s/')}"></span><h2>Another Album</h2><a href="/music/Playboi+Carti/Another+Album">Go to album page</a></header><table class="chartlist"><tbody>${cartiRow}</tbody></table></main>`});
    if(url.pathname==='/user/DCCXX/library') {
     const fields = blankRow.match(/<form[\s\S]*?<\/form>/)[0];
     const initial = stagedScrobble ? blankRow.replace(fields,'') : blankRow;
@@ -94,10 +97,19 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
   await page.reload();
   await page.waitForFunction(image=>document.querySelector('.chartlist-name a[href$="_/2024"]').closest('tr').querySelector('img').src===image,musicImage,{timeout:2000});
   assert.equal(requests.length,4,'verified artist-track covers must reload without another album-list request');
+  const cachedWinners=await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1'));
+  await page.goto('https://www.last.fm'+albumView);
+  await page.waitForFunction(image=>document.querySelector('.chartlist-image img').src===image,albumViewImage,{timeout:2000});
+  assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Playboi+Carti/Another+Album');
+  assert.equal(requests.length,4,'a selected album uses its own header without lookup requests');
+  assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1')),cachedWinners,'view-specific covers must not overwrite global track winners');
+  await page.goto('https://www.last.fm'+artistLibrary);
+  await page.waitForFunction(image=>document.querySelector('.chartlist-name a[href$="_/2024"]').closest('tr').querySelector('img').src===image,musicImage,{timeout:2000});
+  assert.equal(requests.length,4,'leaving the selected album restores the cached most-used album');
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(['rules','settings'])),before,'the real extension must not write display preferences/settings during artwork lookup');
   await page.goto('https://www.last.fm/user/Friend/library/tracks');
   assert.equal(await page.locator('.chartlist-image img').getAttribute('src'),'https://lastfm-img.freetls.fastly.net/i/u/64s/wrong.jpg');
   assert.equal(requests.length,4);
-  console.log('PASS: actual unpacked extension injects personal covers, uses shared requests, preserves preferences and excludes friends');
+  console.log('PASS: actual unpacked extension injects personal covers, respects selected albums without changing global winners, uses shared requests, preserves preferences and excludes friends');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});

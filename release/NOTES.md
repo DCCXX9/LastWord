@@ -1,8 +1,23 @@
-# v0.8.0 beta candidate
+# v0.8.1 beta candidate
 
-Prepared from `7de6c8d` on `preferences-page`, in the existing installed folder.
+Album-view correction prepared from `b391802` (v0.8.0 beta) on
+`preferences-page`, in the existing installed folder.
 
-## Changes
+## Album-view correction
+
+On a specific album's library page, every track now uses the verified album
+header's cover and public album link, including guest artists and tracks with
+missing or different native artwork. This does not wait for the artwork cache
+or history requests. Late rows and native image rewrites retain the same cover.
+An updated preferred header image is copied to the track rows.
+
+This view-specific result never replaces saved all-time track winners. Artist
+and general track lists retain the most-scrobbled-album selection. Other profiles
+remain untouched. Existing settings, XML undo, legacy records, identity and
+permissions are unchanged. If the album header has no verifiable real cover,
+the extension leaves the native rows rather than selecting a different release.
+
+## Included v0.8.0 changes
 
 - New installations start disconnected instead of selecting DCCXX. First-install
   setup opens automatically and XML import waits for profile setup.

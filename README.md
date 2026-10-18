@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.8.0 beta**.
+Last.fm profile. Installed candidate: **v0.8.1 beta**.
 
 ## Public beta candidate
 
@@ -30,6 +30,10 @@ Already-started modules are reused, retaining early cached artwork application.
 - **Personal track covers:** Visible track rows on your connected profile use
   the album from your own all-time scrobbles. Where multiple albums were tagged,
   the most-scrobbled album wins; exact ties use the most recently scrobbled album.
+  On a specific album's library page, its verified header cover and album link
+  instead apply to every track immediately, including guest artists and blank
+  thumbnails. No history lookup or cache read is needed for this album context,
+  and it does not replace saved all-time track winners used on other views.
   A winning blank album uses the public artist/track-title album page (for example,
   Silentó / Watch Me (Whip / Nae Nae)). Album-artist tags select compilation covers.
   The signed-in album overview's primary cover supplies your starred artwork.
@@ -204,6 +208,7 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/options.cjs`, `tests/extension.cjs`, `tests/itunes-parser.cjs`,
 `tests/itunes-store.cjs`, `tests/itunes-ui.cjs`, `tests/artwork.cjs`,
 `tests/artwork-store.cjs`, `tests/artwork-albums.cjs`, `tests/artwork-extension.cjs`,
+`tests/artwork-album-view.cjs`,
 `tests/artwork-placeholder.cjs`, `tests/artwork-recovery.cjs`, `tests/startup.cjs`,
 `tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
 `tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
@@ -220,6 +225,9 @@ and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The v0.8.1 album-view artwork fix starts from `b391802` (v0.8.0 beta).
+It changes no saved track winners, preferences, XML undo or storage formats.
 
 The v0.8.0 beta starts from `7de6c8d` (v0.7.0). Its source changes do not migrate
 user data. Returning to an earlier version can reactivate a previously enabled
