@@ -6,6 +6,7 @@
   let currentUrl = location.href;
   let observer, cacheReady = false;
   let cacheError = '', lastError = '', startedAt = 0;
+  let retryTimer;
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const albumImages = new Map();
@@ -65,6 +66,7 @@
     originals.delete(image);
   }
   function reset() {
+    clearTimeout(retryTimer);
     generation++; running?.controller.abort();
     observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear();
     globalThis.LastfmArtworkSource?.clear();
@@ -82,9 +84,11 @@
     S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
   }
   async function pump() {
+    clearTimeout(retryTimer);
     if (!cacheReady || !own() || !globalThis.LastfmArtworkSource ||
         !globalThis.LastfmPages || LastfmPages.status().rateLimited) return;
-    const waiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
+    const visibleWaiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
+    const now = Date.now(), waiting = visibleWaiting.filter(job => !job.retryAt || job.retryAt <= now);
     if (running) {
       if (!running.job.albumless && waiting.some(job => job.albumless)) running.controller.abort();
       return;
@@ -92,7 +96,11 @@
     // Album-less scrobbles need a title-album fallback. Give those visible rows
     // priority without changing the all-time album counting or request throttle.
     const job = waiting.find(job => job.albumless) || waiting.find(job => job.placeholder) || waiting[0];
-    if (!job) return;
+    if (!job) {
+      const next = Math.min(...visibleWaiting.map(job => job.retryAt));
+      if (Number.isFinite(next)) retryTimer = setTimeout(pump, Math.max(1, next - now));
+      return;
+    }
     const controller = new AbortController(), current = generation;
     running = { job, controller }; job.state = 'loading';
     startedAt = Date.now();
@@ -107,10 +115,12 @@
       finish(job, cover);
     } catch (error) {
       if (current !== generation) return;
-      job.state = error.name === 'AbortError' ? 'waiting' : 'unavailable';
+      const retry = error.retryable && !job.retried && !LastfmPages.status().rateLimited;
+      job.state = error.name === 'AbortError' || retry ? 'waiting' : 'unavailable';
+      if (retry) { job.retried = true; job.retryAt = Date.now() + 10000; }
       if (error.name !== 'AbortError') lastError = error.message;
       if (error.name !== 'AbortError' && !job.cover) for (const image of job.images) {
-        if (image.isConnected) image.title = 'Cover unchanged: ' + error.message;
+        if (image.isConnected) image.title = retry ? 'Waiting to retry this cover…' : 'Cover unchanged: ' + error.message;
       }
     } finally {
       if (running?.controller === controller) running = null;
@@ -252,7 +262,9 @@
   };
   S.subscribe(accept);
   S.read().then(accept).catch(error => console.error('Last.fm personal covers:', error.message));
-  addEventListener('visibilitychange', () => { if (document.hidden) running?.controller.abort(); else scan(); });
+  addEventListener('visibilitychange', () => {
+    if (document.hidden) { clearTimeout(retryTimer); running?.controller.abort(); } else scan();
+  });
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, mutationOptions); scan(); } });
   addEventListener('popstate', scan);

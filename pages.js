@@ -64,7 +64,7 @@
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
     check(signal);
-    let timedOut = false;
+    let timedOut = false, received = false;
     const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
     try {
       const response = await fetch(target.href, {
@@ -72,6 +72,7 @@
         ...(edit ? {method:'POST',body,headers:{'X-Requested-With':'XMLHttpRequest'}} : {})
       });
       const html = await response.text();
+      received = true;
       let markup = html;
       if (response.status !== 429 && response.headers.get('content-type')?.includes('application/json')) {
         try {
@@ -87,7 +88,13 @@
         await chrome.storage.local.set({ [PAUSE]: { at: Date.now() } });
         throw new Error('Last.fm asked for a break. Page loading is paused in all tabs.');
       }
-      if (!response.ok) throw new Error(`Last.fm returned HTTP ${response.status}. Loading stopped.`);
+      if (!response.ok) {
+        const error = new Error(`Last.fm returned HTTP ${response.status}. Loading stopped.`);
+        // Consumers may recover a temporary read failure. Never retry writes,
+        // rate warnings, redirects or unverified metadata as a transport error.
+        error.retryable = !edit && response.status >= 500 && response.status <= 600;
+        throw error;
+      }
       if (!allowed(response.url)) {
         throw new Error('Last.fm redirected away from your library. Check your sign-in.');
       }
@@ -95,7 +102,11 @@
       lastError = '';
       return { doc, url: response.url };
     } catch (error) {
-      if (timedOut) error = new Error('Last.fm took too long to respond. Loading stopped.');
+      if (signal?.aborted) error = abortError();
+      else if (timedOut) {
+        error = new Error('Last.fm took too long to respond. Loading stopped.');
+        error.retryable = !edit;
+      } else if (!received && error.name === 'TypeError') error.retryable = !edit;
       if (error.name !== 'AbortError') lastError = error.message;
       throw error;
     } finally {

@@ -1,6 +1,7 @@
 # Current state — 18 October 2026
 
-Installed candidate: **v0.8.2 beta**, branch preferences-page.
+Installed candidate: **v0.8.3 beta**, branch preferences-page.
+Scrolling/artwork recovery baseline: ff6fc13 (v0.8.2 beta).
 Artist Tracks correction baseline: c4ef360 (v0.8.1 beta).
 Album-view correction baseline: b391802 (v0.8.0 beta).
 Beta preparation baseline: 7de6c8d (v0.7.0).
@@ -14,6 +15,40 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Scrolling/artwork recovery (v0.8.3)
+
+Jay reports blanks after infinite scrolling starts. The real page-2/page-3
+insertion test initially passed unchanged. A separate failing regression proved
+that one temporary history error permanently stranded an otherwise resolvable
+cover during scrolling. Recovery now waits ten seconds and retries once while
+visible, using the existing paced queue. Other covers continue during backoff.
+Metadata refusals, rate warnings and native writes do not auto-retry. Profile
+changes cancel recovery; hidden tabs suspend it. Album selection is unchanged.
+
+The new actual unpacked-extension integration covers 101 rows, a temporary
+rank-42 failure, imported rows 53/55/57/101, loaded images and album links,
+preference preservation and removal of completed scroll controls. Focused
+guards cover persistent failure bounds, invalid metadata, rate stops, hidden
+tabs and profile changes. All 42 suites are verified: the combined gate passed
+41/42, with only the new test's first-install setup tab racing its Last.fm
+navigation. The fixture now waits for that owned setup page before navigating;
+its focused rerun passed (1/1), without a runtime change. Logs:
+test-results/v083-combined.log and v083-scroll-startup.log. The original
+temporary-response regression failed first (v083-transient-before.log).
+
+Windows independently extracted and matched all 36 runtime files against the
+audit and tested source. ZIP: 237,752 bytes; SHA-256
+bde6d798574d2eacde9101db6523d87006dafc1b541d1064eff70379ed659ffb.
+Report: test-results/v083-package-verification.json. The extracted package also
+passed actual isolated-extension onboarding, profile/record preservation and
+no-automatic-write checks (1/1; v083-extracted-install.log).
+
+Chrome DevTools reached the public full Tracks list (50 native images). Public
+track-history and album pages returned HTTP 600. Signed-in Supermium remains
+unverified; this reproduced recovery defect is not a confirmed diagnosis of
+Jay's current page. No Console homework, data migration, user-profile access,
+scrobble edits, permissions change or publication. Rollback source: ff6fc13.
 
 ## Artist Tracks artwork (v0.8.2)
 

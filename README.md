@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.8.2 beta**.
+Last.fm profile. Installed candidate: **v0.8.3 beta**.
 
 ## Public beta candidate
 
@@ -225,6 +225,10 @@ and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` pointing to a Chromium executable.
 `tests/extension.cjs` creates a disposable profile under ignored test-results.
 
 ## Rollback
+
+The v0.8.3 scrolling/artwork recovery candidate starts from `ff6fc13` (v0.8.2 beta).
+Temporary artwork read failures receive one delayed, visibility-scoped retry.
+No preferences, record formats, native editing or extension permissions changed.
 
 The v0.8.2 artist Tracks artwork fix starts from `c4ef360` (v0.8.1 beta).
 It only extends read-only album lookup; native edit validation and storage

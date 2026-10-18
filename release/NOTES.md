@@ -1,4 +1,25 @@
-# v0.8.2 beta candidate
+# v0.8.3 beta candidate
+
+Scrolling/artwork recovery prepared from `ff6fc13` (v0.8.2 beta), in the existing
+installed folder. A temporary history request failure previously left that
+track unavailable for the rest of the visit. Artwork now gets one retry after
+ten seconds when visible, through the same paced request queue. Other visible
+tracks can resolve during that delay. Persistent failures stop after that retry.
+Rate-limit warnings, invalid album metadata and native writes never auto-retry.
+Hidden tabs suspend recovery and profile changes cancel it.
+
+An actual isolated unpacked-extension test loads 101 rows through the real
+page-2/page-3 scroller. It recovers a temporary failure for rank 42 and verifies
+painted tagged-album covers and links on imported rows 53, 55, 57 and 101.
+Album selection, saved preferences, identity and permissions are unchanged.
+
+The initial row-insertion test passed without source changes. This candidate
+fixes a reproduced permanent-blank failure path; it does not establish that this
+was the cause of Jay's signed-in FiGure5 result. Public track-list inspection
+worked, but public track-history/album requests returned HTTP 600. One normal
+Reload and refresh is still the signed-in acceptance check. No Console steps.
+
+## Included v0.8.2 changes
 
 Artist Tracks correction prepared from `c4ef360` (v0.8.1 beta) in the existing
 installed folder. Artwork lookup now accepts a native tagged album when its

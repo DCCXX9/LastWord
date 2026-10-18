@@ -1,7 +1,33 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.8.2 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.8.3 beta. One candidate for Jay's Reload and the public package.
+
+## v0.8.3 scrolling/artwork recovery
+
+Baseline ff6fc13 (v0.8.2 beta), initially clean installed checkout. Scope:
+temporary read-failure classification, bounded visible artwork recovery, real
+scroll/extension integration, version labels and package. Native edit behavior,
+album selection, local record formats, identity and permissions are unchanged.
+
+The initial real-scroller insertion test passed unchanged. A temporary history
+failure then reproduced a permanent blank. The actual unpacked-extension test
+now verifies recovery while pages 2 and 3 load, tagged-album images/links on
+initial and imported rows, unchanged preferences and completed-control removal.
+Focused retry guards pass. All 42 suites are verified: combined 41/42, followed
+by a passing focused rerun after the new fixture's first-install setup/navigation
+race was removed. No runtime change was needed for that fixture correction.
+Windows independently extracted and verified all 36 files against the audit
+and tested source. ZIP: 237,752 bytes; SHA-256
+`bde6d798574d2eacde9101db6523d87006dafc1b541d1064eff70379ed659ffb`.
+Audit: test-results/v083-package-verification.json. The extracted ZIP passed
+actual isolated-extension onboarding, record/profile preservation and no-write
+checks (1/1; v083-extracted-install.log). Combined/focused logs:
+v083-combined.log, v083-scroll-startup.log under test-results.
+Public list inspection succeeded; public history/album pages returned HTTP 600.
+This is a recovery candidate, with Jay's signed-in acceptance still pending.
+Logs: test-results/v083-transient-before.log, v083-actual-scroll.log and
+v083-retry-guards.log. Source rollback: ff6fc13.
 
 ## v0.8.2 artist Tracks follow-up
 
