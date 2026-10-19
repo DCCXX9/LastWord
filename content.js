@@ -139,7 +139,7 @@
       : mode === 'loading' || mode === 'ready' ? 'Pause loading'
       : mode === 'error' ? 'Try again'
       : mode === 'paused' ? 'Resume loading' : 'Load next page?';
-    state.no.hidden = state.always.hidden = state.hint.hidden = mode !== 'prompt';
+    state.no.hidden = state.always.hidden = mode !== 'prompt';
     state.notice.setAttribute('aria-busy', String(mode === 'loading'));
   }
 
@@ -315,15 +315,13 @@
     action.type = 'button';
     const no = document.createElement('button'), always = document.createElement('button');
     no.type = always.type = 'button'; no.textContent = 'No'; always.textContent = 'Always';
-    const hint = document.createElement('small');
-    hint.textContent = 'Yes loads one page. Always loads as you scroll, with another check every 10 pages (about 500 rows). This view only.';
-    const detail = document.createElement('div'), actions = document.createElement('div');
-    detail.append(label, hint); actions.className = 'lfm-scroll-actions';
-    actions.append(action, no, always); notice.append(detail, actions);
+    const actions = document.createElement('div');
+    actions.className = 'lfm-scroll-actions';
+    actions.append(action, no, always); notice.append(label, actions);
     const isHistory = ['scrobbles', 'artistScrobbles'].includes(A.libraryView(location.href));
     const lastSection = isHistory ? datedSections(table)?.at(-1) : null;
     (lastSection || table).after(notice);
-    const state = { table, lastSection, pagination, notice, label, action, no, always, hint, next,
+    const state = { table, lastSection, pagination, notice, label, action, no, always, next,
       wasHidden: pagination.hidden, tableIndex: [...document.querySelectorAll('table.chartlist')].indexOf(table),
       visited: new Set([location.href]), loaded: 0, checkpoint: 10, automatic: false,
       controller: null, observer: null, mode: 'prompt', active: true };

@@ -1,6 +1,6 @@
 # Current state — 19 October 2026
 
-Installed candidate: **v0.9.1 beta**, branch preferences-page.
+Installed candidate: **v0.9.2 beta**, branch preferences-page.
 Scroll consent and page-overlap baseline: 881fe1b (v0.9.0 beta).
 Library-wide XML casing framework baseline: b134285 (v0.8.3 beta).
 Scrolling/artwork recovery baseline: ff6fc13 (v0.8.2 beta).
@@ -17,6 +17,15 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Compact scroll prompt (v0.9.2)
+
+Baseline: 7217c0d. Removed the explanatory hint beneath “Load next page?”
+and prevented Yes / No / Always from wrapping onto separate lines. Loading
+choices and ten-page checkpoints are unchanged.
+Scroll-consent and release checks passed (2/2). The real content script and CSS
+were visually checked at 770px panel width and a 360px viewport; all buttons
+share a row. Rebuilt the 37-file v0.9.2 beta ZIP (246,526 bytes).
 
 ## Scroll consent and history overlap (v0.9.1)
 

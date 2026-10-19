@@ -1,7 +1,14 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.1 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.2 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.2 compact scroll prompt
+
+Baseline 7217c0d. Removed the extra explanatory text and kept all three
+choice buttons on one row. Page loading behavior and saved records are unchanged.
+Scroll-consent/release checks passed (2/2), with desktop and narrow-layout visual
+checks of the real content script and stylesheet. The v0.9.2 ZIP is rebuilt.
 
 ## v0.9.1 scroll consent and history overlap
 

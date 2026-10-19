@@ -1,4 +1,9 @@
-# v0.9.1 beta candidate
+# v0.9.2 beta candidate
+
+Removed the extra text beneath “Load next page?” and kept Yes / No / Always
+on one row. The existing loading choices and ten-page checkpoints are unchanged.
+
+## Included v0.9.1 scrolling changes
 
 Library page loading now asks first: Yes loads once, No pauses this view, and
 Always enables automatic loading only to the next ten-page checkpoint. Including

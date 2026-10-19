@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.1 beta**.
+Last.fm profile. Installed candidate: **v0.9.2 beta**.
 
 ## Public beta candidate
 
