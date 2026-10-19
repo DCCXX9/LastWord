@@ -210,6 +210,9 @@
     for (const job of jobs.values()) if (job.state === 'complete') {
       globalThis.LastfmArtworkAlbums?.remember?.(job.item, job.cover, username);
     }
+    for (const job of jobs.values()) if (!job.albumless && job.cover) {
+      globalThis.LastfmArtworkAlbums?.hint?.(job.item, job.cover, username);
+    }
     const candidates = [...jobs.values()].filter(job => !job.albumless && job.state !== 'loading');
     const known = candidates.length && globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username);
     for (const job of candidates) {

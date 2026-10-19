@@ -1,15 +1,42 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.5 beta**, branch preferences-page.
+Installed candidate: **v0.9.6 beta**, branch preferences-page.
+Baseline: 7ffd7a9; focused legacy-cache correction, signed-in acceptance pending.
+
+Read-only inspection reached the active Supermium extension's artwork storage.
+Its lucre 7 record is dated 6 October and lacks sourceVersion; LUCRE siblings
+are absent. v0.9.5 required a fresh sourceVersion 3 winner to seed album counts,
+so its fixture did not represent this installed cache. No stored data was changed.
+
+Legacy/stale non-fallback winners now supply album-name hints only. Exact current
+own-library album counts must prove each track's winner; an exact album header
+must provide fresh artwork before a hint can resolve anything. Old image URLs
+are not promoted to verified artwork. Existing fresh-cover behavior, request
+bounds, profile isolation, storage format and permissions remain intact.
+
+The actual public source reader resolved lucre 5 to LUCRE (18/18), and the live
+LUCRE album exposed matching track counts summing to 120. Both inspectors remain
+logged out, so these reads do not certify the installed signed-in queue/forms.
+
+The new unpacked regression fails against v0.9.5 and passes this correction:
+legacy cache, refreshed image, initial/appended rows, majority proof, insufficient
+counts, cached revisits and profile/preferences preservation. Four focused suites
+passed (test-results/v096-focused.log). Final album-header rejection and release
+checks passed 2/2 (test-results/v096-final.log). The 39-file ZIP was independently
+extracted and all hashes matched (test-results/v096-package-verification.json).
+ZIP SHA-256: a0157a2611c371c35c65ff96b35df99bf127eb7b164eb10e75138e461514bde6.
+No full-suite rerun or
+signed-in visual acceptance is claimed. Prior failed candidate follows.
+
 **Live acceptance failed:** Jay's 20 October screenshot still shows blank
 lucre 1–6 and A_X covers on Dean Blunt's full Tracks page. v0.9.5 is not an
-accepted fix for this defect. No later runtime candidate has been prepared.
+accepted fix for this defect.
 
-The follow-up inspection could not reach the failing signed-in runtime: Computer
+The earlier follow-up inspection could not reach the failing signed-in runtime: Computer
 Use lists only the empty in-app browser/MCP Apps surfaces, and the running
 Chrome/Supermium processes expose no remote-debugging-port flag. The separate
-DevTools browser receives Last.fm's Temporarily Unavailable page (body says
-Error 503) for the exact Tracks URL. This external response does not establish
+DevTools browser initially received Last.fm's Temporarily Unavailable page (body said
+Error 503) for the exact Tracks URL. It subsequently recovered. That response does not establish
 the cause in Jay's tab.
 
 The v0.9.5 regression assumes a fresh sourceVersion 3, non-fallback LUCRE winner

@@ -14,7 +14,9 @@
   function coverForAlbum(artist, album, username) {
     if (!A.ownProfile(location.href, username) || !A.libraryView(location.href)) return null;
     const saved = known.get(albumKey({ artist, name: album }, username));
-    if (saved) return { artist, album, image: saved.album.image, url: saved.album.url };
+    const read = records.get(albumKey({ artist, name: album }, username));
+    if (read?.counts && read.cover) return { artist, album, ...read.cover };
+    if (saved?.album.image) return { artist, album, image: saved.album.image, url: saved.album.url };
     // The five-album counting bound does not limit already-loaded artwork.
     // Only use this after the individual history has proved the album winner.
     for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
@@ -49,8 +51,8 @@
     }
     const rankedTracks = A.libraryView(url.href) === 'tracks';
     // Full artist Tracks pages have no album rows. Seed only from fresh,
-    // previously verified winners for this artist, then prove each new winner
-    // from exact album counts; a shared album title alone proves nothing.
+    // saved winners for this artist, then prove each new winner from today's
+    // exact album counts. Legacy/stale records supply names only, never art.
     if (rankedTracks) for (const saved of known.values()) {
       if (saved.username === R.normalize(username) && saved.artists.has(R.normalize(artist.artist))) albums.push(saved.album);
     }
@@ -65,6 +67,13 @@
     saved.album = album;
     saved.artists.add(R.normalize(item.artist));
   }
+  function hint(item, cover, username) {
+    if (cover.fallback || !cover.total || !A.coverImage(cover.image)) return;
+    const album = { artist: cover.artist, name: cover.album };
+    const key = albumKey(album, username);
+    if (!known.has(key)) known.set(key, { album, username: R.normalize(username), artists: new Set() });
+    known.get(key).artists.add(R.normalize(item.artist));
+  }
   function proven(item, username, data) {
     const key = trackKey(item), total = data.totals.get(key);
     if (!total) return null;
@@ -73,8 +82,9 @@
     ranked.sort((a,b) => b.count-a.count);
     const scanned = ranked.reduce((n, entry) => n+entry.count, 0), remaining = total-scanned;
     if (remaining < 0 || !ranked[0]?.count || ranked[0].count <= (ranked[1]?.count || 0)+remaining) return null;
-    const album = ranked[0].album;
-    return { artist: album.artist, album: album.name, image: album.image, url: album.url,
+    const album = ranked[0].album, cover = records.get(albumKey(album, username)).cover;
+    if (!cover) return null;
+    return { artist: album.artist, album: album.name, ...cover,
       fallback: false, scanned, total, sourceVersion: 3 };
   }
   function peekMany(items, username) {
@@ -99,6 +109,19 @@
           const page = await LastfmPages.get(url, { signal }), returned = A.musicItem(page.url);
           if (returned?.type !== 'albums' || R.normalize(returned.artist) !== R.normalize(album.artist) ||
               R.normalize(returned.name) !== R.normalize(album.name)) throw new Error('Last.fm returned a different album library.');
+          if (pageNumber === 1) {
+            const header = page.doc.querySelector('.library-header');
+            const linked = [...(header?.querySelectorAll('a[href]') || [])].map(link => A.musicItem(link, page.url))
+              .some(item => item?.type === 'albums' && R.normalize(item.artist) === R.normalize(album.artist) &&
+                R.normalize(item.name) === R.normalize(album.name));
+            const primary = header?.querySelector('.library-header-image img');
+            const image = A.coverImage(primary?.getAttribute('data-src')) || A.coverImage(primary?.getAttribute('src'));
+            const verifiedHeader = A.ownProfile(page.url, username) && linked && image &&
+              R.normalize(header?.querySelector('.library-header-title')?.textContent) === R.normalize(album.name);
+            record.cover = verifiedHeader ? { image, url: `${location.origin}/music/${encode(album.artist)}/${encode(album.name)}` }
+              : album.image ? { image: album.image, url: album.url } : null;
+            if (!record.cover) throw new Error('This album library has no verified cover.');
+          }
           const displays = [...page.doc.querySelectorAll('.col-main .metadata-display')];
           const n = displays.length === 1 ? count(displays[0].textContent) : null;
           if (n === null || total !== null && total !== n) throw new Error('The album library total could not be verified.');
@@ -141,6 +164,6 @@
     }
     return proven(item, username, data);
   }
-  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, remember,
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, remember, hint,
     clear: () => { records.clear(); known.clear(); } });
 })();

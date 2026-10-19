@@ -50,6 +50,11 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 20 October, separately authorised artwork retry: v0.9.6 addresses an observed
+  legacy-cache mismatch. Old album names seed fresh exact counts/header reads;
+  obsolete artwork is not trusted. Focused regression and acceptance limits:
+  CURRENT.md. The old maintenance/reset heartbeat remains paused.
+
 - 17 October, separately authorised public beta preparation: v0.8.0 starts fresh
   installs disconnected, retains existing data and hard-disables corrections/
   capture without migrating saved records. Local help/privacy, original assets,

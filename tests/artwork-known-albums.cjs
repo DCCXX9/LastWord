@@ -6,10 +6,11 @@ const library = '/user/DCCXX/library/music/Dean+Blunt/+tracks';
 const placeholder = 'https://lastfm-img.freetls.fastly.net/i/u/64s/4128a6eb29f94943c9d206c08e625904.jpg';
 const image = 'https://lastfm-img.freetls.fastly.net/i/u/64s/6da014dd54bb1082a3a51218fcbf7a89.jpg';
 const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
+const legacy = process.env.LFM_TEST_LEGACY_ALBUM_HINT === '1';
 const track = name => '/music/Dean+Blunt/_/' + encode(name);
 const row = (name, n, src = placeholder) => `<tr class="chartlist-row"><td class="chartlist-image"><span class="cover-art"><img width="32" height="32" src="${src}"></span></td><td class="chartlist-name"><a href="${track(name)}">${name}</a></td><td><span data-stat-value="${n}">${n}</span></td></tr>`;
 const list = second => `<!doctype html><main class="col-main"><table class="chartlist"><tbody>${second ? row('lucre 6', 18) : row('lucre 5', 18) + row('lucre 7', 1, image) + row('Unproven', 18)}</tbody></table>${second ? '' : '<nav class="pagination"><a class="pagination-next" href="?page=2">Next</a></nav>'}</main>`;
-const album = `<main class="col-main"><p class="metadata-display">37</p><table class="chartlist"><tbody>${row('lucre 5', 18)}${row('lucre 6', 13)}${row('lucre 7', 1)}${row('Unproven', 5)}</tbody></table></main>`;
+const album = `<main class="col-main"><header class="library-header"><h2 class="library-header-title">LUCRE</h2><span class="library-header-image"><img src="${image}"></span><a href="/music/Dean+Blunt/LUCRE">Go to album page</a></header><p class="metadata-display">37</p><table class="chartlist"><tbody>${row('lucre 5', 18)}${row('lucre 6', 13)}${row('lucre 7', 1)}${row('Unproven', 5)}</tbody></table></main>`;
 (async () => {
   fs.mkdirSync(path.join(root, 'test-results'), { recursive: true });
   const profile = fs.mkdtempSync(path.join(root, 'test-results', 'known-albums-profile-'));
@@ -36,8 +37,11 @@ const album = `<main class="col-main"><p class="metadata-display">37</p><table c
     assert.ok(setup); await setup.locator('#profile-status').filter({ hasText: 'Not connected' }).waitFor();
     const saved = { settings: { username: 'DCCXX', infiniteScroll: true }, rules: { artists: {}, albums: {}, tracks: {}, albumArtists: {} } };
     const cover = { artist: 'Dean Blunt', album: 'LUCRE', image, url: origin + '/music/Dean+Blunt/LUCRE', fallback: false, scanned: 1, total: 1, sourceVersion: 3 };
+    // Observed installed cache: lucre 7 is two weeks old with no sourceVersion.
+    // Its obsolete image must be a discovery hint, never the resolved artwork.
+    if (legacy) { delete cover.sourceVersion; cover.image = image.replace('6da014dd54bb1082a3a51218fcbf7a89', '11111111111111111111111111111111'); }
     const item = { artist: 'Dean Blunt', name: 'lucre 7' };
-    await worker.evaluate(data => chrome.storage.local.set(data), { ...saved, lfmPersonalArtworkCacheV1: [{ key: JSON.stringify(['dccxx', 'dean blunt', 'lucre 7']), username: 'DCCXX', item, cover, checkedAt: Date.now() }] });
+    await worker.evaluate(data => chrome.storage.local.set(data), { ...saved, lfmPersonalArtworkCacheV1: [{ key: JSON.stringify(['dccxx', 'dean blunt', 'lucre 7']), username: 'DCCXX', item, cover, checkedAt: Date.now() - (legacy ? 14 * 86400000 : 0) }] });
     const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
     await page.goto(origin + library);
     const painted = async name => {

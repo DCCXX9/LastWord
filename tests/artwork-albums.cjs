@@ -75,6 +75,19 @@ const albumPage = tracks => `<!doctype html><main class="col-main"><p class="met
   await page.evaluate(() => LastfmArtworkAlbums.clear());
   assert.equal(await page.evaluate(() => LastfmArtworkAlbums.coverForAlbum('Playboi Carti', 'MUSIC', 'Friend')), null);
   assert.deepEqual(worker.data.rules,{artists:{},albums:{},tracks:{},albumArtists:{}});
+  await page.evaluate(() => {
+    LastfmArtworkAlbums.clear();
+    document.querySelector('table.chartlist').remove();
+    history.replaceState(null, '', location.pathname + '/+tracks');
+    LastfmArtworkAlbums.hint({ artist: 'Playboi Carti', name: '2024' }, {
+      artist: 'Playboi Carti', album: 'MUSIC', fallback: false, total: 63,
+      image: 'https://lastfm-img.freetls.fastly.net/i/u/64s/obsolete.jpg'
+    }, 'DCCXX');
+  });
+  assert.equal(await page.evaluate(() => LastfmArtworkAlbums.coverForAlbum('Playboi Carti', 'MUSIC', 'DCCXX')), null,
+    'a legacy hint cannot supply artwork before a fresh read verifies it');
+  await assert.rejects(page.evaluate(() => LastfmArtworkAlbums.resolve({ artist: 'Playboi Carti', name: '2024' }, 'DCCXX')),
+    /no verified cover/, 'a hint must not recover obsolete art from a missing album header');
   console.log('PASS: MUSIC wins for 2024, album images are reused, shared totals update proven tracks progressively and preserve preferences');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

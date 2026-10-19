@@ -1,4 +1,12 @@
-# v0.9.5 beta candidate
+# v0.9.6 beta candidate
+
+Older saved artwork can now help discover the correct album for blank sibling
+tracks. It supplies an album name only: current personal album counts must prove
+the winner, and the exact album header supplies its current cover. This addresses
+the observed old LUCRE cache that v0.9.5 could not use, including scroll-added rows.
+Preferences and saved data remain intact. Signed-in visual acceptance is pending.
+
+## Included v0.9.5 artist Tracks album counts
 
 Full artist Tracks pages now reuse exact album counts to prove several personal
 track covers together, including scroll-added tracks. Fresh verified covers seed

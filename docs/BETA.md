@@ -1,7 +1,16 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.5 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.6 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.6 Legacy artwork cache correction
+
+The installed lucre 7 cache lacks the fresh verification marker assumed by
+v0.9.5. Stale/legacy non-fallback records now suggest exact album names;
+current own-library counts and album-header artwork must verify new winners.
+No saved data migration, clearing, new permissions or scrobble edits.
+Failing-before and focused passing regressions: CURRENT.md. Signed-in acceptance
+remains Jay's Reload test. No automatic publication is authorised.
 
 ## v0.9.5 Artist Tracks album counts
 
