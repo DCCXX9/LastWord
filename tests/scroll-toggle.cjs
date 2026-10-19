@@ -33,13 +33,13 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
         assert.equal((await status()).scrollState, transition === 'setting' ? 'off' : 'unavailable');
       };
       const enable = () => worker.externalSet({ settings: { username: 'DCCXX', infiniteScroll: true } });
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
       await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 2 &&
-        document.querySelector('.lfm-scroll-status')?.dataset.state === 'ready');
+        document.querySelector('.lfm-scroll-status')?.dataset.state === 'prompt');
       await disable();
       assert.equal(await page.locator('tr.chartlist-row').count(), 2, 'disabling must retain loaded rows');
       await enable();
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
       await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 3);
       assert.deepEqual(calls, [1, 2, 3], transition + ' reactivation must continue with the next unseen page');
       assert.deepEqual(await page.locator('tr.chartlist-row').allTextContents(), ['Row 1', 'Row 2', 'Row 3']);
@@ -72,7 +72,7 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
         if (failure) request.reject(new Error('Obsolete request failed.'));
         else request.resolve({ url: request.url, doc: new DOMParser().parseFromString(source, 'text/html') });
       }, { index, failure, source: html(index === 2 ? 3 : 2) });
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
       await page.waitForFunction(() => requests.length === 1);
       await worker.externalSet({ settings: { username: 'DCCXX', infiniteScroll: false } });
       await page.waitForFunction(() => !document.querySelector('.lfm-scroll-status'));
@@ -87,8 +87,8 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
         'an obsolete result must not change the newer request status');
       await finish(1);
       await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 2 &&
-        document.querySelector('.lfm-scroll-status')?.dataset.state === 'ready');
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+        document.querySelector('.lfm-scroll-status')?.dataset.state === 'prompt');
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
       await page.waitForFunction(() => requests.length === 3);
       await finish(2);
       await page.waitForFunction(() => !document.querySelector('.lfm-scroll-status'));

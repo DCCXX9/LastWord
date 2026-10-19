@@ -24,15 +24,15 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
     });
     const worker = await mockExtension(page, { settings:{username:'DCCXX',infiniteScroll:true}, albumlessScanDraft: { pages: 93 } });
     await loadScripts(page, scripts);
-    await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 2 &&
-      document.querySelector('.lfm-scroll-status')?.dataset.state === 'ready');
+      document.querySelector('.lfm-scroll-status')?.dataset.state === 'prompt');
     const restore = () => page.evaluate(() => {
       dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
       dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
     });
     await restore();
-    await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 3);
     assert.deepEqual(calls, [1, 2, 3], 'a restored browser-history page must continue from page three, not repeat page two');
     assert.deepEqual(await page.locator('tr.chartlist-row').allTextContents(), ['Row 1', 'Row 2', 'Row 3']);
@@ -60,7 +60,7 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
     });
     await mockExtension(pending, {settings:{username:'DCCXX',infiniteScroll:true}});
     await loadScripts(pending, scripts);
-    await pending.getByRole('button', { name: 'Load next page', exact: true }).click();
+    await pending.getByRole('button', { name: 'Yes', exact: true }).click();
     await pending.waitForRequest(request => request.url().includes('page=2'));
     await pending.evaluate(() => {
       dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));

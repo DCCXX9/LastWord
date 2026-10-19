@@ -48,6 +48,7 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+libraryPath);
   await page.locator('tr.chartlist-row').nth(41).scrollIntoViewIfNeeded();
+  await page.getByRole('button',{name:'Always',exact:true}).click();
   await page.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===100,{},{timeout:10000});
   await page.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row')[41].querySelector('img').title==='Waiting to retry this cover…');
   const painted = async rank => {

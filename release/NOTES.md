@@ -1,4 +1,17 @@
-# v0.9.0 beta candidate
+# v0.9.1 beta candidate
+
+Library page loading now asks first: Yes loads once, No pauses this view, and
+Always enables automatic loading only to the next ten-page checkpoint. Including
+the initial page, normal lists stop at 500 rows, then 1000, and ask again. A new
+view asks again; existing settings and saved library records are preserved.
+
+Warning/resume and shifted history pages could repeat scrobbles already loaded.
+Verified timestamp/artist/track identities now remove that overlap; real repeated
+listens remain. Unseen reordered history stops before it changes the page.
+This fixes a reproduced response pattern, not a capture of Jay's signed-in page.
+The outstanding artwork issue is separate and unchanged.
+
+## Included v0.9.0 XML casing framework
 
 Library-wide XML casing framework prepared from b134285 in the same installed
 folder. Open Display names or Settings → Import iTunes XML. Scan locally, choose

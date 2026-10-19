@@ -1,7 +1,20 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.0 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.1 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.1 scroll consent and history overlap
+
+Baseline 881fe1b, clean installed checkout. Scope: ask-first page loading,
+Yes / No / Always controls, ten-page checkpoints and verified history overlap
+handling after warning/resume. Retain loaded rows, date headings, profile
+isolation, cancellation and native pagination. Existing records and permissions
+are preserved. No artwork changes or live signed-in claims.
+
+Combined gate: 46/46 suites passed. The prompt was visually checked in the actual
+isolated unpacked extension. Windows independently extracted all 37 runtime files
+and matched the tested source. Logs/audit: test-results/v091-combined.log and
+v091-package-verification.json. Signed-in user acceptance remains open.
 
 ## v0.9.0 library-wide XML casing framework
 

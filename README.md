@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.0 beta**.
+Last.fm profile. Installed candidate: **v0.9.1 beta**.
 
 ## Public beta candidate
 
@@ -116,19 +116,26 @@ Already-started modules are reused, retaining early cached artwork application.
   forms need the complete named original/current pairs; the live album layout
   remains unverified.
 - **Keep scrolling:** Artists, Albums, Tracks, Scrobbles, artist Scrobbles,
-  artist Tracks and artist Albums append Last.fm's native rows. The panel
+  artist Tracks and artist Albums offer to append Last.fm's native rows. Nothing
+  loads until you choose Yes (one page) or Always (automatic for this view).
+  No pauses loading and restores native pagination. Always asks again at ten
+  total pages, including the initial page, then each further ten-page boundary
+  (about 500 rows per batch). A new view always asks first. The panel
   reports loading, paused and error states, then disappears after the last page.
   Copied stale controls are removed when a library container is replaced. Last.fm's pagination
   returns if loading fails or is disabled.
   Scrobbles retain every dated section in page order. A day spanning pages
   continues under its existing heading; the loading panel follows the final
   section. Failed or cancelled insertions roll back the complete added page.
+  Overlapping scrobbles are matched by timestamp, artist and track, so a shifted
+  page boundary cannot repeat an already displayed play. Unseen rows newer than
+  the current history tail stop loading without changing the displayed history.
   Switching scrolling off/on, reconnecting the same profile or returning with
   browser Back retains loaded pages and continues from the next unseen page.
   Finished views remain finished; cancelled requests cannot replace newer work.
 - **Request limits:** one request at a time across this extension's Last.fm
   tabs, at least 1.5 seconds between requests and a 15-second timeout. There
-  are no automatic retries. A rate-limit response pauses requests across
+  are no automatic page retries. A rate-limit response pauses requests across
   tabs and reloads. After Last.fm's warning clears, click Resume loading in
   the scrolling panel to make one new attempt. No cooldown expiry is assumed.
 - **Display name preferences:** Open Settings and backup → Manage artist, album

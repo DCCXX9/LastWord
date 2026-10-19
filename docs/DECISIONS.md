@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## 19 October 2026: explicit scrolling consent and finite batches
+
+The saved infiniteScroll flag controls whether loading is offered, not automatic
+consent. Each fresh view starts with Yes / No / Always; choices are transient.
+Always is bounded at ten total loaded pages, including the original page, and
+requires a new choice at each further ten-page boundary. This bounds unattended
+DOM growth; the user can explicitly approve another batch. No permanent setting
+or storage migration is required. Errors/rate warnings end automatic consent.
+
+History page numbers are offsets and can overlap after new plays arrive. Joins
+discard already visible verified timestamp/artist/track identities, rather than
+deduplicating song names. An unseen newer timestamp stops the insertion. Native
+date headings/order are retained; unknown identities are never guessed or removed.
+
 ## 15 October 2026: finishing artwork, native editing and album-less rules
 
 Scrobble edit fields are the artwork authority when available, ahead of rendered

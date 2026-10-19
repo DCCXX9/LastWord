@@ -66,6 +66,8 @@ const list = page => `<!doctype html><main class="col-main"><a id="artist" href=
     assert.equal(await own.locator('#album').textContent(),'aLbUm');
     await own.locator('.chartlist-name a').last().filter({hasText:'sOnG 50'}).waitFor();
     await own.locator('tr.chartlist-row').last().scrollIntoViewIfNeeded();
+    await own.locator('[data-lfm-ui="scroll"]').screenshot({path:path.join(root,'test-results','scroll-consent-panel.png')});
+    await own.getByRole('button',{name:'Yes',exact:true}).click();
     await own.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===60);
     assert.equal(await own.locator('.chartlist-name a').last().textContent(),'sOnG 60','imported rules apply to real infinite-scroll rows');
     const friend = await browser.newPage();

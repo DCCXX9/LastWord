@@ -1,6 +1,7 @@
 # Current state — 19 October 2026
 
-Installed candidate: **v0.9.0 beta**, branch preferences-page.
+Installed candidate: **v0.9.1 beta**, branch preferences-page.
+Scroll consent and page-overlap baseline: 881fe1b (v0.9.0 beta).
 Library-wide XML casing framework baseline: b134285 (v0.8.3 beta).
 Scrolling/artwork recovery baseline: ff6fc13 (v0.8.2 beta).
 Artist Tracks correction baseline: c4ef360 (v0.8.1 beta).
@@ -16,6 +17,31 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Scroll consent and history overlap (v0.9.1)
+
+Every fresh library view asks “Load next page?” with Yes / No / Always. Yes
+loads one page, No stops this view and restores native pagination, and Always
+enables automatic scrolling only to the next ten-page boundary. The initial
+page counts, so the first checkpoint is 500 rows on a normal 50-row list, then
+1000. No saved settings, preferences, XML undo or legacy scan formats changed.
+
+A reproduced warning/resume fixture showed shifted offset pages repeating
+already loaded plays and date headings. History joins now compare verified
+timestamp/artist/track identities, omit overlaps and reject unseen out-of-order
+rows before insertion. Genuine repeated listens at different timestamps remain.
+Requests stay serialized; explicit resume is reserved before clearing a pause.
+Constructed evidence does not establish the precise signed-in response Jay saw.
+
+Focused checks: scroll-overlap and scroll-consent pass; existing library-scroll,
+scroll-history, scroll-toggle, scrobble-sections and actual unpacked XML import
+pass with explicit consent. Combined gate passed 46/46 suites (v091-combined.log).
+Windows extracted and matched all 37 runtime files against the audit and tested
+source (v091-package-verification.json). ZIP: 246,892 bytes; SHA-256
+2c34bb349e7ae243abf8bd4a89b4c19302aad5d40c393cfda707c3b79d977ee1.
+The actual unpacked prompt was visually checked (scroll-consent-panel.png).
+Logs: test-results/v091-overlap-before.log, v091-scroll-focused.log and
+v091-scroll-guards.log. No artwork correction or signed-in acceptance claimed.
 
 ## Library-wide XML casing framework (v0.9.0)
 

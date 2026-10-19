@@ -5,7 +5,7 @@
   let snapshot, status = null;
   const views = { artists: 'Artists', albums: 'Albums', tracks: 'Tracks', scrobbles: 'Scrobbles',
     artistAlbums: 'Artist albums', artistScrobbles: 'Artist scrobbles', album: 'Album tracks', track: 'Track history', profile: 'Profile' };
-  const scrollLabels = { ready: 'Ready', loading: 'Loading', paused: 'Paused', complete: 'All pages loaded', error: 'Paused after an error', off: 'Off', unavailable: 'Unavailable' };
+  const scrollLabels = { prompt: 'Waiting for your choice', declined: 'Paused for this view', ready: 'Ready', loading: 'Loading', paused: 'Paused', complete: 'All pages loaded', error: 'Paused after an error', off: 'Off', unavailable: 'Unavailable' };
   function message(text, error = false) {
     $('message').textContent = text; $('message').dataset.tone = error ? 'error' : 'success';
   }

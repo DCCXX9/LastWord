@@ -22,6 +22,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
    await page.goto('https://www.last.fm/user/DCCXX'+view);
    const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
    await loadScripts(page,scripts);
+   await page.getByRole('button',{name:'Yes',exact:true}).click();
    await page.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===2)
      .catch(async error => { console.error(view, await page.locator('body').innerText()); throw error; });
    assert.equal(calls,1);
@@ -41,7 +42,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
   await redraw.evaluate(()=>{window.IntersectionObserver=class {observe(){} disconnect(){}};});
   await mockExtension(redraw, {settings:{username:'DCCXX',infiniteScroll:true}});
   await loadScripts(redraw,scripts);
-  await redraw.getByRole('button',{name:'Load next page',exact:true}).waitFor();
+  await redraw.getByRole('button',{name:'Yes',exact:true}).waitFor();
   await redraw.evaluate(()=>{
    const main=document.querySelector('main');
    main.replaceWith(main.cloneNode(true));
@@ -61,6 +62,7 @@ const html = (n, next = true) => `<!doctype html><main><table class="chartlist">
   await page.goto('https://www.last.fm/user/DCCXX/library');
   const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
   await loadScripts(page,scripts);
+  await page.getByRole('button',{name:'Yes',exact:true}).click();
   await page.getByText(/Last.fm asked for a break/).waitFor();
   assert.equal(requests,1);
   assert.ok(worker.data.lfmNetworkPause);

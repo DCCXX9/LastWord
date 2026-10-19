@@ -101,6 +101,31 @@
       .filter(node => node.matches('section.tracklist-section'));
   }
 
+  function historyEntry(row) {
+    const form = row.querySelector('form[data-edit-scrobble]');
+    const value = name => {
+      const fields = form?.querySelectorAll(`[name="${name}"]`);
+      return fields?.length === 1 ? fields[0].value : null;
+    };
+    let artist = value('artist_name'), track = value('track_name');
+    let time = /^\d+$/.test(value('timestamp') || '') ? Number(value('timestamp')) * 1000 : NaN;
+    if (!Number.isFinite(time)) {
+      time = Date.parse(row.querySelector('time[datetime]')?.getAttribute('datetime'));
+      const item = [...row.querySelectorAll('a[href]')].map(link => A.musicItem(link)).find(item => item?.type === 'tracks');
+      artist = item?.artist; track = item?.name;
+    }
+    return Number.isFinite(time) && artist && track
+      ? { time, key: JSON.stringify([time, R.normalize(artist), R.normalize(track)]) } : null;
+  }
+
+  function askScroll(state) {
+    state.automatic = false;
+    const count = state.loaded + 1;
+    renderScroll(state, 'prompt', count >= state.checkpoint
+      ? `${count} pages are loaded. Load next page?`
+      : 'Load next page?');
+  }
+
   function renderScroll(state, mode, message) {
     state.mode = mode;
     if (mode === 'complete') {
@@ -110,14 +135,17 @@
     }
     state.label.textContent = message;
     state.notice.dataset.state = mode;
-    state.action.textContent = mode === 'loading' ? 'Pause loading'
+    state.action.textContent = mode === 'prompt' ? 'Yes'
+      : mode === 'loading' || mode === 'ready' ? 'Pause loading'
       : mode === 'error' ? 'Try again'
-      : mode === 'paused' ? 'Resume loading' : 'Load next page';
+      : mode === 'paused' ? 'Resume loading' : 'Load next page?';
+    state.no.hidden = state.always.hidden = state.hint.hidden = mode !== 'prompt';
     state.notice.setAttribute('aria-busy', String(mode === 'loading'));
   }
 
   async function appendRows(state, sourceTable, pageUrl, controller) {
-    const added = [], rows = [];
+    const added = [];
+    let rows = [];
     let lastSection = state.lastSection;
     let copies;
     if (lastSection) {
@@ -136,6 +164,22 @@
         .map(row => document.importNode(row, true)));
     }
     if (!rows.length) throw new Error('This page contained no library rows. Loading stopped.');
+    if (lastSection) {
+      const existing = datedSections(state.table).flatMap(section => [...section.querySelectorAll('tr.chartlist-row')])
+        .map(historyEntry).filter(Boolean);
+      const seen = new Set(existing.map(entry => entry.key));
+      let oldest = existing.at(-1)?.time ?? Infinity;
+      // Offset pages can repeat plays when fresh scrobbles arrive during a pause.
+      // Compare play identities, not song names: real repeated listens survive.
+      rows = rows.filter(row => {
+        const entry = historyEntry(row);
+        if (!entry) return true;
+        if (seen.has(entry.key)) { row.remove(); return false; }
+        if (entry.time > oldest) throw new Error('Last.fm returned reordered history. Refresh this view before continuing.');
+        oldest = entry.time; seen.add(entry.key); return true;
+      });
+      copies = copies.filter(copy => copy.querySelector('tr.chartlist-row'));
+    }
     for (const row of rows) {
       row.querySelectorAll('img[data-src]').forEach(img => {
         if (!img.getAttribute('src') || img.getAttribute('src').startsWith('data:')) {
@@ -178,13 +222,15 @@
     return true;
   }
 
-  async function loadMore(state) {
+  async function loadMore(state, resume = false) {
     if (scroller !== state || !state.active || state.mode === 'loading' || !state.next ||
         !ownProfile() || document.hidden) return;
     const controller = new AbortController();
     state.controller = controller;
     renderScroll(state, 'loading', 'Loading the next library page…');
     try {
+      if (resume && LastfmPages.status().rateLimited) await LastfmPages.resume();
+      if (scroller !== state || !state.active || state.controller !== controller || controller.signal.aborted) return;
       const page = await LastfmPages.get(state.next, { signal: controller.signal });
       if (scroller !== state || !state.active || state.controller !== controller || !ownProfile() || controller.signal.aborted) return;
       const url = new URL(page.url);
@@ -200,12 +246,20 @@
       const next = A.nextPage(page.doc, page.url);
       state.next = next && !state.visited.has(next) ? next : null;
       state.loaded++;
-      renderScroll(state, state.next ? 'ready' : 'complete', state.next
-        ? `${state.loaded} more ${state.loaded === 1 ? 'page' : 'pages'} loaded. Keep scrolling.`
-        : 'You’ve reached the end of this library view.');
-      if (!state.next) state.observer.disconnect();
+      if (!state.next) {
+        renderScroll(state, 'complete', 'You’ve reached the end of this library view.');
+        state.observer.disconnect();
+      } else if (!state.automatic || state.loaded + 1 >= state.checkpoint) askScroll(state);
+      else {
+        renderScroll(state, 'ready', `${state.loaded + 1} pages loaded. Keep scrolling.`);
+        const bounds = state.notice.getBoundingClientRect();
+        if (bounds.bottom > 0 && bounds.top < innerHeight + 400) setTimeout(() => {
+          if (state.mode === 'ready' && state.automatic) void loadMore(state);
+        }, 0);
+      }
     } catch (error) {
       if (scroller !== state || !state.active || state.controller !== controller) return;
+      state.automatic = false;
       state.pagination.hidden = false;
       renderScroll(state, error.name === 'AbortError' || LastfmPages.status().rateLimited
         ? 'paused' : 'error', error.name === 'AbortError'
@@ -216,11 +270,13 @@
   function suspendScroll() {
     if (!scroller?.active) return;
     scroller.active = false;
+    scroller.automatic = false;
     scroller.controller?.abort();
     scroller.observer.disconnect();
     scroller.notice.remove();
     scroller.pagination.hidden = scroller.wasHidden;
     if (scroller.mode === 'loading') renderScroll(scroller, 'paused', 'Loading paused. Your loaded rows are still here.');
+    else if (scroller.mode === 'ready') askScroll(scroller);
   }
   function stopScroll() {
     suspendScroll();
@@ -257,25 +313,45 @@
     label.setAttribute('role', 'status');
     const action = document.createElement('button');
     action.type = 'button';
-    notice.append(label, action);
+    const no = document.createElement('button'), always = document.createElement('button');
+    no.type = always.type = 'button'; no.textContent = 'No'; always.textContent = 'Always';
+    const hint = document.createElement('small');
+    hint.textContent = 'Yes loads one page. Always loads as you scroll, with another check every 10 pages (about 500 rows). This view only.';
+    const detail = document.createElement('div'), actions = document.createElement('div');
+    detail.append(label, hint); actions.className = 'lfm-scroll-actions';
+    actions.append(action, no, always); notice.append(detail, actions);
     const isHistory = ['scrobbles', 'artistScrobbles'].includes(A.libraryView(location.href));
     const lastSection = isHistory ? datedSections(table)?.at(-1) : null;
     (lastSection || table).after(notice);
-    const state = { table, lastSection, pagination, notice, label, action, next,
+    const state = { table, lastSection, pagination, notice, label, action, no, always, hint, next,
       wasHidden: pagination.hidden, tableIndex: [...document.querySelectorAll('table.chartlist')].indexOf(table),
-      visited: new Set([location.href]), loaded: 0, controller: null, observer: null, mode: 'ready', active: true };
+      visited: new Set([location.href]), loaded: 0, checkpoint: 10, automatic: false,
+      controller: null, observer: null, mode: 'prompt', active: true };
     scroller = state;
-    renderScroll(state, 'ready', 'Keep scrolling is ready.');
-    action.addEventListener('click', async () => {
+    askScroll(state);
+    action.addEventListener('click', () => {
       if (scroller !== state || !state.active) return;
+      state.automatic = false;
       if (state.mode === 'loading') { state.controller.abort(); return; }
-      try {
-        if (LastfmPages.status().rateLimited) await LastfmPages.resume();
-        await loadMore(state);
-      } catch (error) { renderScroll(state, 'error', error.message); }
+      if (state.mode === 'ready') { renderScroll(state, 'paused', 'Loading paused. Your loaded rows are still here.'); return; }
+      if (state.mode === 'declined') { askScroll(state); return; }
+      void loadMore(state, true);
+    });
+    no.addEventListener('click', () => {
+      if (scroller !== state || !state.active || state.mode !== 'prompt') return;
+      state.automatic = false; state.pagination.hidden = state.wasHidden;
+      renderScroll(state, 'declined', 'Page loading is off for this view. Your loaded rows are still here.');
+      state.action.focus({ preventScroll: true });
+    });
+    always.addEventListener('click', () => {
+      if (scroller !== state || !state.active || state.mode !== 'prompt') return;
+      state.automatic = true;
+      if (state.loaded + 1 >= state.checkpoint) state.checkpoint = (Math.floor((state.loaded + 1) / 10) + 1) * 10;
+      void loadMore(state, true);
+      state.action.focus({ preventScroll: true });
     });
     state.observer = new IntersectionObserver(entries => {
-      if (state.mode === 'ready' && entries.some(entry => entry.isIntersecting)) loadMore(state);
+      if (state.mode === 'ready' && state.automatic && entries.some(entry => entry.isIntersecting)) void loadMore(state);
     }, { rootMargin: '400px 0px' });
     state.observer.observe(notice);
   }

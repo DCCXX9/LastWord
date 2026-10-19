@@ -2,9 +2,12 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.9.0 beta**. Keep it in place.
+The installed folder already contains **v0.9.1 beta**. Keep it in place.
 
 1. Click Reload on the existing extension card in `chrome://extensions`.
+   Refresh your own Last.fm library. Scroll to the bottom: Yes loads one page,
+   No stops, and Always loads as you scroll until the next ten-page checkpoint.
+   Confirm the history joins retain their chronological order.
 2. Open the extension's Display names page → Import casing for your whole library
    from iTunes XML (or use Settings → Import your iTunes casing).
 3. Choose an XML, review its names and choose artist/album/song groups or
@@ -17,15 +20,15 @@ No Console commands are needed. A screenshot or ordinary description of any
 remaining problem is enough. Direct Library Doctor connection/sync is not yet
 enabled; a fresh XML export after cleanup uses the same import flow today.
 The previously reported live blank-artwork defect remains unresolved and is
-unchanged by this XML feature. Signed-in results are not certified by the
+unchanged by this scrolling update. Signed-in results are not certified by the
 isolated regression tests.
 
 ## Prepared local outputs
 
 | Output | Path relative to project |
 | --- | --- |
-| Upload / download ZIP | `dist/lastfm-personal-library-0.9.0-beta.zip` |
-| ZIP checksum | `dist/lastfm-personal-library-0.9.0-beta.zip.sha256` |
+| Upload / download ZIP | `dist/lastfm-personal-library-0.9.1-beta.zip` |
+| ZIP checksum | `dist/lastfm-personal-library-0.9.1-beta.zip.sha256` |
 | Per-file audit | `dist/package-manifest.json` |
 | Static website including download and privacy page | `dist/site/` |
 | Store copy and review instructions | `release/STORE-LISTING.md` |

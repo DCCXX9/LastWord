@@ -31,16 +31,16 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
       await page.evaluate(() => { window.IntersectionObserver = class { observe() {} disconnect() {} }; });
       const worker = await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
       await loadScripts(page, scripts);
-      await page.getByRole('button', { name: 'Load next page', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Yes', exact: true }).waitFor();
       const lastInitialRow = page.locator('[data-test-stamp="19"]');
       const panel = page.locator('[data-lfm-ui="scroll"]');
       const initialPanelFollows = await panel.evaluate((panel, row) => Boolean(row.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING), await lastInitialRow.elementHandle());
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
-      await page.getByText('1 more page loaded. Keep scrolling.', { exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
+      await page.waitForFunction(() => document.querySelectorAll('[data-test-stamp]').length === 6 && document.querySelector('.lfm-scroll-status').dataset.state === 'prompt');
       assert.deepEqual(await page.locator('[data-test-stamp]').evaluateAll(rows => rows.map(row => Number(row.dataset.testStamp))),
         [30, 20, 19, 18, 10, 9], 'every fetched day must follow the existing days in original page order');
       assert.ok(initialPanelFollows, 'loading panel must follow every initial date section');
-      await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes', exact: true }).click();
       await page.waitForFunction(() => document.querySelector('nav.pagination').hidden && document.querySelectorAll('[data-test-stamp]').length === 8);
       assert.deepEqual(await page.locator('[data-test-stamp]').evaluateAll(rows => rows.map(row => Number(row.dataset.testStamp))),
         [30, 20, 19, 18, 10, 9, 8, 5]);
@@ -70,12 +70,12 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
     await page.evaluate(() => { window.IntersectionObserver = class { observe() {} disconnect() {} }; });
     await mockExtension(page, {settings:{username:'DCCXX',infiniteScroll:true}});
     await loadScripts(page, scripts);
-    await page.getByRole('button', { name: 'Load next page', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Yes', exact: true }).waitFor();
     await page.evaluate(() => {
       window.originalFrame = requestAnimationFrame;
       window.requestAnimationFrame = callback => { window.finishAppendFrame = callback; };
     });
-    await page.getByRole('button', { name: 'Load next page', exact: true }).click();
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
     await page.waitForFunction(() => !!window.finishAppendFrame, null, { polling: 50, timeout: 3000 });
     await page.getByRole('button', { name: 'Pause loading', exact: true }).click();
     await page.evaluate(() => { requestAnimationFrame = window.originalFrame; window.finishAppendFrame(); });
