@@ -1,4 +1,18 @@
-# v0.9.6 beta candidate
+# v0.9.7 beta candidate
+
+Personal track artwork recovery now covers the mixed-artist library Tracks
+list as well as individual artists. Saved album hints work even when the seed
+track is off-page, including new artists and tracks reached by scrolling.
+Each track still needs exact personal counts proving its most-used album;
+identical titles from different artists never share that evidence. Uncached
+tracks retain individual history lookup, including appended Scrobbles rows.
+
+Existing cached winners display without repeat discovery. Unseen tracks still
+need Last.fm responses, and missing metadata/artwork cannot be reconstructed.
+No permissions, preferences, saved-data formats or installation identity changed.
+Signed-in visual acceptance is pending.
+
+## Included v0.9.6 legacy artwork cache correction
 
 Older saved artwork can now help discover the correct album for blank sibling
 tracks. It supplies an album name only: current personal album counts must prove

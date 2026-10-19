@@ -7,6 +7,7 @@
   let observer, cacheReady = false;
   let cacheError = '', lastError = '', startedAt = 0;
   let retryTimer;
+  let seededGeneration = -1;
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const albumImages = new Map();
@@ -81,7 +82,7 @@
         job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
     job.cover = cover; job.state = 'complete';
     globalThis.LastfmArtworkAlbums?.remember?.(job.item, cover, username);
-    cache.set(keyFor(job.item), { cover, checkedAt: Date.now() });
+    cache.set(keyFor(job.item), { item: job.item, cover, checkedAt: Date.now() });
     for (const image of job.images) apply(image, cover);
     S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
   }
@@ -169,6 +170,15 @@
       }
     }
     if (album || !cacheReady) return;
+    const albums = globalThis.LastfmArtworkAlbums;
+    if (albums && seededGeneration !== generation) {
+      for (const saved of cache.values()) if (saved.item && !saved.item.albumless) {
+        if (Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 && saved.cover.sourceVersion === 3) {
+          albums.remember(saved.item, saved.cover, username);
+        } else albums.hint(saved.item, saved.cover, username);
+      }
+      seededGeneration = generation;
+    }
     for (const [image] of originals) if (!image.isConnected) originals.delete(image);
     for (const [image, value] of observed) if (!image.isConnected) {
       observer.unobserve(image); observed.delete(image); value.job.images.delete(image);

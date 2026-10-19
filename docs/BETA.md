@@ -1,7 +1,23 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.6 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.7 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.7 Library-wide artwork recovery
+
+Baseline 6058d39. Mixed-artist library Tracks now shares exact album-count
+recovery, with independent candidate limits and evidence for each artist.
+Saved album hints are available even when their original track is off-page;
+new artists and tracks appended by scrolling use the same resolution path.
+Individual history remains available for uncached tracks. Native Scrobbles
+rows use the track's most-used album, including when the latest row names a
+different album. Existing saved records, preferences and permissions are intact.
+Failing-before, focused and combined/package evidence: CURRENT.md. Signed-in
+acceptance remains open; missing Last.fm metadata/artwork cannot be invented.
+
+Final combined gate: 53/53 suites passed. Windows extracted and matched all
+39 runtime files in the 268,275-byte package against the source audit. ZIP
+SHA-256: 105f5c0c003c302e991388e3da5eee463b2cfd9e2c327b25ef1682e0beb4ca7b.
 
 ## v0.9.6 Legacy artwork cache correction
 

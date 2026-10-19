@@ -1,6 +1,39 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.6 beta**, branch preferences-page.
+Installed candidate: **v0.9.7 beta**, branch preferences-page.
+Baseline: 6058d39; library-wide artwork correction, signed-in acceptance pending.
+
+The shared album-count recovery was limited to an individual artist URL, and
+only tracks already rendered could contribute saved album hints. It now also
+runs on the mixed-artist library Tracks page. Saved hints from off-page tracks
+are registered once per page generation, including artists reached by scrolling.
+Each artist retains its own five-album candidate bound. Exact personal track
+counts and album-header identity still prove each winner; matching song/album
+names from another artist cannot contribute evidence. Cold tracks retain their
+individual history lookup. No data migration, permission or request-pacing change.
+
+The new actual-unpacked mixed-library regression fails on v0.9.6 and passes the
+correction: initial rows, new artists after row 50, off-page legacy seeds, same
+titles across artists, unrelated seeds, cold history, cached revisit and native
+Scrobbles rows appended by scrolling. The latest scrobble's minority album must
+not replace its track's most-used album. Six focused suites passed
+(test-results/v097-focused.log). The final combined gate passed 53/53 suites
+(test-results/v097-combined.log), including 101 uncached scroll-added tracks,
+album-view covers, native editing, profile changes and preserved stored data.
+
+Windows independently extracted all 39 files from the 268,275-byte v0.9.7 ZIP
+and matched every SHA-256 against the source audit
+(test-results/v097-package-verification.json). ZIP SHA-256:
+105f5c0c003c302e991388e3da5eee463b2cfd9e2c327b25ef1682e0beb4ca7b.
+
+The public DCCXX library Tracks page was reached and its 50-row artist/track
+identities and data-stat-value counts inspected. It is logged out. Isolated
+unpacked extension checks do not certify Jay's signed-in session. Cached covers
+can paint immediately; discovering an unseen winner still requires Last.fm
+responses. No guarantee is made for unavailable metadata or missing artwork.
+
+## v0.9.6 evidence and prior acceptance history
+
 Baseline: 7ffd7a9; focused legacy-cache correction, signed-in acceptance pending.
 
 Read-only inspection reached the active Supermium extension's artwork storage.

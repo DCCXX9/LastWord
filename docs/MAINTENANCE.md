@@ -50,6 +50,12 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 20 October, separately authorised library-wide artwork follow-up: v0.9.7
+  extends album-count recovery to mixed-artist library Tracks and saved seeds
+  off-page, retaining per-artist proof and bounds. Infinite-scroll and native
+  Scrobbles coverage, exact checks and signed-in limits: CURRENT.md. The reset
+  heartbeat remains paused; this does not resume its old allowance override.
+
 - 20 October, separately authorised artwork retry: v0.9.6 addresses an observed
   legacy-cache mismatch. Old album names seed fresh exact counts/header reads;
   obsolete artwork is not trusted. Focused regression and acceptance limits:

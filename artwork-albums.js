@@ -30,16 +30,17 @@
     return null;
   }
   function context(username) {
-    const url = new URL(location.href), artist = A.musicItem(url.href);
+    const url = new URL(location.href), artist = A.musicItem(url.href), view = A.libraryView(url.href);
     if (url.search || !A.ownProfile(url.href, username) ||
-        !['artistScrobbles', 'tracks'].includes(A.libraryView(url.href)) || artist?.type !== 'artists') return null;
+        !['artistScrobbles', 'tracks'].includes(view) || artist && artist.type !== 'artists' ||
+        view === 'artistScrobbles' && !artist) return null;
     const albums = [], totals = new Map(), seen = new Set();
     for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
       const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(Boolean);
       if (!item) continue;
       const n = count(row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value'));
       if (n === null) continue;
-      if (item.type === 'tracks' && R.normalize(item.artist) === R.normalize(artist.artist)) totals.set(trackKey(item), n);
+      if (item.type === 'tracks' && (!artist || R.normalize(item.artist) === R.normalize(artist.artist))) totals.set(trackKey(item), n);
       if (item.type !== 'albums') continue;
       const img = row.querySelector('.chartlist-image img');
       const image = A.coverImage(img?.getAttribute('data-src')) || A.coverImage(img?.getAttribute('src'));
@@ -47,17 +48,23 @@
       const key = albumKey(item, username);
       if (seen.has(key)) continue;
       seen.add(key);
-      albums.push({ ...item, image, url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
+      albums.push({ ...item, image, artists: new Set([R.normalize(artist?.artist || item.artist)]),
+        url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
     }
-    const rankedTracks = A.libraryView(url.href) === 'tracks';
-    // Full artist Tracks pages have no album rows. Seed only from fresh,
-    // saved winners for this artist, then prove each new winner from today's
-    // exact album counts. Legacy/stale records supply names only, never art.
+    const rankedTracks = view === 'tracks';
+    // Ranked lists, including mixed-artist library Tracks, reuse saved album
+    // hints. Each artist keeps its own bounded candidates and exact proof.
     if (rankedTracks) for (const saved of known.values()) {
-      if (saved.username === R.normalize(username) && saved.artists.has(R.normalize(artist.artist))) albums.push(saved.album);
+      if (saved.username === R.normalize(username) && (!artist || saved.artists.has(R.normalize(artist.artist)))) {
+        albums.push({ ...saved.album, artists: saved.artists });
+      }
     }
-    return albums.length && totals.size ? { albums: albums.slice(0, 5), totals, rankedTracks } : null;
+    return albums.length && totals.size ? { albums, totals, rankedTracks } : null;
   }
+  const candidates = (item, data) => {
+    const artist = R.normalize(item.artist);
+    return data.albums.filter(album => album.artists.has(artist)).slice(0, 5);
+  };
   function remember(item, cover, username) {
     if (cover.sourceVersion !== 3 || cover.fallback || !cover.total || !A.coverImage(cover.image)) return;
     const album = { artist: cover.artist, name: cover.album, image: cover.image, url: cover.url };
@@ -77,7 +84,7 @@
   function proven(item, username, data) {
     const key = trackKey(item), total = data.totals.get(key);
     if (!total) return null;
-    const ranked = [], available = data.albums.filter(album => records.get(albumKey(album, username))?.counts);
+    const ranked = [], available = candidates(item, data).filter(album => records.get(albumKey(album, username))?.counts);
     for (const album of available) ranked.push({ album, count: records.get(albumKey(album, username)).counts.get(key) || 0 });
     ranked.sort((a,b) => b.count-a.count);
     const scanned = ranked.reduce((n, entry) => n+entry.count, 0), remaining = total-scanned;
@@ -156,7 +163,7 @@
   async function resolve(item, username, signal) {
     const data = context(username);
     if (!data?.totals.has(trackKey(item)) || item.placeholder && !data.rankedTracks) return null;
-    for (const album of data.albums) {
+    for (const album of candidates(item, data)) {
       if (signal?.aborted) throw new DOMException('Artwork lookup cancelled.', 'AbortError');
       const known = proven(item, username, data);
       if (known) return known;
