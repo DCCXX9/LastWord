@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.8.3 beta**.
+Last.fm profile. Installed candidate: **v0.9.0 beta**.
 
 ## Public beta candidate
 
@@ -87,6 +87,12 @@ Already-started modules are reused, retaining early cached artwork application.
   Apply. Existing preferences that differ are initially unchecked. Duplicate
   names are combined; missing/invalid metadata is reported. Compilation albums
   can appear under both the track artist and album artist as separate scopes.
+  Use the artist/album/song/album-artist group checkboxes to select across all
+  results, including pages outside the active search. The XML's exact casing is
+  used without title-case conversion. A fresh XML export after Library Doctor
+  cleanup can be imported through this same flow. The source-independent casing
+  builder is documented in [docs/LIBRARY_CASING.md](docs/LIBRARY_CASING.md);
+  direct Library Doctor connection/sync is not enabled.
 - **Revert XML import:** The last applied XML import can be reverted after
   closing/reopening the page or restarting the browser. Revert restores the
   overwritten preferences and removes new ones, preserving later manual edits.

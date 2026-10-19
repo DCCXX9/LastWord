@@ -1,4 +1,22 @@
-# v0.8.3 beta candidate
+# v0.9.0 beta candidate
+
+Library-wide XML casing framework prepared from b134285 in the same installed
+folder. Open Display names or Settings → Import iTunes XML. Scan locally, choose
+artists, albums, songs and album artists across every result page, resolve any
+conflicting spellings, then Apply. Group selections also include eligible names
+outside the current search. XML casing is copied exactly, without title-case
+conversion. Rules also apply to future matching plays and infinite-scroll rows.
+
+The existing persistent Revert preserves later manual changes. Existing differing
+preferences start unchecked. Use Export JSON backup before replacing an import's
+undo record. There is no total XML file-size cap; storage quota still applies.
+
+The shared name-record collector is ready for a later Library Doctor adapter;
+today the hand-off is a fresh iTunes XML export after cleanup. No direct app
+connection or automatic sync is enabled. No permissions, identity or storage
+formats changed. The outstanding live blank-artwork issue remains unresolved.
+
+## Retained v0.8.3 scrolling/artwork behavior
 
 Scrolling/artwork recovery prepared from `ff6fc13` (v0.8.2 beta), in the existing
 installed folder. A temporary history request failure previously left that

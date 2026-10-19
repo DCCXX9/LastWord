@@ -1,6 +1,7 @@
-# Current state — 18 October 2026
+# Current state — 19 October 2026
 
-Installed candidate: **v0.8.3 beta**, branch preferences-page.
+Installed candidate: **v0.9.0 beta**, branch preferences-page.
+Library-wide XML casing framework baseline: b134285 (v0.8.3 beta).
 Scrolling/artwork recovery baseline: ff6fc13 (v0.8.2 beta).
 Artist Tracks correction baseline: c4ef360 (v0.8.1 beta).
 Album-view correction baseline: b391802 (v0.8.0 beta).
@@ -15,6 +16,33 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Library-wide XML casing framework (v0.9.0)
+
+The existing streaming XML import now has artist, album, song and album-artist
+selection controls spanning every result page and the active search. Display
+names links directly to import. Exact source spelling is retained without title
+case conversion. Existing differing preferences remain unchecked until selected;
+conflicting XML casings require a choice. Apply and persistent selective Revert
+reuse the unchanged sole-writer storage contract.
+
+The XML adapter now uses a source-independent, versioned metadata collector;
+Library Doctor can later supply the same reviewed name records. Only four name
+fields enter the plan; private paths/IDs are discarded. No connection to Library
+Doctor, new permissions, user-data migration or live music-library edits.
+Contract and future integration boundary: docs/LIBRARY_CASING.md.
+
+Focused checks passed: shared collector (5000 songs), existing 128 MiB parser,
+review controls across search/pagination, and actual isolated unpacked import.
+That integration verifies exact names on initial and real infinite-scroll rows,
+friend isolation, persistent Revert, later manual edits and legacy-record
+preservation. Logs: test-results/v090-casing-focused.log (collector/parser pass;
+new fixture interaction assumptions corrected), v090-casing-ui.log (2/2 pass).
+Combined regression gate passed: 44/44 suites (v090-combined.log). Windows
+independently extracted and matched all 37 runtime files against the audit and
+tested source (v090-package-verification.json). ZIP: 242,199 bytes; SHA-256
+a1108ad66193dfb943b59bde71bc33762111c1a8a8417d8f463be68deffcb924.
+Constructed tests do not certify signed-in Supermium or Doctor integration.
 
 ## Unresolved live artwork follow-up
 
@@ -36,7 +64,8 @@ Chrome". No native app input was sent. Jay asked us to collect the popup result
 ourselves; the alternate browser connection also failed to answer within a
 bounded 20-second check. No additional Console/reload homework is requested.
 Runtime work waits for direct evidence of the failing queue/reader step.
-Signed-in acceptance is open; installed runtime remains v0.8.3.
+Signed-in acceptance is open. The v0.9.0 XML framework leaves this artwork
+behavior unchanged; no artwork fix is claimed.
 
 ## Scrolling/artwork recovery (v0.8.3)
 

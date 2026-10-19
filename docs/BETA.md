@@ -1,7 +1,18 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.8.3 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.0 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.0 library-wide XML casing framework
+
+Baseline b134285, clean installed checkout on preferences-page. Scope: a shared
+source-independent casing collector, whole-library type selections on XML review,
+an import entry from Display names, documented future Library Doctor boundary,
+focused/actual-extension checks and updated beta package. Reuse existing XML
+streaming, conflicts, atomic Apply and selective Revert. Keep storage formats,
+identity and permissions intact. No changes in Library Doctor's checkout, no
+cross-app connection, live metadata edits or publication. The live artwork
+defect is separate and remains unresolved.
 
 ## v0.8.3 scrolling/artwork recovery
 

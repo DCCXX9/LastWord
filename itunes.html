@@ -11,7 +11,8 @@
   <main>
     <section class="card" aria-labelledby="file-heading">
       <h2 id="file-heading">Choose an iTunes library XML</h2>
-      <p class="subtle">Every song is checked for artist, album, track and album artist names. Review the results before saving any preferences.</p>
+      <p class="subtle">Use the spelling and capitals in your XML for artists, albums and songs across your Last.fm library, including future plays and pages loaded as you scroll. Review the results before saving.</p>
+      <p class="subtle">You can use a fresh iTunes XML export after cleaning up your library in Library Doctor. Names are copied exactly; no title-case conversion is applied here.</p>
       <p class="privacy-note">Your file is read on this device. No uploads or Last.fm requests. The original XML is never saved by the extension.</p>
       <label for="xml-file">iTunes library XML</label>
       <input id="xml-file" type="file" accept=".xml,text/xml,application/xml" disabled>
@@ -23,6 +24,12 @@
       <p id="review-totals" class="subtle"></p>
       <details id="issues" hidden><summary>Skipped items &amp; scan details</summary><p id="issues-summary"></p><ul id="issues-list"></ul></details>
       <p class="review-help">New names are selected. Existing preferences that differ stay unchecked. Where your XML contains several casings, choose the spelling you want and select it.</p>
+      <fieldset id="library-groups" aria-describedby="library-groups-help"><legend>Select across the entire XML library</legend><div class="library-groups">
+        <label><input id="select-artists" type="checkbox"><span>Artists<small id="selection-artists"></small></span></label>
+        <label><input id="select-albums" type="checkbox"><span>Albums<small id="selection-albums"></small></span></label>
+        <label><input id="select-tracks" type="checkbox"><span>Songs<small id="selection-tracks"></small></span></label>
+        <label><input id="select-albumArtists" type="checkbox"><span>Album artists<small id="selection-albumArtists"></small></span></label>
+      </div><p id="library-groups-help" class="subtle">These boxes select all eligible names of that type, across every results page and outside your search. Conflicting casings still need a choice. Checking a group also selects replacements for existing preferences; review them before applying.</p></fieldset>
       <div id="stale-notice" class="notice" hidden><span>Saved preferences changed during this review. Load the latest values before applying. Your casing choices will be kept; selections will reset.</span><button id="refresh-review" type="button">Review current preferences</button></div>
       <div class="filters"><div class="search-field"><label for="search">Search all scanned names</label><input id="search" type="search" placeholder="Name, artist, or current preference" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="tracks">Tracks</option><option value="albumArtists">Album artists</option></select></div></div>
       <div class="selection-tools"><span id="shown-count" class="subtle"></span><div class="button-group"><button id="select-filtered" type="button">Select filtered names</button><button id="clear-filtered" type="button">Clear filtered names</button><button id="select-all" type="button">Select all eligible names</button><button id="clear-all" type="button">Clear all selections</button></div></div>
@@ -35,6 +42,6 @@
     <p id="message" class="message" role="status" aria-live="polite" tabindex="-1"></p>
   </main>
   <dialog id="confirm-dialog" aria-labelledby="confirm-heading"><h2 id="confirm-heading"></h2><p id="confirm-detail"></p><div class="button-group"><button id="cancel-confirm" type="button">Cancel</button><button id="confirm" type="button" class="primary">Apply</button></div></dialog>
-  <script src="rules.js"></script><script src="store.js"></script><script src="itunes-parser.js"></script><script src="itunes.js"></script>
+  <script src="rules.js"></script><script src="store.js"></script><script src="library-casing.js"></script><script src="itunes-parser.js"></script><script src="itunes.js"></script>
 </body>
 </html>

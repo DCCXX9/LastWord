@@ -16,7 +16,7 @@ const entry = (id, name = 'Song', artist = 'Artist') => `<key>${id}</key><dict><
   await page.route('**/*', route => { requests.push(route.request().url()); return route.abort(); });
   try {
     await page.goto('about:blank');
-    for (const file of ['rules.js', 'itunes-parser.js']) await page.addScriptTag({ path: path.join(root, file) });
+    for (const file of ['rules.js', 'library-casing.js', 'itunes-parser.js']) await page.addScriptTag({ path: path.join(root, file) });
     const result = await page.evaluate(xml => LastfmItunes.scan(xml), fixture);
     assert.equal(result.songs, 5);
     assert.equal(result.skipped, 1);

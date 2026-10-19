@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const R = globalThis.LastfmRules;
+  const C = globalThis.LastfmLibraryCasing;
   const CHUNK = 64 * 1024;
   const ITEM_LIMIT = 16 * 1024 * 1024;
   const malformed = () => new Error('The XML file is malformed or incomplete. Export a fresh library XML from iTunes.');
@@ -34,46 +34,17 @@
     return !value ? '' : value.tagName === 'string' && !value.children.length ? spelling(value.textContent) : null;
   }
   function collector() {
-    const candidates = new Map(), variants = new Map(), issues = new Map();
-    let songs = 0, skipped = 0, duplicates = 0;
-    const issue = message => issues.set(message, (issues.get(message) || 0) + 1);
-    function add(type, name, artist) {
-      const from = R.normalize(name), id = R.idFor(type, from, artist), key = type + ':' + id;
-      const existing = candidates.get(key);
-      if (existing) {
-        duplicates++; existing.occurrences++;
-        if (!variants.get(key).has(name)) { variants.get(key).add(name); existing.variants.push(name); }
-      } else {
-        candidates.set(key, { type, id, from, to: name, ...(artist ? { artist } : {}), variants: [name], occurrences: 1 });
-        variants.set(key, new Set([name]));
-      }
-    }
+    const data = C.createCollector();
     function consume(raw) {
-      songs++;
       const doc = new DOMParser().parseFromString(raw, 'application/xml');
       if (doc.querySelector('parsererror')) throw malformed();
       let fields;
       try { fields = dictionary(doc.documentElement); }
-      catch { skipped++; issue('Entries with invalid or duplicate fields were skipped.'); return; }
-      const name = stringField(fields, 'Name'), artist = stringField(fields, 'Artist');
-      if (!name || !artist || name.length > 500 || artist.length > 500) {
-        skipped++; issue('Entries without a valid track name and artist (up to 500 characters each) were skipped.'); return;
-      }
-      add('artists', artist); add('tracks', name, artist);
-      const album = stringField(fields, 'Album'), albumArtist = stringField(fields, 'Album Artist');
-      const validAlbumArtist = albumArtist !== null && albumArtist.length <= 500;
-      if (!validAlbumArtist) issue('Invalid album artist values were omitted.');
-      else if (albumArtist) add('albumArtists', albumArtist);
-      if (album === null || album.length > 500) issue('Invalid album values were omitted.');
-      else if (album) {
-        add('albums', album, artist);
-        if (validAlbumArtist && albumArtist && R.normalize(albumArtist) !== R.normalize(artist)) add('albums', album, albumArtist);
-      }
+      catch { data.skipTrack('Entries with invalid or duplicate fields were skipped.'); return; }
+      data.addTrack(Object.fromEntries(['Name', 'Artist', 'Album', 'Album Artist']
+        .map(name => [name, stringField(fields, name)])));
     }
-    return { consume,
-      counts: () => ({ processed: songs, skipped, candidates: candidates.size }),
-      result: () => ({ songs, total: songs, skipped, duplicates, candidates: [...candidates.values()],
-        issues: [...issues].map(([message, count]) => ({ message, count })) }) };
+    return { consume, counts: data.counts, result: data.result };
   }
 
   // Lexical and structural XML processing retains only one track and the current

@@ -28,7 +28,20 @@
       [entry.from, entry.artist || '', entry.expected?.to || '', ...entry.variants].some(value => R.normalize(value).includes(query))));
   }
   function updateSummary() {
-    const n = selected().length;
+    const counts = Object.fromEntries(R.TYPES.map(type => [type, { eligible: 0, selected: 0 }]));
+    let n = 0;
+    for (const entry of entries) {
+      if (!eligible(entry)) continue;
+      counts[entry.type].eligible++;
+      if (entry.selected) { counts[entry.type].selected++; n++; }
+    }
+    for (const type of R.TYPES) {
+      const control = $('select-' + type), count = counts[type];
+      control.checked = count.eligible > 0 && count.selected === count.eligible;
+      control.indeterminate = count.selected > 0 && count.selected < count.eligible;
+      control.disabled = busy || count.eligible === 0;
+      $('selection-' + type).textContent = count.selected.toLocaleString() + ' of ' + count.eligible.toLocaleString() + ' eligible selected';
+    }
     $('selected-count').textContent = n.toLocaleString() + ' selected';
     $('apply-summary').textContent = n.toLocaleString() + (n === 1 ? ' display preference' : ' display preferences') + ' selected for ' + reviewProfile + '.';
     $('apply').disabled = busy || stale || n === 0;
@@ -153,6 +166,10 @@
     }
   });
   $('cancel-scan').addEventListener('click', () => controller?.abort());
+  for (const type of R.TYPES) $('select-' + type).addEventListener('change', event => {
+    for (const entry of entries) if (entry.type === type) entry.selected = event.target.checked && eligible(entry);
+    draw();
+  });
   for (const id of ['search', 'type-filter']) $(id).addEventListener(id === 'search' ? 'input' : 'change', () => { page = 1; draw(); });
   $('previous').addEventListener('click', () => { page--; draw(); });
   $('next').addEventListener('click', () => { page++; draw(); });

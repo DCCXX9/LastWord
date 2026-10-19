@@ -18,7 +18,7 @@ async function openPage(browser, worker) {
   const mock = await mockExtension(page, { settings: { username: 'DCCXX', infiniteScroll: true }, rules: {
     artists: { '["artist"]': { from: 'Artist', to: 'aRTIST' } }, albums: {}, tracks: {}, albumArtists: {}
   } }, { worker, senderUrl: 'chrome-extension://test/itunes.html' });
-  await loadScripts(page, ['rules.js', 'store.js', 'itunes-parser.js', 'itunes.js']);
+  await loadScripts(page, ['rules.js', 'store.js', 'library-casing.js', 'itunes-parser.js', 'itunes.js']);
   await page.waitForFunction(() => !document.querySelector('#xml-file').disabled);
   return { page, worker: mock };
 }
@@ -43,6 +43,21 @@ async function confirm(page, button) {
     assert.equal(await page.locator('#scan-file').innerText(), 'File: Library.xml');
     assert.match(await page.locator('#scan-summary').innerText(), /108 songs checked. 1 skipped/);
     assert.match(await page.locator('#review-totals').innerText(), /106 tracks/);
+    // Type selection reaches beyond both the active search and the 100-row page.
+    await page.locator('#clear-all').click();
+    await page.locator('#search').fill('lowercase');
+    await page.locator('#select-tracks').check();
+    assert.equal(await page.locator('#selected-count').innerText(), '106 selected');
+    assert.equal(await page.locator('#candidates tr').count(), 1);
+    await page.locator('#candidates tr input').uncheck();
+    assert.equal(await page.locator('#select-tracks').evaluate(x => x.indeterminate), true);
+    assert.equal(await page.locator('#selected-count').innerText(), '105 selected');
+    await page.locator('#select-tracks').check();
+    assert.equal(await page.locator('#selected-count').innerText(), '106 selected');
+    await page.locator('#select-tracks').uncheck();
+    assert.equal(await page.locator('#selected-count').innerText(), '0 selected');
+    await page.locator('#search').fill('');
+    await page.locator('#select-all').click();
     assert.equal(await page.locator('#candidates tr').count(), 100);
     await page.locator('#next').click();
     assert.ok(await page.locator('#candidates tr').count() > 0, 'names beyond first page remain accessible');

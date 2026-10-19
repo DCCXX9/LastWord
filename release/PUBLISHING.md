@@ -2,28 +2,30 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.8.3 beta**. Keep it in place.
+The installed folder already contains **v0.9.0 beta**. Keep it in place.
 
 1. Click Reload on the existing extension card in `chrome://extensions`.
-2. Refresh Last.fm once. Do not uninstall or load a second folder.
-3. Open Homixide Gang's full library Tracks list and scroll to FiGure5
-   [INTERLUDE]. Its cover and image link should use I5U5WE5. Other tracks use
-   their own most-scrobbled albums, including rows loaded further down.
+2. Open the extension's Display names page → Import casing for your whole library
+   from iTunes XML (or use Settings → Import your iTunes casing).
+3. Choose an XML, review its names and choose artist/album/song groups or
+   individual rows. Export JSON before replacing saved preferences, then Apply.
+4. Refresh your own Last.fm library. Imported casing should appear on matching
+   names, including rows loaded as you scroll. Revert last XML import is available
+   on the import page; it preserves later manual preference edits.
 
 No Console commands are needed. A screenshot or ordinary description of any
-remaining problem is enough. Cold artwork still needs Last.fm requests; this
-candidate adds one delayed recovery attempt for temporary artwork read failures
-while the real scroller and artwork queue run together.
-Album views still reuse their header immediately; new track covers can require
-requests, while saved winners apply without discovery. Signed-in results
-are not certified by the isolated regression tests.
+remaining problem is enough. Direct Library Doctor connection/sync is not yet
+enabled; a fresh XML export after cleanup uses the same import flow today.
+The previously reported live blank-artwork defect remains unresolved and is
+unchanged by this XML feature. Signed-in results are not certified by the
+isolated regression tests.
 
 ## Prepared local outputs
 
 | Output | Path relative to project |
 | --- | --- |
-| Upload / download ZIP | `dist/lastfm-personal-library-0.8.3-beta.zip` |
-| ZIP checksum | `dist/lastfm-personal-library-0.8.3-beta.zip.sha256` |
+| Upload / download ZIP | `dist/lastfm-personal-library-0.9.0-beta.zip` |
+| ZIP checksum | `dist/lastfm-personal-library-0.9.0-beta.zip.sha256` |
 | Per-file audit | `dist/package-manifest.json` |
 | Static website including download and privacy page | `dist/site/` |
 | Store copy and review instructions | `release/STORE-LISTING.md` |
