@@ -80,6 +80,7 @@
     if (job.state === 'complete' && job.cover?.image === cover.image && job.cover?.url === cover.url &&
         job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
     job.cover = cover; job.state = 'complete';
+    globalThis.LastfmArtworkAlbums?.remember?.(job.item, cover, username);
     cache.set(keyFor(job.item), { cover, checkedAt: Date.now() });
     for (const image of job.images) apply(image, cover);
     S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
@@ -205,6 +206,9 @@
       const job = jobs.get(key); job.images.add(image);
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
+    }
+    for (const job of jobs.values()) if (job.state === 'complete') {
+      globalThis.LastfmArtworkAlbums?.remember?.(job.item, job.cover, username);
     }
     const candidates = [...jobs.values()].filter(job => !job.albumless && job.state !== 'loading');
     const known = candidates.length && globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username);

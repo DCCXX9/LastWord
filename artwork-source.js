@@ -95,7 +95,7 @@
 
   async function resolve(item, username, signal) {
     let shared;
-    try { if (!item.placeholder) shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal); }
+    try { shared = await globalThis.LastfmArtworkAlbums?.resolve(item, username, signal); }
     catch (error) {
       if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
       // The bounded aggregate is an optimization; the track history is still authoritative.

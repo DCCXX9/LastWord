@@ -1,7 +1,23 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.4 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.5 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.5 Artist Tracks album counts
+
+Baseline 6bcd73e, clean installed checkout. Reuse fresh proved album covers on
+the full artist Tracks page, then read bounded exact album counts to prove other
+track winners. Initial and appended rows share those counts; insufficient counts
+still require individual history. No guessing from similar track/album names,
+new storage formats or changed request throttles. Failed album and history reads
+can still leave unresolved covers. Public Dean Blunt history and LUCRE artwork
+were observed, with intermittent HTTP 600 responses. Signed-in acceptance remains
+Jay's Reload test; synthetic checks are not proof of that session.
+
+Combined gate: 51/51 suites passed (test-results/v095-combined.log). Windows
+extracted and matched all 39 runtime files against the package audit and tested
+source (test-results/v095-package-verification.json). ZIP: 265,569 bytes;
+SHA-256: 57ad63f41b2432a9328aebb61432385a4c0d742a6f896aabbf9530a531c51337.
 
 ## v0.9.4 broken image recovery
 
@@ -12,7 +28,7 @@ personal-cover writes retain the recovered URL. Working images, links and
 user-selected image identity are preserved. No new page reads, permissions or
 saved-data formats. Deleted or fully blocked images cannot be reconstructed.
 Focused actual-unpacked checks pass; combined/package evidence: CURRENT.md.
-Signed-in Drug Church acceptance remains Jay's Reload check.
+Jay's subsequent live screenshot confirms Drug Church's portrait now displays.
 
 ## v0.9.3 artist redirect protection
 

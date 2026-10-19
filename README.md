@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.4 beta**.
+Last.fm profile. Installed candidate: **v0.9.5 beta**.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
 routes in the connected profile and their public music pages. Album/track links,
@@ -50,6 +50,10 @@ Already-started modules are reused, retaining early cached artwork application.
   Silentó / Watch Me (Whip / Nae Nae)). Album-artist tags select compilation covers.
   The signed-in album overview's primary cover supplies your starred artwork.
   Both the thumbnail and cover link update, retaining native thumbnail size.
+  Full artist Tracks lists can share exact album counts seeded by fresh verified
+  track covers, proving several winners with fewer individual history reads.
+  Initial and scroll-added rows use the same proof. Unavailable metadata can
+  still leave unresolved covers; a shared album name alone is never enough.
   Generic music-note covers are hidden during lookup and never accepted as a
   resolved cover. Previously cached generic images are re-resolved. Placeholder
   spans become album links once the chosen cover is available; profile changes

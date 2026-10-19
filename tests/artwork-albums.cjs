@@ -63,6 +63,17 @@ const albumPage = tracks => `<!doctype html><main class="col-main"><p class="met
   const bounded=await page.evaluate(async()=>{LastfmArtworkAlbums.clear();return LastfmArtworkAlbums.resolve({artist:'Playboi Carti',name:'2024'},'DCCXX');});
   assert.equal(bounded,null,'large unfinished album lists leave selection to the individual track reader');
   assert.deepEqual(musicPages,[1,2],'the optimization must not crawl a third album-list page');
+  const reused = await page.evaluate(() => {
+    const item = { artist: 'Playboi Carti', name: '2024' };
+    const cover = { artist: item.artist, album: 'MUSIC', image: 'https://lastfm-img.freetls.fastly.net/i/u/64s/preferred.jpg',
+      url: 'https://www.last.fm/music/Playboi+Carti/MUSIC', fallback: false, sourceVersion: 3, total: 63 };
+    LastfmArtworkAlbums.remember(item, cover, 'DCCXX');
+    return LastfmArtworkAlbums.coverForAlbum(item.artist, cover.album, 'DCCXX');
+  });
+  assert.equal(reused.album, 'MUSIC', 'a remembered album retains the cover-result contract for individual history reads');
+  assert.ok(reused.image.endsWith('/preferred.jpg'));
+  await page.evaluate(() => LastfmArtworkAlbums.clear());
+  assert.equal(await page.evaluate(() => LastfmArtworkAlbums.coverForAlbum('Playboi Carti', 'MUSIC', 'Friend')), null);
   assert.deepEqual(worker.data.rules,{artists:{},albums:{},tracks:{},albumArtists:{}});
   console.log('PASS: MUSIC wins for 2024, album images are reused, shared totals update proven tracks progressively and preserve preferences');
  }finally{await browser.close();}

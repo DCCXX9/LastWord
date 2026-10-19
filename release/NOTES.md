@@ -1,4 +1,16 @@
-# v0.9.4 beta candidate
+# v0.9.5 beta candidate
+
+Full artist Tracks pages now reuse exact album counts to prove several personal
+track covers together, including scroll-added tracks. Fresh verified covers seed
+the album lookup; each new track still needs sufficient counts to prove that
+album wins its own all-time scrobbles. Existing saved winners display immediately.
+
+This reduces separate history reads when Last.fm returns temporary errors. It
+cannot resolve metadata if neither album counts nor track history is available.
+No permissions, installation identity, preferences or storage formats changed.
+Signed-in Dean Blunt acceptance remains the Reload test.
+
+## Included v0.9.4 broken-image recovery
 
 Failed artist portraits and album thumbnails automatically retry alternate sizes
 of the same selected image. Recovery also applies to scroll-added rows, failed
@@ -10,9 +22,8 @@ do not scan history or request additional Last.fm pages. Deleted images and
 images blocked at all sizes remain unavailable. Existing preferences, undo,
 legacy records, installation identity and permissions are preserved.
 
-Actual-unpacked recovery and existing artwork integration pass. Signed-in
-Drug Church acceptance remains the Reload test; isolated fixtures do not certify
-the particular live failure previously shown.
+Actual-unpacked recovery and existing artwork integration pass. Jay's subsequent
+live screenshot confirms Drug Church's portrait now displays.
 
 ## Included v0.9.3 artist redirect protection
 

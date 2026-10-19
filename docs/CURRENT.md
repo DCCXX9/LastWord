@@ -1,6 +1,7 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.4 beta**, branch preferences-page.
+Installed candidate: **v0.9.5 beta**, branch preferences-page.
+Artist Tracks album-count reuse baseline: 6bcd73e (v0.9.4 beta).
 Broken image recovery baseline: 9522e18 (v0.9.3 beta).
 Redirect protection baseline: 2e7420f (v0.9.2 beta).
 Scroll consent and page-overlap baseline: 881fe1b (v0.9.0 beta).
@@ -19,6 +20,49 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Artist Tracks album-count reuse (v0.9.5)
+
+Dean Blunt's public Tracks page reproduces the native LUCRE placeholders. The
+public lucre 5 history was read successfully: all 18 plays name LUCRE; the
+album overview supplies image 6da014dd54bb1082a3a51218fcbf7a89. Subsequent history
+reads returned HTTP 600 intermittently, also on normal navigation. One success
+with Accept: text/html did not repeat, so headers were not changed. The initial
+short-ID theory was disproved before any runtime change: that captured ID has
+32 digits. Public inspection does not establish Jay's signed-in queue state.
+
+Previously the shared album-count reader only worked on artist overview pages,
+not /+tracks. A fresh, verified cached LUCRE track could already display, while
+each blank sibling still needed its own failing history read. Artist Tracks
+pages now seed up to five exact albums from fresh verified track winners on the
+page. Existing bounded own-library album reads prove each new track's winner
+against its all-time total, including appended rows. Thirteen of eighteen plays
+prove a winner; five of eighteen do not. Ties/uncertainty retain the individual
+history reader. Unfiltered views only; source identity, native fields, starred
+cover, links, request pacing, rate-limit stops and data formats are preserved.
+
+This reduces repeated history requests; it cannot reconstruct unavailable
+metadata. With no fresh known album, or if both album and history requests fail,
+the correct cover remains unresolved. No claim of universal instant loading or
+signed-in acceptance is made. The original broader live blank-cover issue below
+remains an acceptance item.
+
+The new actual-unpacked regression fails on the previous runtime and passes
+with shared album counts: initial and scroll-added tracks paint/link correctly
+without their unavailable histories, insufficient counts never guess a winner,
+and cached revisits/profile/preferences are preserved. Focused gate: 4/4 suites
+(test-results/v095-known-before.log and v095-known-focused.log). The combined
+gate passes 51/51 suites (test-results/v095-combined.log), including existing
+artwork authority, native edits, scrolling, startup, storage and XML checks.
+The actual public LUCRE 64s image also decoded successfully at 64x64.
+
+Windows independently extracted the 39-file package; all files match the tested
+source and package audit (test-results/v095-package-verification.json).
+ZIP: 265,569 bytes; SHA-256
+57ad63f41b2432a9328aebb61432385a4c0d742a6f896aabbf9530a531c51337.
+
+Jay supplied a live screenshot confirming Drug Church's repaired portrait after
+v0.9.4. That acceptance covers the portrait, not unresolved track placeholders.
 
 ## Broken artist and album images (v0.9.4)
 

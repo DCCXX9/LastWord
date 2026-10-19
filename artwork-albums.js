@@ -2,6 +2,7 @@
   'use strict';
   const A = LastfmAdapter, R = LastfmRules;
   const records = new Map();
+  const known = new Map();
   const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
   const trackKey = item => JSON.stringify([R.normalize(item.artist), R.normalize(item.name)]);
   const albumKey = (album, username) => JSON.stringify([R.normalize(username), R.normalize(album.artist), R.normalize(album.name)]);
@@ -12,6 +13,8 @@
   }
   function coverForAlbum(artist, album, username) {
     if (!A.ownProfile(location.href, username) || !A.libraryView(location.href)) return null;
+    const saved = known.get(albumKey({ artist, name: album }, username));
+    if (saved) return { artist, album, image: saved.album.image, url: saved.album.url };
     // The five-album counting bound does not limit already-loaded artwork.
     // Only use this after the individual history has proved the album winner.
     for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
@@ -27,7 +30,7 @@
   function context(username) {
     const url = new URL(location.href), artist = A.musicItem(url.href);
     if (url.search || !A.ownProfile(url.href, username) ||
-        A.libraryView(url.href) !== 'artistScrobbles' || artist?.type !== 'artists') return null;
+        !['artistScrobbles', 'tracks'].includes(A.libraryView(url.href)) || artist?.type !== 'artists') return null;
     const albums = [], totals = new Map(), seen = new Set();
     for (const row of document.querySelectorAll('.col-main table.chartlist tr.chartlist-row')) {
       const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(Boolean);
@@ -44,7 +47,23 @@
       seen.add(key);
       albums.push({ ...item, image, url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
     }
-    return albums.length && totals.size ? { albums: albums.slice(0, 5), totals } : null;
+    const rankedTracks = A.libraryView(url.href) === 'tracks';
+    // Full artist Tracks pages have no album rows. Seed only from fresh,
+    // previously verified winners for this artist, then prove each new winner
+    // from exact album counts; a shared album title alone proves nothing.
+    if (rankedTracks) for (const saved of known.values()) {
+      if (saved.username === R.normalize(username) && saved.artists.has(R.normalize(artist.artist))) albums.push(saved.album);
+    }
+    return albums.length && totals.size ? { albums: albums.slice(0, 5), totals, rankedTracks } : null;
+  }
+  function remember(item, cover, username) {
+    if (cover.sourceVersion !== 3 || cover.fallback || !cover.total || !A.coverImage(cover.image)) return;
+    const album = { artist: cover.artist, name: cover.album, image: cover.image, url: cover.url };
+    const key = albumKey(album, username);
+    if (!known.has(key)) known.set(key, { album, username: R.normalize(username), artists: new Set() });
+    const saved = known.get(key);
+    saved.album = album;
+    saved.artists.add(R.normalize(item.artist));
   }
   function proven(item, username, data) {
     const key = trackKey(item), total = data.totals.get(key);
@@ -113,7 +132,7 @@
   }
   async function resolve(item, username, signal) {
     const data = context(username);
-    if (!data?.totals.has(trackKey(item))) return null;
+    if (!data?.totals.has(trackKey(item)) || item.placeholder && !data.rankedTracks) return null;
     for (const album of data.albums) {
       if (signal?.aborted) throw new DOMException('Artwork lookup cancelled.', 'AbortError');
       const known = proven(item, username, data);
@@ -122,5 +141,6 @@
     }
     return proven(item, username, data);
   }
-  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, clear: () => records.clear() });
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, remember,
+    clear: () => { records.clear(); known.clear(); } });
 })();
