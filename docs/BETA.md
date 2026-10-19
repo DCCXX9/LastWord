@@ -1,7 +1,19 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.2 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.3 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.3 artist redirect protection
+
+Baseline 2e7420f, clean installed checkout. Protect exact Travis Scott and Lucki
+navigation on the connected profile and their public music pages. Share the
+policy with scrolling/artwork reads; reject wrong-artist responses, preserve
+native form submissions and genuine Lucky Twice. Default-on checkbox, live
+opt-out and old-backup compatibility. No new authority or user-data migration.
+
+Targeted checks pass for URLs/identity, actual unpacked scroll integration,
+settings restoration, artwork reads and native editor delegation. Final combined
+gate and package evidence: docs/CURRENT.md. Signed-in reload acceptance is open.
 
 ## v0.9.2 compact scroll prompt
 

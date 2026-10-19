@@ -62,7 +62,8 @@
     if (!current) return null;
     const link = root.querySelector('nav.pagination .pagination-next a[href],nav.pagination a.pagination-next[href],nav.pagination a[rel="next"]');
     const next = link && parse(link.getAttribute('href'), base);
-    if (!next || next.pathname !== current.pathname) return null;
+    if (!next || next.pathname !== current.pathname &&
+        !globalThis.LastfmRedirects?.samePagePath(current.href, next.href)) return null;
     const page = Number(current.searchParams.get('page') || 1);
     const nextNumber = Number(next.searchParams.get('page'));
     if (!Number.isSafeInteger(nextNumber) || nextNumber <= page) return null;

@@ -1,4 +1,22 @@
-# v0.9.2 beta candidate
+# v0.9.3 beta candidate
+
+Artist redirect protection starts with Travis Scott and Lucki. Artist, album and
+track links on your connected profile and their public music pages use Last.fm's
++noredirect route, including newly loaded rows. Artwork/library reads use the
+same policy and reject a response identifying another artist.
+
+Genuine Lucky Twice entries remain native. Already redirected row links require
+original native scrobble fields proving the intended artist before repair.
+Turn off Protect artist redirects in Settings to restore native links. Existing
+preferences, XML undo, legacy records, installation identity and permissions are
+preserved. Old JSON backups remain accepted; no startup data migration.
+
+This protects navigation; it cannot repair Last.fm's merged global statistics or
+intercept a server redirect before a typed/external URL loads. Help explains the
+scope and links to Last.fm's spelling-correction setting. No account setting is
+changed automatically. Signed-in acceptance remains open after isolated checks.
+
+## Included v0.9.2 compact prompt
 
 Removed the extra text beneath “Load next page?” and kept Yes / No / Always
 on one row. The existing loading choices and ten-page checkpoints are unchanged.

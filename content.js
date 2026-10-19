@@ -234,7 +234,8 @@
       const page = await LastfmPages.get(state.next, { signal: controller.signal });
       if (scroller !== state || !state.active || state.controller !== controller || !ownProfile() || controller.signal.aborted) return;
       const url = new URL(page.url);
-      if (url.pathname !== new URL(currentUrl).pathname ||
+      if (url.pathname !== new URL(currentUrl).pathname &&
+          !globalThis.LastfmRedirects?.samePagePath(currentUrl, page.url) ||
           url.searchParams.get('page') !== new URL(state.next).searchParams.get('page')) {
         throw new Error('Last.fm returned a different library page. Loading stopped.');
       }
@@ -379,6 +380,7 @@
       ownProfile: ownProfile(), view: A.libraryView(location.href),
       scrollState: settings.infiniteScroll ? (scroller?.active ? scroller.mode : 'unavailable') : 'off',
       ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status(),
+      redirects: globalThis.LastfmRedirects?.status(),
       albumless: globalThis.LastfmAlbumless?.status() };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {

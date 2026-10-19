@@ -13,7 +13,8 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
   function settings(input) {
     return {
       username: typeof input?.username === 'string' ? input.username.trim() : defaults.username,
-      infiniteScroll: input?.infiniteScroll !== false
+      infiniteScroll: input?.infiniteScroll !== false,
+      redirectProtection: input?.redirectProtection !== false
     };
   }
 
@@ -32,10 +33,12 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
     if (!object(value) || typeof value.username !== 'string' ||
         !/^(?:[^/\\\s?#]+)?$/.test(value.username) ||
         typeof value.infiniteScroll !== 'boolean' ||
+        (owns(value, 'redirectProtection') && typeof value.redirectProtection !== 'boolean') ||
         Object.keys(value).some(key => !owns(defaults, key))) {
       throw new Error('Enter a valid Last.fm username and scrolling setting.');
     }
-    return { username: value.username, infiniteScroll: value.infiniteScroll };
+    return { username: value.username, infiniteScroll: value.infiniteScroll,
+      redirectProtection: value.redirectProtection !== false };
   }
 
   function validRule(type, id, rule) {

@@ -1,7 +1,13 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.2 beta**.
+Last.fm profile. Installed candidate: **v0.9.3 beta**.
+
+Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
+routes in the connected profile and their public music pages. Album/track links,
+scroll-added rows and artwork reads share the policy. Genuine Lucky Twice links
+require original native scrobble evidence before any repair. Toggle in Settings;
+see [scope and testing](docs/REDIRECT_PROTECTION.md).
 
 ## Public beta candidate
 

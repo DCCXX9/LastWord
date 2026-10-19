@@ -1,6 +1,7 @@
-# Current state — 19 October 2026
+# Current state — 20 October 2026
 
-Installed candidate: **v0.9.2 beta**, branch preferences-page.
+Installed candidate: **v0.9.3 beta**, branch preferences-page.
+Redirect protection baseline: 2e7420f (v0.9.2 beta).
 Scroll consent and page-overlap baseline: 881fe1b (v0.9.0 beta).
 Library-wide XML casing framework baseline: b134285 (v0.8.3 beta).
 Scrolling/artwork recovery baseline: ff6fc13 (v0.8.2 beta).
@@ -17,6 +18,31 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Artist redirect protection (v0.9.3)
+
+Exact Travis Scott and Lucki links gain +noredirect in the connected profile
+and their public music pages, including albums/tracks and scroll-added rows.
+Already canonical Lucky Twice / Travi$ Scott links require validated original
+native scrobble evidence before repair. Other profiles, genuine Lucky Twice,
+image galleries and native edit forms retain their original behavior.
+
+The shared read queue applies the same routing and rejects another returned
+artist. Pagination accepts only equivalent direct/bypass paths, preserving
+filter and page checks. The new default-on setting can restore native hrefs
+immediately; old backups remain supported without a startup migration.
+No permissions, identity, saved rules, XML undo or legacy record changes.
+Scope, sources, acceptance and limits: docs/REDIRECT_PROTECTION.md.
+
+Combined gate passed 49/49 suites (test-results/v093-combined.log), including
+redirect URL/storage, actual unpacked scrolling, artwork read/native-edit,
+settings, startup Reload and existing XML/artwork/history checks. Settings UI
+was visually checked. Windows extracted all 38 runtime files and matched their
+SHA-256 values to tested source (test-results/v093-package-verification.json).
+ZIP: 255,909 bytes; SHA-256
+e6ce50ca191e4c267964c5683ee342910705f0b9b29f414a3a33427b1817f4d5.
+Signed-in Last.fm acceptance remains Jay's reload check; fixtures do not certify
+Last.fm's actual catalogue, global statistics or account setting.
 
 ## Compact scroll prompt (v0.9.2)
 

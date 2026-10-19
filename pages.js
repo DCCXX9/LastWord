@@ -21,9 +21,10 @@
 
   async function request(url, signal, album, { minInterval = 1500, form, beforeSend } = {}) {
     check(signal);
-    const target = new URL(url, location.href);
     const { settings } = await LastfmStore.read();
     const edit = Boolean(form);
+    const target = new URL(!edit && globalThis.LastfmRedirects
+      ? LastfmRedirects.protect(url, settings, location.href) : url, location.href);
     const editPath = value => new URL(value).origin === location.origin &&
       /^\/user\/[^/]+\/library\/edit-track$/.test(new URL(value).pathname) &&
       LastfmAdapter.ownProfile(value, settings.username);
@@ -97,6 +98,13 @@
       }
       if (!allowed(response.url)) {
         throw new Error('Last.fm redirected away from your library. Check your sign-in.');
+      }
+      const directUrl = target.href.replace('/music/+noredirect/', '/music/');
+      if (!edit && globalThis.LastfmRedirects &&
+          LastfmRedirects.protect(directUrl, settings, location.href) !== directUrl &&
+          LastfmAdapter.musicItem(target.href)?.artist.toLowerCase() !==
+            LastfmAdapter.musicItem(response.url)?.artist.toLowerCase()) {
+        throw new Error('Last.fm returned a different artist. Redirect protection stopped loading.');
       }
       check(signal);
       lastError = '';

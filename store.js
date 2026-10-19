@@ -2,7 +2,7 @@
   'use strict';
   if (globalThis.LastfmStore) return;
 
-  const DEFAULT_SETTINGS = Object.freeze({ username: '', infiniteScroll: true });
+  const DEFAULT_SETTINGS = Object.freeze({ username: '', infiniteScroll: true, redirectProtection: true });
   const FEATURES = Object.freeze({ automaticCorrections: false });
   const channel = 'lastfm-store-v1';
 

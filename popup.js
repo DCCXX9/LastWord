@@ -60,6 +60,7 @@
           view: String(status.view || 'unknown'), scrollState: String(status.scrollState || 'unknown'),
           rateLimited: !!status.rateLimited, contentVersion: String(status.version || 'unknown'),
           artwork: status.artwork || null,
+          redirects: status.redirects || null,
           albumless: status.albumless || null
         } : { connected: false }
       };

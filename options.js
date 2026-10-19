@@ -26,6 +26,7 @@
     if (!settingsDirty) {
       $('username').value = next.settings.username;
       $('infinite').checked = next.settings.infiniteScroll !== false;
+      $('redirects').checked = next.settings.redirectProtection !== false;
     }
   }
   $('settings-form').addEventListener('input', () => {
@@ -40,7 +41,8 @@
     const revision = settingsRevision;
     $('save-settings').disabled = true;
     try {
-      const next = await S.saveSettings({ username, infiniteScroll: $('infinite').checked });
+      const next = await S.saveSettings({ username, infiniteScroll: $('infinite').checked,
+        redirectProtection: $('redirects').checked });
       settingsDirty = settingsRevision !== revision;
       accept(next); $('settings-note').textContent = settingsDirty ? 'Unsaved changes' : '';
       message(settingsDirty ? 'Settings saved. Your newer changes are still unsaved.'
