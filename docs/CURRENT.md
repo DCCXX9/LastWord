@@ -1,6 +1,26 @@
 # Current state — 20 October 2026
 
 Installed candidate: **v0.9.5 beta**, branch preferences-page.
+**Live acceptance failed:** Jay's 20 October screenshot still shows blank
+lucre 1–6 and A_X covers on Dean Blunt's full Tracks page. v0.9.5 is not an
+accepted fix for this defect. No later runtime candidate has been prepared.
+
+The follow-up inspection could not reach the failing signed-in runtime: Computer
+Use lists only the empty in-app browser/MCP Apps surfaces, and the running
+Chrome/Supermium processes expose no remote-debugging-port flag. The separate
+DevTools browser receives Last.fm's Temporarily Unavailable page (body says
+Error 503) for the exact Tracks URL. This external response does not establish
+the cause in Jay's tab.
+
+The v0.9.5 regression assumes a fresh sourceVersion 3, non-fallback LUCRE winner
+is cached for lucre 7, and ranked rows expose data-stat-value. Neither assumption
+has been observed in the failing signed-in tab. A visible lucre 7 cover alone
+does not prove it can seed the shared album reader. Before another runtime fix,
+inspect a failing row's job/error, the cached lucre 7 record's freshness/source,
+and the actual history/album response and count markup. Preserve saved data;
+do not repeat the short-ID/header theories, clear caches, or treat fixture
+passes as evidence that this live defect is fixed.
+
 Artist Tracks album-count reuse baseline: 6bcd73e (v0.9.4 beta).
 Broken image recovery baseline: 9522e18 (v0.9.3 beta).
 Redirect protection baseline: 2e7420f (v0.9.2 beta).
