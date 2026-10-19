@@ -1,4 +1,20 @@
-# v0.9.3 beta candidate
+# v0.9.4 beta candidate
+
+Failed artist portraits and album thumbnails automatically retry alternate sizes
+of the same selected image. Recovery also applies to scroll-added rows, failed
+responsive sources and selected-album covers, without fighting the personal
+artwork feature or changing image links, titles or styling.
+
+Retries are bounded, shared within the page and deferred while offscreen. They
+do not scan history or request additional Last.fm pages. Deleted images and
+images blocked at all sizes remain unavailable. Existing preferences, undo,
+legacy records, installation identity and permissions are preserved.
+
+Actual-unpacked recovery and existing artwork integration pass. Signed-in
+Drug Church acceptance remains the Reload test; isolated fixtures do not certify
+the particular live failure previously shown.
+
+## Included v0.9.3 artist redirect protection
 
 Artist redirect protection starts with Travis Scott and Lucki. Artist, album and
 track links on your connected profile and their public music pages use Last.fm's

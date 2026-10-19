@@ -381,6 +381,7 @@
       scrollState: settings.infiniteScroll ? (scroller?.active ? scroller.mode : 'unavailable') : 'off',
       ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status(),
       redirects: globalThis.LastfmRedirects?.status(),
+      imageRecovery: globalThis.LastfmImageRecovery?.status(),
       albumless: globalThis.LastfmAlbumless?.status() };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {

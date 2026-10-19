@@ -1,6 +1,7 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.3 beta**, branch preferences-page.
+Installed candidate: **v0.9.4 beta**, branch preferences-page.
+Broken image recovery baseline: 9522e18 (v0.9.3 beta).
 Redirect protection baseline: 2e7420f (v0.9.2 beta).
 Scroll consent and page-overlap baseline: 881fe1b (v0.9.0 beta).
 Library-wide XML casing framework baseline: b134285 (v0.8.3 beta).
@@ -18,6 +19,53 @@ Startup correction baseline: 695e220 (v0.6.9).
 Scrolling correction baseline: ff7ae0d (v0.6.8).
 Correction baseline: ae100ec (v0.6.7).
 Artwork feature baseline: 74ce8ba796c9d39e8c42a7a18060969935cd33c1 (v0.6.2).
+
+## Broken artist and album images (v0.9.4)
+
+The previous runtime had no handler for failed native image loads. A failing
+actual-unpacked regression reproduced broken artist and album derivatives while
+the same image remained available at another size. Recovery now checks native
+load errors and failures already present at startup, including scroll-added rows
+and failed responsive sources. It probes 300x300 then ar0 using the exact image
+ID/file type, committing only a successfully decoded source. Personal artwork
+uses that repaired source instead of repeatedly restoring the failed thumbnail.
+
+Only the connected profile's chartlist/header images participate. Working images,
+alt/title text, links, styling, selected photo/album identity and saved data stay
+intact. Two probes per image ID, two active jobs, five-second probe deadlines,
+256 in-memory jobs and viewport gating bound requests and memory. Failures do
+not trigger history or HTML-page reads. Deleted/fully blocked images remain
+unavailable; generic placeholders still belong to the existing selection logic.
+
+The new real-unpacked image-recovery suite verifies native startup failures,
+artist/album recovery, failed srcset and lazy-loader rewrites, scroll-added rows,
+visible-element failure after a successful probe, personal-cover coexistence,
+stale preference protection, offscreen deferral, finite failures and friend/data
+isolation. Before log: test-results/v094-image-before.log. Focused integration
+passes image-recovery and artwork-extension (v094-image-integration-final.log).
+An initial focused run exposed an undefined-record comparison for non-CDN image
+names; the guard was corrected before the final passing integration run.
+
+Drug Church's public photo ID 6696583a8c279d9b0534d98d51140fe8 returned actual
+JPEGs at avatar70s, 64s, 300x300 and ar0 during investigation. The original
+signed-in failure could not be inspected: the attached DevTools browser has no
+Last.fm session and direct public page fetches return a Client Challenge.
+Therefore alternate-size recovery is verified in isolation, while Jay's actual
+Drug Church page remains the Reload acceptance check.
+
+A separate isolated unpacked-browser check forced the native thumbnails to fail,
+then loaded the real public Drug Church portrait and Hygiene cover from Last.fm's
+CDN. Both decoded at 300x300; the screenshot was visually checked
+(test-results/v094-public-cdn.png and v094-public-cdn.json). This uses public
+images in a constructed page, not Jay's signed-in library.
+
+The 39-file package was independently extracted by Windows and every file/hash
+matched the tested source (test-results/v094-package-verification.json).
+ZIP: 264,067 bytes; SHA-256
+c727a14fd59b8849b7ae3b4f9e435c690a873d809e234e35822296127c9518bb.
+Final combined gate passed 50/50 suites (test-results/v094-combined.log),
+including existing artwork, startup, redirect, scrolling, native editing,
+storage and XML checks. No signed-in acceptance is implied by these checks.
 
 ## Artist redirect protection (v0.9.3)
 

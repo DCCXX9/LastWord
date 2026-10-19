@@ -61,6 +61,7 @@
           rateLimited: !!status.rateLimited, contentVersion: String(status.version || 'unknown'),
           artwork: status.artwork || null,
           redirects: status.redirects || null,
+          imageRecovery: status.imageRecovery || null,
           albumless: status.albumless || null
         } : { connected: false }
       };

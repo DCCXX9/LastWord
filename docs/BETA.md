@@ -1,7 +1,18 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.3 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.4 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.4 broken image recovery
+
+Baseline 9522e18, clean installed checkout. Failed native artist portraits and
+album thumbnails retry two sizes of the same image, including scroll-added
+rows. Bounded visible-only probes share verified results within the page;
+personal-cover writes retain the recovered URL. Working images, links and
+user-selected image identity are preserved. No new page reads, permissions or
+saved-data formats. Deleted or fully blocked images cannot be reconstructed.
+Focused actual-unpacked checks pass; combined/package evidence: CURRENT.md.
+Signed-in Drug Church acceptance remains Jay's Reload check.
 
 ## v0.9.3 artist redirect protection
 

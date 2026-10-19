@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.3 beta**.
+Last.fm profile. Installed candidate: **v0.9.4 beta**.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
 routes in the connected profile and their public music pages. Album/track links,
@@ -33,6 +33,12 @@ Already-started modules are reused, retaining early cached artwork application.
 
 ## Features
 
+- **Broken image recovery:** Failed artist portraits and album thumbnails retry
+  two alternate CDN sizes of the exact selected image. This covers headers and
+  newly scrolled rows, preserves links and starred image identity, and leaves
+  working images alone. Requests are bounded and only begin near the viewport.
+  No history scan or additional Last.fm page requests are needed. Deleted images
+  and images blocked at every size remain unavailable.
 - **Personal track covers:** Visible track rows on your connected profile use
   the album from your own all-time scrobbles. Where multiple albums were tagged,
   the most-scrobbled album wins; exact ties use the most recently scrobbled album.

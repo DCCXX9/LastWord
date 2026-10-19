@@ -1,6 +1,6 @@
 [
   "manifest.json", "background.js", "rules.js", "store.js", "adapter.js", "redirects.js",
-  "content.js", "content.css", "pages.js", "native-edit.js", "lfm-ui.css",
+  "content.js", "content.css", "pages.js", "native-edit.js", "lfm-ui.css", "image-recovery.js",
   "artwork.js", "artwork-source.js", "artwork-albums.js",
   "albumless-store.js", "albumless-reader.js", "albumless-engine.js", "albumless-scan.js",
   "albumless.html", "albumless-ui.js", "options.html", "options.js",

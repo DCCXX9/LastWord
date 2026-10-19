@@ -30,7 +30,8 @@
     remember(image);
     const original = originals.get(image);
     const size = /\/i\/u\/(\d+(?:s|x\d+))\//.exec(original.attrs.src || original.attrs['data-src'] || '')?.[1];
-    const source = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
+    const sized = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
+    const source = globalThis.LastfmImageRecovery?.sourceFor(image, sized) || sized;
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     const attr = (name, value) => { if (image.getAttribute(name) !== value) image.setAttribute(name, value); };
     attr('src', source); attr('data-src', source);
