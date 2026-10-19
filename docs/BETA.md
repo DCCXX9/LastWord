@@ -1,7 +1,19 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.7 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.8 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.8 Signed-in artwork parsing
+
+Baseline 83cb6d8. Real signed-in responses included hidden skeleton chartlists
+that were incorrectly validated as scrobbles/tracks. Both readers now exclude
+only those explicit loading tables. Initial lucre 5 and an actually blank
+scroll-added rank-53 row were traced through exact personal album evidence to
+loaded visible images in the installed Supermium profile. See CURRENT.md for
+counts, screenshots, regression and package evidence. No storage migration,
+new permissions or installation identity change.
+Final gate: 53/53 suites passed; the 39-file v0.9.8 package was independently
+extracted and hash-matched to the installed source. Digest: CURRENT.md.
 
 ## v0.9.7 Library-wide artwork recovery
 

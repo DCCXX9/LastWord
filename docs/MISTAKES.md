@@ -58,3 +58,13 @@ discovery. Historical discovery needs a user-provided export or another source
 that can identify both blank album fields without thousands of web requests.
 Verify one normal edit and one new play in the signed-in browser before enabling
 automatic correction.
+
+## Signed-in loading skeletons mistaken for library data (2026-10-20)
+
+v0.9.7 passed isolated/public checks but failed in the installed signed-in tab.
+Actual responses included chartlist__placeholder tables with empty rows beside
+complete real tables. Both artwork readers rejected those extra rows. Trace
+actual response structure and the displayed image before another candidate;
+include observed signed-in skeletons in regression fixtures. Exclude explicitly
+marked skeleton tables, preserving strict validation of real rows. v0.9.8 was
+verified on initial and genuinely blank scroll-added rows in the same profile.

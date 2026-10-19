@@ -1,7 +1,41 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.7 beta**, branch preferences-page.
-Baseline: 6058d39; library-wide artwork correction, signed-in acceptance pending.
+Installed candidate: **v0.9.8 beta**, branch preferences-page.
+Baseline: 83cb6d8. Signed-in Supermium defect isolated and corrected.
+
+The real signed-in history response for lucre 5 contained 18 valid LUCRE
+scrobbles plus 49 empty rows in a chartlist__placeholder loading table.
+The LUCRE album response contained seven valid tracks (120 plays in total)
+plus six empty loading rows. Both artwork readers included these skeletons,
+then rejected the response. Waiting could never resolve the hidden image.
+Both readers now exclude only explicitly marked placeholder tables; validation
+of every real row, exact artist/album identity and majority counts remains strict.
+
+The regression reproducing those signed-in skeleton tables failed before the
+fix, then all three focused artwork suites passed. Live v0.9.8 was reloaded in
+the existing approved Supermium profile with identity/storage preserved:
+
+- Initial lucre 5: LUCRE, 18/18, visible loaded 64px image and exact album link.
+- The actual Yes button appended ranks 51–100. Rank 53, 3dash snow dubs stereo
+  test1 new fx, initially had a hidden placeholder. Its normal queue rendered
+  BM2  KWAKE DUBS 2021, matching all nine real scrobbles despite 49 skeletons.
+- Both actual painted covers were checked with viewport screenshots. Initial
+  compositor screenshots were unusable; direct viewport capture succeeded.
+
+Local evidence: test-results/live-artwork-trace-20261020.jsonl,
+v098-live-window.png, v098-live-scroll-window.png, v098-before.log and
+v098-focused.log. Shared readers cover all artists and appended rows; the
+synthetic mixed-library regression covers additional artists, cold history,
+native scrobbles and profile isolation. This is not an audit of every library
+track. Unseen albums still require paced requests; unavailable art is unresolved.
+
+The final combined regression gate passed **53/53 suites**
+(test-results/v098-combined.log). Windows independently extracted all 39
+files from the 268,333-byte package and matched every SHA-256 to the source
+audit (test-results/v098-package-verification.json). ZIP SHA-256:
+412b77befd7e41ecdab22ca6a9d97eaf09907840b9e2230bd18c4ee0c1a40215.
+
+## v0.9.7 prior candidate — signed-in acceptance failed
 
 The shared album-count recovery was limited to an individual artist URL, and
 only tracks already rendered could contribute saved album hints. It now also

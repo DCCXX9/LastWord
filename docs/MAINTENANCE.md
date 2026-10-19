@@ -50,6 +50,11 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 20 October, separately authorised real-row tracing: v0.9.8 corrects signed-in
+  skeleton-table parsing, reproduced before patching. Verified actual initial
+  and scroll-added blank rows resolve and paint their scrobbled album covers.
+  Exact evidence and remaining limits: CURRENT.md. Reset watcher stays paused.
+
 - 20 October, separately authorised library-wide artwork follow-up: v0.9.7
   extends album-count recovery to mixed-artist library Tracks and saved seeds
   off-page, retaining per-artist proof and bounds. Infinite-scroll and native

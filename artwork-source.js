@@ -115,7 +115,7 @@
       const count = totalScrobbles(page.doc);
       if (total !== null && total !== count) throw new Error('This track’s history changed during lookup. Refresh to try again.');
       total = count;
-      const rows = [...page.doc.querySelectorAll('table.chartlist tr.chartlist-row')];
+      const rows = [...page.doc.querySelectorAll('table.chartlist:not(.chartlist__placeholder) tr.chartlist-row')];
       if (!rows.length && total) throw new Error('This track’s scrobble album fields were unavailable.');
       const pageStamps = new Set();
       for (const row of rows) {

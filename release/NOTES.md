@@ -1,4 +1,15 @@
-# v0.9.7 beta candidate
+# v0.9.8 beta
+
+Fixed a confirmed signed-in blank-cover failure: Last.fm includes empty loading
+skeleton tables alongside complete album and track-history data. Both artwork
+readers now exclude those marked tables while retaining strict real-row checks.
+Verified in the installed Supermium profile: lucre 5 resolves to LUCRE (18/18),
+and a genuinely blank rank-53 row appended by scrolling resolves to its album
+BM2  KWAKE DUBS 2021 (9/9), with loaded images and correct album links.
+The fix applies to all artists using these readers. No permissions, preference
+formats or installation identity changed. Cold lookups still require responses.
+
+## Included v0.9.7 library-wide artwork recovery
 
 Personal track artwork recovery now covers the mixed-artist library Tracks
 list as well as individual artists. Saved album hints work even when the seed

@@ -133,7 +133,7 @@
           const n = displays.length === 1 ? count(displays[0].textContent) : null;
           if (n === null || total !== null && total !== n) throw new Error('The album library total could not be verified.');
           total = n;
-          for (const row of page.doc.querySelectorAll('table.chartlist tr.chartlist-row')) {
+          for (const row of page.doc.querySelectorAll('table.chartlist:not(.chartlist__placeholder) tr.chartlist-row')) {
             const track = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link, page.url)).find(i => i?.type === 'tracks');
             const plays = count(row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value'));
             if (!track || plays === null || totals.has(trackKey(track))) throw new Error('The album track totals could not be verified.');
