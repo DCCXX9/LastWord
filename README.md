@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.9 beta**.
+Last.fm profile. Installed candidate: **v0.9.11 beta**.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
 routes in the connected profile and their public music pages. Album/track links,
@@ -35,11 +35,12 @@ Already-started modules are reused, retaining early cached artwork application.
 
 - **Broken image recovery:** Failed artist portraits and album thumbnails retry
   two alternate CDN sizes of the exact selected image. This covers headers and
-  newly scrolled rows, preserves links and starred image identity, and leaves
+  newly scrolled rows and public artist lists, preserves links and starred image identity, and leaves
   working images alone. Requests are bounded and only begin near the viewport.
   No history scan or additional Last.fm page requests are needed. Deleted images
   and images blocked at every size remain unavailable.
-- **Personal track covers:** Visible track rows on your connected profile use
+- **Personal track covers:** Track rows on your connected profile and public
+  artist pages (including their Tracks lists) use
   the album from your own all-time scrobbles. Where multiple albums were tagged,
   the most-scrobbled album wins; exact ties use the most recently scrobbled album.
   On a specific album's library page, its verified header cover and album link
@@ -54,13 +55,17 @@ Already-started modules are reused, retaining early cached artwork application.
   track covers, proving several winners with fewer individual history reads.
   Initial and scroll-added rows use the same proof. Unavailable metadata can
   still leave unresolved covers; a shared album name alone is never enough.
-  Generic music-note covers are hidden during lookup and never accepted as a
-  resolved cover. Previously cached generic images are re-resolved. Placeholder
+  Unverified covers and their album links are hidden during lookup, so an unrelated
+  compilation is not exposed while the personal winner is being found. Generic
+  music-note images are never accepted as a resolved cover. Placeholder
   spans become album links once the chosen cover is available; profile changes
   restore the original markup. If the selected album has no available artwork,
   its image slot remains empty. Similar Albums artwork is excluded.
   Resolved covers explicitly become visible even if an earlier page/script left
   their image hidden. Placeholder tracks go directly to their own scrobble history.
+  The exact personal album header is checked first for a tagged winner, preserving
+  the selected primary image. Its validated track counts can prove more winners
+  from the same album without repeating individual history requests.
   After proving the winner, its matching album-row cover is reused from anywhere
   in the loaded library. The five-album counting limit does not restrict this reuse.
   If the public album cover request fails or supplies no artwork, the exact album's
@@ -69,7 +74,10 @@ Already-started modules are reused, retaining early cached artwork application.
   tracks in one request. The album's already-loaded row supplies its cover;
   track-row video stills/compilation images are never used to choose an album.
   Proven tracks update progressively while other requests are still pending.
-  This optimization checks at most five albums/two pages each. Unresolved tracks
+  This optimization checks at most five albums/two pages each on an artist overview.
+  Ranked lists try at most one new candidate album per track; one-play tracks go
+  straight to individual history unless already-read counts prove their winner.
+  Unresolved tracks
   use their individual history, including the native scrobble album column.
   A failed aggregate also uses the individual history, unless loading is cancelled
   or Last.fm has asked for a rate-limit pause. Repeated edit IDs are distinguished
@@ -77,10 +85,13 @@ Already-started modules are reused, retaining early cached artwork application.
   Lookups run one track at a time, only while visible, using the shared request
   throttle and rate-limit pause. A provable winner stops the track-history lookup
   early. A separate bounded local cache reuses resolved covers across visits.
-  Cached images and album links apply during page loading; fresh records avoid
-  lookup requests for 24 hours. Older records remain visible while refreshed.
-  Older normal-track selections are verified once by the updated reader without
-  clearing their images or any saved display preferences.
+  Fresh verified images and album links apply during page loading and avoid lookup
+  requests for 24 hours. Old records remain hints and are verified before display.
+  Before scroll-added text is inserted, cached/shared verified covers apply to the
+  detached rows. The first ten cold rows get up to four seconds of preparation;
+  remaining work continues near the viewport. This bounds the page delay without
+  increasing request concurrency. Row mutations process only the affected rows,
+  rather than repeatedly scanning the growing table.
   Native edit fields take priority over canonical/redirected album links. A page's
   lazy loader cannot replace an already resolved image or its album link.
   An uncached track still needs a signed-in history/album lookup.
@@ -92,8 +103,14 @@ Already-started modules are reused, retaining early cached artwork application.
   Scrobble rows wait for their native fields before being classified; when Last.fm
   builds a row in stages, its cached cover applies as the fields arrive instead
   of triggering a fresh lookup under the wrong cache key.
-  Incomplete/unverifiable histories retain the original cover with an explanatory
+  Incomplete/unverifiable histories leave the cover hidden with an explanatory
   hover title. Covers update gradually; background tabs stop looking up artwork.
+  On public artist pages, a verified empty personal history permits only the exact
+  track's explicit Last.fm source-album association as a fallback. Those catalogue
+  results stay in memory and never become personal-winner cache records. Numbered
+  track variants, similar albums and unrelated release artwork are not substituted.
+  Cold loose tracks can still need individual paced requests; instant covers for
+  every unseen track are not guaranteed.
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
   a library XML export. Files are read incrementally, with no 50 MB file cap.
   A cancellable progress bar shows the file percentage and songs checked while

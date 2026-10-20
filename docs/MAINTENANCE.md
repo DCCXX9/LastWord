@@ -50,6 +50,17 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 20 October, separately authorised combined artwork feedback: v0.9.11 prepares
+  cached/shared cover-link pairs before scroll insertion, hides unverified native
+  compilations, reduces repeated table work and speculative one-play lookups,
+  reuses exact personal album counts, and extends recovery to public artist lists.
+  The actual public worker permission failure was reproduced before correction.
+  Final combined gate: 56/56 passed; all 39 package files independently extracted
+  and hash-matched. Signed-in 300-row/public evidence and cold-lookup limits are
+  in CURRENT.md. Jay's normal Reload acceptance remains pending.
+  Jay explicitly authorised finishing this bounded batch beyond the earlier
+  allowance cap; this does not resume open-ended maintenance or the heartbeat.
+
 - 20 October, separately authorised artwork loading performance: v0.9.9 prepares
   nearby initial/appended covers before entry and begins consenting automatic
   pages earlier, with on-screen priority and unchanged pacing/checkpoints.

@@ -29,7 +29,7 @@ const row = `<tr class="chartlist-row"><td class="chartlist-image"><a href="/mus
     const cached = await browser.newPage();
     await cached.route('https://www.last.fm/**', r=>r.fulfill({ body:`<table class="chartlist">${row}</table>` }));
     await cached.goto(url);
-    const worker = await mockExtension(cached,{settings:{username:'DCCXX',infiniteScroll:false},lfmPersonalArtworkCacheV1:[{key:JSON.stringify(['dccxx','different artist','song']),username:'DCCXX',item,cover:{artist:item.artist,album:'Personal Album',url:'https://www.last.fm/music/Different+Artist/Personal+Album',image,fallback:false,scanned:1,total:1,sourceVersion:2},checkedAt:Date.now()}]});
+    const worker = await mockExtension(cached,{settings:{username:'DCCXX',infiniteScroll:false},lfmPersonalArtworkCacheV1:[{key:JSON.stringify(['dccxx','different artist','song']),username:'DCCXX',item,cover:{artist:item.artist,album:'Personal Album',url:'https://www.last.fm/music/Different+Artist/Personal+Album',image,fallback:false,scanned:1,total:1,sourceVersion:3},checkedAt:Date.now()}]});
     await loadScripts(cached,['rules.js','store.js','adapter.js','artwork.js']);
     await cached.waitForFunction(src=>document.querySelector('img').src===src,image);
     assert.equal(requests,2,'cached display has no dependency on a live artwork resolver or network queue');

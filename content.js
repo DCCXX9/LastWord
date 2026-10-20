@@ -187,6 +187,8 @@
         }
       });
     }
+    await globalThis.LastfmArtwork?.prepareRows(rows, {signal:controller.signal});
+    if (scroller !== state || !state.active || state.controller !== controller || controller.signal.aborted) return false;
     if (lastSection) {
       const heading = section => section.querySelector('h2.date-heading')?.textContent.trim();
       for (const copy of copies) {

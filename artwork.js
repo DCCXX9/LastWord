@@ -11,10 +11,13 @@
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const albumImages = new Map();
-  const own = () => A.ownProfile(location.href, username) && !document.hidden;
+  const prepared = new Set(), dirtyRows = new Set();
+  let fullScan = false;
+  const inScope = user => Boolean(user && (A.ownProfile(location.href, user) || A.publicArtistPage(location.href)));
+  const own = () => inScope(username) && !document.hidden;
   const keyFor = item => JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name),
     ...(item.albumless ? ['albumless'] : [])]);
-  const imageAttrs = ['src', 'srcset', 'data-src', 'data-srcset', 'title', 'alt'];
+  const imageAttrs = ['src', 'srcset', 'data-src', 'data-srcset', 'title', 'alt', 'loading'];
 
   function remember(image) {
     if (!originals.has(image)) originals.set(image, {
@@ -26,13 +29,14 @@
     });
   }
   function apply(image, cover) {
-    if (!image.isConnected || !own()) return;
+    if ((!image.isConnected && !prepared.has(image)) || !own()) return;
     if (!A.coverImage(cover.image)) return;
     remember(image);
     const original = originals.get(image);
     const size = /\/i\/u\/(\d+(?:s|x\d+))\//.exec(original.attrs.src || original.attrs['data-src'] || '')?.[1];
     const sized = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
     const source = globalThis.LastfmImageRecovery?.sourceFor(image, sized) || sized;
+    if (prepared.has(image)) image.loading = 'eager';
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     const attr = (name, value) => { if (image.getAttribute(name) !== value) image.setAttribute(name, value); };
     attr('src', source); attr('data-src', source);
@@ -40,17 +44,24 @@
     // A verified resolved cover must be visible; restore() still keeps native styles.
     if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
     attr('alt', 'Cover for ' + cover.album + ' by ' + cover.artist);
-    attr('title', cover.context ? 'Personal cover: ' + cover.album + ' (this album view)'
+    attr('title', cover.public ? 'Album associated with this exact track on Last.fm: ' + cover.album
+      : cover.context ? 'Personal cover: ' + cover.album + ' (this album view)'
       : cover.fallback ? 'Personal cover: matching artist/title album page'
       : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)');
-    if (!original.link && original.wrapper?.isConnected) {
+    if (!original.link && original.wrapper && (original.wrapper.isConnected || prepared.has(image))) {
       const link = document.createElement('a');
       for (const attr of original.wrapper.attributes) link.setAttribute(attr.name, attr.value);
       link.append(...original.wrapper.childNodes);
       original.wrapper.replaceWith(link); original.replacement = link;
     }
     const link = original.link || original.replacement;
-    if (link?.isConnected && link.href !== cover.url) link.href = cover.url;
+    if (link && (link.isConnected || prepared.has(image)) && link.href !== cover.url) link.href = cover.url;
+  }
+  function hold(image) {
+    remember(image);
+    if (image.style.visibility !== 'hidden') image.style.setProperty('visibility', 'hidden');
+    const original = originals.get(image), link = original.link || original.replacement;
+    if (link?.hasAttribute('href')) link.removeAttribute('href');
   }
   function restore(image) {
     const original = originals.get(image);
@@ -70,12 +81,12 @@
   function reset() {
     clearTimeout(retryTimer);
     generation++; running?.controller.abort();
-    observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear();
+    observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear(); prepared.clear(); dirtyRows.clear();
     globalThis.LastfmArtworkSource?.clear();
     for (const image of originals.keys()) restore(image);
   }
   function visible(job) {
-    return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
+    return job.preparing || [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
   }
   function onScreen(job) {
     return [...job.images].some(image => {
@@ -88,10 +99,11 @@
     if (job.state === 'complete' && job.cover?.image === cover.image && job.cover?.url === cover.url &&
         job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
     job.cover = cover; job.state = 'complete';
+    for (const settle of job.settlers || []) settle();
     globalThis.LastfmArtworkAlbums?.remember?.(job.item, cover, username);
-    cache.set(keyFor(job.item), { item: job.item, cover, checkedAt: Date.now() });
+    if (!cover.public) cache.set(keyFor(job.item), { item: job.item, cover, checkedAt: Date.now() });
     for (const image of job.images) apply(image, cover);
-    S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
+    if (!cover.public) S.saveArtwork(job.item, cover).catch(error => { cacheError = error.message; });
   }
   async function pump() {
     clearTimeout(retryTimer);
@@ -133,8 +145,9 @@
       if (retry) { job.retried = true; job.retryAt = Date.now() + 10000; }
       if (error.name !== 'AbortError') lastError = error.message;
       if (error.name !== 'AbortError' && !job.cover) for (const image of job.images) {
-        if (image.isConnected) image.title = retry ? 'Waiting to retry this cover…' : 'Cover unchanged: ' + error.message;
+        if (image.isConnected || prepared.has(image)) image.title = retry ? 'Waiting to retry this cover…' : 'Cover unavailable: ' + error.message;
       }
+      if (job.state === 'unavailable') for (const settle of job.settlers || []) settle();
     } finally {
       if (running?.controller === controller) running = null;
       pump();
@@ -158,14 +171,15 @@
     // cache or queued history lookup must not replace the selected album.
     return { root, cover: link && image ? { artist: item.artist, album: item.name, image, url: link.href, context: true } : null };
   }
-  function scan() {
+  function scan(incoming = null) {
     if (currentUrl !== location.href) { reset(); currentUrl = location.href; }
     if (!own()) return;
     const album = albumContext();
     for (const [image] of albumImages) if (!image.isConnected || !album?.cover || !album.root?.contains(image)) {
       albumImages.delete(image); restore(image);
     }
-    for (const row of document.querySelectorAll('tr.chartlist-row')) {
+    const rows = incoming instanceof Set || Array.isArray(incoming) ? [...incoming] : [...document.querySelectorAll('tr.chartlist-row')];
+    for (const row of rows) {
       if (![...row.querySelectorAll('.chartlist-name a[href]')].some(link => A.musicItem(link)?.type === 'tracks')) continue;
       const image = row.querySelector('.chartlist-image img');
       if (!image) continue;
@@ -175,9 +189,7 @@
         }
         continue;
       }
-      if (!A.coverImage(image.getAttribute('data-src') || image.getAttribute('src'))) {
-        remember(image); image.style.setProperty('visibility', 'hidden');
-      }
+      if (!observed.get(image)?.job.cover) hold(image);
     }
     if (album || !cacheReady) return;
     const albums = globalThis.LastfmArtworkAlbums;
@@ -189,11 +201,12 @@
       }
       seededGeneration = generation;
     }
-    for (const [image] of originals) if (!image.isConnected) originals.delete(image);
-    for (const [image, value] of observed) if (!image.isConnected) {
+    for (const [image] of originals) if (!image.isConnected && !prepared.has(image)) originals.delete(image);
+    for (const [image, value] of observed) if (!image.isConnected && !prepared.has(image)) {
       observer.unobserve(image); observed.delete(image); value.job.images.delete(image);
     }
-    for (const row of document.querySelectorAll('tr.chartlist-row')) {
+    const touched = new Set();
+    for (const row of rows) {
       const image = row.querySelector('.chartlist-image img');
       if (!image) continue;
       let item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(value => value?.type === 'tracks');
@@ -206,6 +219,8 @@
       const albumless = fields && !fields.album.trim() && !fields.albumArtist.trim() &&
         R.normalize(fields.artist) === R.normalize(item.artist) && R.normalize(fields.track) === R.normalize(item.name);
       if (albumless) item = { ...item, albumless: true };
+      const total = row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value');
+      if (/^\d+$/.test(total || '') && Number.isSafeInteger(Number(total))) item = {...item,libraryTotal:Number(total)};
       const key = keyFor(item);
       const previous = observed.get(image);
       if (previous && previous.job === jobs.get(key)) continue;
@@ -216,24 +231,19 @@
       }
       if (!jobs.has(key)) {
         const saved = cache.get(key);
-        // Existing images remain visible while older selection results are
-        // verified once against album totals/native scrobble metadata.
+        // Only current verified winners may be displayed before a new lookup.
         const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 &&
           (item.albumless || saved.cover.sourceVersion === 3);
-        jobs.set(key, { item, images: new Set(), cover: saved?.cover, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
+        jobs.set(key, { item, images: new Set(), cover: fresh ? saved.cover : null, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
           placeholder: !A.coverImage(image.getAttribute('data-src') || image.getAttribute('src')) });
       }
       const job = jobs.get(key); job.images.add(image);
+      touched.add(job);
       observed.set(image, { job, visible: false }); observer.observe(image);
       if (job.cover) apply(image, job.cover);
     }
-    for (const job of jobs.values()) if (job.state === 'complete') {
-      globalThis.LastfmArtworkAlbums?.remember?.(job.item, job.cover, username);
-    }
-    for (const job of jobs.values()) if (!job.albumless && job.cover) {
-      globalThis.LastfmArtworkAlbums?.hint?.(job.item, job.cover, username);
-    }
-    const candidates = [...jobs.values()].filter(job => !job.albumless && job.state !== 'loading');
+    const candidates = [...jobs.values()].filter(job => !job.albumless && ['waiting','unavailable'].includes(job.state) &&
+      (!incoming || touched.has(job)));
     const known = candidates.length && globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username);
     for (const job of candidates) {
       const cover = known?.get(job.item);
@@ -241,9 +251,55 @@
     }
     pump();
   }
-  function schedule() {
+  function schedule(rows) {
+    if (!rows) fullScan = true;
+    else for (const row of rows) dirtyRows.add(row);
     if (queued) return;
-    queued = true; queueMicrotask(() => { queued = false; scan(); });
+    queued = true; queueMicrotask(() => {
+      queued = false; const selected = fullScan ? null : new Set(dirtyRows);
+      fullScan = false; dirtyRows.clear(); scan(selected);
+    });
+  }
+  async function prepareRows(rows, {signal} = {}) {
+    await ready;
+    if (!own() || signal?.aborted) return;
+    const current = generation, images = rows.map(row => row.querySelector('.chartlist-image img')).filter(Boolean);
+    for (const image of images) prepared.add(image);
+    let timer, abort;
+    const waiting = new Set(), settlers = [];
+    try {
+      scan(rows);
+      // Cached winners apply while detached. Give the first viewport of cold
+      // rows a bounded head start; never hold a 50-row page for minutes.
+      for (const image of images.slice(0, 10)) {
+        const job = observed.get(image)?.job;
+        if (job?.state === 'waiting' || job?.state === 'loading') waiting.add(job);
+      }
+      if (!waiting.size) return;
+      const completed = [...waiting].map(job => new Promise(resolve => {
+        job.preparing = true; (job.settlers ||= new Set()).add(resolve); settlers.push([job,resolve]);
+      }));
+      pump();
+      await Promise.race([Promise.all(completed), new Promise(resolve => {
+        timer = setTimeout(resolve, 4000); abort = resolve;
+        signal?.addEventListener('abort', abort, {once:true});
+      })]);
+      if (current !== generation || signal?.aborted) throw new DOMException('Artwork preparation cancelled.', 'AbortError');
+    } finally {
+      clearTimeout(timer); if (abort) signal?.removeEventListener('abort',abort);
+      for (const [job,settle] of settlers) { job.preparing = false; job.settlers.delete(settle); }
+      for (const image of images) {
+        prepared.delete(image);
+        if ((signal?.aborted || current !== generation) && !image.isConnected) {
+          const job = observed.get(image)?.job;
+          observer.unobserve(image); observed.delete(image); job?.images.delete(image); restore(image);
+          if (job && !job.images.size) {
+            if (running?.job === job) running.controller.abort();
+            else jobs.delete(keyFor(job.item));
+          }
+        }
+      }
+    }
   }
   observer = new IntersectionObserver(entries => {
     for (const entry of entries) {
@@ -265,20 +321,30 @@
       const image = record.target.matches('img') ? record.target : record.target.querySelector('img');
       const cover = albumImages.get(image) || observed.get(image)?.job.cover;
       if (cover) apply(image, cover);
+      else if (originals.has(image)) hold(image);
     }
-    if (records.some(record => record.type === 'attributes' && record.target.closest('.library-header') ||
-      [...record.addedNodes].some(node => node.nodeType === 1))) schedule();
+    const rows = new Set();
+    for (const record of records) {
+      if (record.target.closest?.('.library-header')) { schedule(); continue; }
+      for (const node of record.addedNodes) if (node.nodeType === 1) {
+        if (node.matches('.library-header') || node.querySelector('.library-header')) schedule();
+        const row = node.closest('tr.chartlist-row');
+        if (row) rows.add(row);
+        for (const child of node.querySelectorAll('tr.chartlist-row')) rows.add(child);
+      }
+    }
+    if (rows.size) schedule(rows);
   });
   mutations.observe(document, mutationOptions);
   const accept = async state => {
     const changed = username !== state.settings.username;
-    if (changed || !A.ownProfile(location.href, state.settings.username)) reset();
+    if (changed || !inScope(state.settings.username)) reset();
     username = state.settings.username;
     if (changed || !cacheReady) {
       cacheReady = false; cache.clear();
       scan();
       const current = generation;
-      if (A.ownProfile(location.href, username)) {
+      if (inScope(username)) {
         try {
           const records = await S.readArtwork();
           if (current !== generation) return;
@@ -291,14 +357,14 @@
     scan();
   };
   S.subscribe(accept);
-  S.read().then(accept).catch(error => console.error('Last.fm personal covers:', error.message));
+  const ready = S.read().then(accept).catch(error => console.error('Last.fm personal covers:', error.message));
   addEventListener('visibilitychange', () => {
     if (document.hidden) { clearTimeout(retryTimer); running?.controller.abort(); } else scan();
   });
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, mutationOptions); scan(); } });
   addEventListener('popstate', scan);
-  globalThis.LastfmArtwork = Object.freeze({ start: scan, status: () => ({
+  globalThis.LastfmArtwork = Object.freeze({ start: () => scan(), prepareRows, status: () => ({
     cacheReady, cachedTracks: cache.size, cacheError: cacheError || null,
     visibleImages: [...observed.values()].filter(value => value.visible).length,
     jobs: Object.fromEntries(['waiting', 'loading', 'complete', 'unavailable'].map(state =>

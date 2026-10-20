@@ -1,4 +1,4 @@
-# Store listing draft · v0.9.9 beta
+# Store listing draft · v0.9.11 beta
 
 Prepared for review, not submitted. Publisher account, public URLs and support
 details must be supplied before publication. Do not enter invented details.
@@ -22,14 +22,19 @@ Keep your choices locally in your browser, without changing Last.fm's catalogue.
 - Keep scrolling through native Last.fm library rows, including dated Scrobbles.
 - Export and restore a JSON backup.
 
-Connect your Last.fm username in Settings. Personalisation applies only to that
-profile. No extension password, developer account or analytics is required. XML
+Connect your Last.fm username in Settings. Display names apply only to that
+profile. Personal covers also run on public artist pages and their Tracks lists.
+No extension password, developer account or analytics is required. XML
 files are processed on your device and are not uploaded to the developer.
 
 This is a beta. Personal track covers and native editing are included for testing.
 Covers use your most-scrobbled album for the track and update the album link too.
 On a specific album's library page, all tracks use that album's existing header
 cover and link without history lookups.
+Unverified covers and links stay hidden during lookup. Cached and shared verified
+covers are prepared before scroll-added rows appear, with a bounded head start
+for new lookups. Public tracks you have never heard use only an explicit exact
+track-to-album association from Last.fm; unrelated releases are not substituted.
 Cached covers are reused; new selections require Last.fm requests and can take
 time. Missing artwork and changes to Last.fm's pages can prevent a result.
 Normal scrobble edits use Last.fm's editor and require the appropriate Last.fm
@@ -46,7 +51,7 @@ Independent project. Not affiliated with or endorsed by Last.fm or Apple.
 
 ## Assets
 
-- Extension ZIP: `dist/lastfm-personal-library-0.9.9-beta.zip`
+- Extension ZIP: `dist/lastfm-personal-library-0.9.11-beta.zip`
 - Icon: `release/assets/icon128.png` (128 × 128 PNG)
 - Small promotional tile: `release/assets/promo440.png` (440 × 280 PNG)
 - Screenshots: `release/assets/setup.png`, `preferences.png`, `xml-review.png`
@@ -68,7 +73,10 @@ preserve existing album-less/discovery records. The extension does not use Sync.
 
 **Last.fm site access justification:** Read the connected profile's library rows,
 native edit forms, album tags and images to apply preferences, append the next
-library page, select personal covers and open Last.fm's normal editor. The content
+library page, select personal covers and open Last.fm's normal editor. Public
+artist lists also read your connected history and exact track/album pages for
+covers. Redirect protection adjusts supported artist links on public music pages.
+The content
 scripts match only `https://www.last.fm/*`. There is no unrelated-site access.
 
 **Remote code:** None. Runtime JavaScript is packaged locally. Requests retrieve

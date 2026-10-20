@@ -1,6 +1,78 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.9 beta**, branch preferences-page.
+Installed candidate: **v0.9.11 beta**, branch preferences-page.
+Baseline: 9ae8197. Combined artwork feedback; one Reload version.
+
+Unverified covers and album links remain hidden until the selected personal album
+is proved. Fresh sourceVersion-3 winners apply immediately; stale records remain
+hints. Scroll batches prepare cached/shared pairs while detached, then allow up
+to four seconds for the first ten cold rows before insertion. New rows and image
+attributes are processed locally rather than rescanning the growing table.
+
+Exact personal album headers and validated track counts are reused across sibling
+tracks, including detached ranked rows. Ranked lists make at most one new album
+guess per track; one-play tracks use individual history unless existing counts
+prove the winner. Missing blank-tag title albums do not trigger an additional
+useless own-album request. Shared serial pacing, rate-limit pauses, scrolling
+consent and checkpoints are unchanged.
+
+Public artist roots and Tracks lists use personal winners. A verified empty
+personal history permits only the exact track's explicit source-album association
+from Last.fm, kept in page memory. Public artwork access does not grant native
+editing, preference writes or other-profile access. Broken selected-image sizes
+also recover on public artist lists.
+
+Actual signed-in Supermium checks:
+
+- Five actual Yes loads reached 300 Yeat rows with no page errors. The first
+  inserted frame contained verified covers and album links for ranks 51–60,
+  151–160 and 201–210, plus nine of ten sampled rows at 101–110. Cold ranks
+  251–260 mostly remained hidden during their individual lookups. This is
+  preparation evidence, not a guarantee that all 300 unseen covers load at once.
+- Page-load elapsed times (including shared queue, network and preparation)
+  were 2.8s, 8.4s, 2.4s, 6.4s and 11.5s. Two missing loose title-album pages
+  terminated as unavailable rather than looking as though they were loading.
+- Public William Basinski initially exposed a real worker scope failure:
+  artwork-cache access was rejected because the worker's own URL is an extension
+  URL. The URL guard now uses an explicit Last.fm base; a failing worker-origin
+  regression and unpacked public-cover integration reproduce and verify the fix.
+- Last.fm confirms no personal history or exact source-album association for
+  dlp 1.1.1, dlp 1.1.2 and dlp 1.1.3. Those slots remain unavailable. The separate
+  dlp 1.1 recording has album metadata; it is never substituted for these variants.
+- The corrected public runtime settled on six personal winners with loaded 64px
+  images and matching links, plus the exact public 92982 association for 92982.3.
+  That catalogue-only result was absent from the personal-winner cache. On a
+  cached revisit, all six personal pairs applied 301–368ms after their text, with
+  cache access successful. Cold requests in this trace took roughly 5s per page
+  including pacing; first-ever resolution still took over a minute for the list.
+- A final-runtime Yes append inserted ranks 51–100 in 1.86s. Every sampled
+  rank 51–60 had its verified personal cover URL and album link in the first
+  insertion frame. Owned live-test tabs were closed afterward to stop test reads.
+
+Evidence: test-results/batch-live.json, batch-live-300.png,
+batch-public-live-worker-failure.json, batch-public-live.json,
+batch-public-live.png, batch-public-revisit.json, batch-public-revisit.png, batch-final-scroll.json,
+batch-public-details.json and batch-worker-origin-fixed.log.
+Cold loose tracks can still require individual paced Last.fm responses. The
+four-second preparation budget is not a promise of instant artwork. No whole
+library crawl, storage migration, new permission or scrobble edit was made.
+Old Last.fm tabs still need refresh after extension Reload to release old contexts.
+
+Final combined gate: **56/56 suites passed** (test-results/v0911-combined.log),
+including actual unpacked artwork/scroll, public selected-image recovery, native
+editing, redirect, XML/undo, storage, startup and desktop/mobile release-site checks.
+No test failures remained in that combined run. Earlier reproduced failures are
+retained separately as evidence.
+
+Windows independently extracted and hash-matched all 39 runtime files in the
+278,938-byte ZIP (test-results/v0911-package-verification.json). ZIP SHA-256:
+edce8395a06605760231cb5a7d122775031d5e31e69b4da8bacae98b313184e1.
+Package: dist/lastfm-personal-library-0.9.11-beta.zip. No publication or push.
+Rollback source: 9ae8197; the installed folder/identity/storage were retained.
+Jay's normal browsing acceptance remains the final Reload check.
+
+## v0.9.9 prior candidate — nearby artwork preparation
+
 Baseline: b71710a. Bounded artwork preparation before rows enter the viewport.
 
 Artwork previously started only within 100px of the viewport. The real signed-in

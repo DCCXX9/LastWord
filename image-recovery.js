@@ -6,7 +6,8 @@
   const attrs = ['src', 'data-src', 'srcset', 'data-srcset'];
   const jobs = new Map(), repaired = new Map();
   let username = '', generation = 0, active = 0, recovered = 0;
-  const own = () => A.ownProfile(location.href, username) && !document.hidden;
+  const inScope = () => username && (A.ownProfile(location.href, username) || A.publicArtistPage(location.href));
+  const own = () => inScope() && !document.hidden;
 
   function identity(value) {
     try {
@@ -156,7 +157,7 @@
   addEventListener('visibilitychange', () => { if (!document.hidden) { scan(); pump(); } });
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, options); scan(); } });
-  addEventListener('popstate', () => { if (!A.ownProfile(location.href, username)) reset(); else scan(); });
+  addEventListener('popstate', () => { if (!inScope()) reset(); else scan(); });
   globalThis.LastfmImageRecovery = Object.freeze({
     sourceFor: (image, source) => {
       const record = repaired.get(image);

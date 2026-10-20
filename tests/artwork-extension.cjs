@@ -48,6 +48,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
    if(url.pathname==='/music/Test+Artist/Album') return route.fulfill({contentType:'text/html',body:'<!doctype html><meta property="og:image" content="https://lastfm-img.freetls.fastly.net/i/u/ar0/9741753a613314214accd15a28eb91da.jpg">'});
    if(url.pathname===blankHistory) return route.fulfill({contentType:'text/html',body:'<!doctype html><main class="col-main"><p class="metadata-display">1</p><table class="chartlist"><tbody><tr class="chartlist-row"><td><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Silentó"><input name="track_name" value="Watch Me (Whip / Nae Nae)"><input name="timestamp" value="3"></form></td></tr></tbody></table></main>'});
    if(url.pathname===singleAlbum) return route.fulfill({contentType:'text/html',body:'<!doctype html><div class="cover-art"><img src="https://lastfm-img.freetls.fastly.net/i/u/500x500/9741753a613314214accd15a28eb91da.jpg"></div>'});
+   if(url.pathname==='/user/DCCXX/library/music/+noredirect/Test+Artist/Album') return route.fulfill({contentType:'text/html',body:`<!doctype html><main class="col-main"><header class="library-header"><h2 class="library-header-title">Album</h2><span class="library-header-image"><img src="${image}"></span><a href="/music/Test+Artist/Album">Album</a></header><p class="metadata-display">1</p><table class="chartlist"><tr class="chartlist-row"><td class="chartlist-name"><a href="/music/Test+Artist/_/Track">Track</a></td><td><span data-stat-value="1"></span></td></tr></table></main>`});
    return route.fulfill({status:404,body:'Unexpected request'});
   });
   const worker=browser.serviceWorkers()[0]||await browser.waitForEvent('serviceworker');
@@ -57,7 +58,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
   await page.goto('https://www.last.fm/user/DCCXX/library/tracks');
   await page.waitForFunction(image=>document.querySelector('.chartlist-image img').src===image,image);
   assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Test+Artist/Album');
-  assert.deepEqual(requests,['/user/DCCXX/library/music/+noredirect/Test+Artist/_/Track','/music/Test+Artist/Album']);
+  assert.deepEqual(requests,['/user/DCCXX/library/music/+noredirect/Test+Artist/_/Track','/user/DCCXX/library/music/+noredirect/Test+Artist/Album']);
   for(let n=0;n<20;n++) {
    if((await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1'))).lfmPersonalArtworkCacheV1?.length) break;
    await new Promise(resolve=>setTimeout(resolve,50));

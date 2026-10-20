@@ -41,15 +41,26 @@
     return A.editRow(copy, base, username, true);
   }
 
-  async function albumCover(artist, album, username, signal) {
+  async function albumCover(artist, album, username, signal, tagged = true) {
     const url = `${location.origin}/music/${encode(artist)}/${encode(album)}`;
     check(signal);
     const existing = globalThis.LastfmArtworkAlbums?.coverForAlbum?.(artist, album, username);
-    if (existing) return existing;
+    if (existing && (!tagged || !globalThis.LastfmArtworkAlbums?.loadCover)) return existing;
     const key = username + ':' + url;
     if (!albumImages.has(key)) {
       const pending = (async () => {
-        let failure;
+        let failure, libraryTried = false;
+        if (tagged && globalThis.LastfmArtworkAlbums?.loadCover) {
+          libraryTried = true;
+          try {
+            const cover = await LastfmArtworkAlbums.loadCover(artist, album, username, signal);
+            if (cover) return cover;
+          } catch (error) {
+            if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
+            failure = error;
+          }
+        }
+        if (existing) return existing;
         try {
           const page = await LastfmPages.getAlbum(url, { signal });
           const item = A.musicItem(page.url);
@@ -68,6 +79,9 @@
           if (error.name === 'AbortError' || LastfmPages.status().rateLimited) throw error;
           failure = error;
         }
+        // An empty album tag cannot have an exact album-library history under
+        // this guessed single title. A second lookup cannot supply that proof.
+        if (libraryTried || !tagged) throw failure;
         // Recover from a missing public cover using this exact album's own-library header.
         const libraryUrl = `${location.origin}/user/${encode(username)}/library/music/+noredirect/${encode(artist)}/${encode(album)}`;
         const page = await LastfmPages.get(libraryUrl, { signal });
@@ -112,6 +126,11 @@
           norm(returned.artist) !== norm(item.artist) || norm(returned.name) !== norm(item.name)) {
         throw new Error('Last.fm returned a different track history.');
       }
+      const empty = A.publicArtistPage(location.href) && !page.doc.querySelector('.col-main .metadata-display') &&
+        !page.doc.querySelector('table.chartlist:not(.chartlist__placeholder) tr.chartlist-row') &&
+        [...page.doc.querySelectorAll('.col-main p')].some(p =>
+          norm(p.textContent) === norm(username + " hasn't listened to this track yet."));
+      if (empty) return catalogueCover(item, username, signal);
       const count = totalScrobbles(page.doc);
       if (total !== null && total !== count) throw new Error('This track’s history changed during lookup. Refresh to try again.');
       total = count;
@@ -151,14 +170,35 @@
       }
     }
     check(signal);
+    if (!total && A.publicArtistPage(location.href)) return catalogueCover(item, username, signal);
     const fallback = !winner?.album;
     const artist = fallback ? item.artist : winner.artist;
     const album = fallback ? item.name : winner.album;
-    return { ...await albumCover(artist, album, username, signal), fallback, scanned, total, sourceVersion: 3 };
+    return { ...await albumCover(artist, album, username, signal, !fallback), fallback, scanned, total, sourceVersion: 3 };
+  }
+  async function catalogueCover(item, username, signal) {
+    const url = `${location.origin}/music/${encode(item.artist)}/_/${encode(item.name)}`;
+    const page = await LastfmPages.getTrack(url, { signal }), returned = A.musicItem(page.url);
+    if (returned?.type !== 'tracks' || norm(returned.artist) !== norm(item.artist) ||
+        norm(returned.name) !== norm(item.name) || norm(page.doc.querySelector('h1')?.textContent) !== norm(item.name)) {
+      throw new Error('Last.fm returned a different public track.');
+    }
+    // Only this exact track's explicit inAlbum/source-album relation is evidence.
+    // Similar releases, neighbouring numbered tracks and og:image are not.
+    for (const block of page.doc.querySelectorAll('.source-album')) {
+      const link = block.querySelector('.source-album-name a[href]'), album = A.musicItem(link, page.url);
+      if (album?.type !== 'albums' || norm(album.artist) !== norm(item.artist)) continue;
+      const primary = block.querySelector('.source-album-art img') || block.querySelector('img');
+      const image = A.coverImage(primary?.getAttribute('data-src')) || A.coverImage(primary?.getAttribute('src'));
+      if (image) return {artist:album.artist,album:album.name,image,url:new URL(link.getAttribute('href'),page.url).href,
+        public:true,fallback:true,scanned:0,total:0};
+      return {...await albumCover(album.artist,album.name,username,signal,false),public:true,fallback:true,scanned:0,total:0};
+    }
+    throw new Error('Last.fm has no associated album cover for this exact track.');
   }
   async function forBlankScrobble(item, username, signal) {
     check(signal);
-    return { ...await albumCover(item.artist, item.name, username, signal),
+    return { ...await albumCover(item.artist, item.name, username, signal, false),
       fallback: true, scanned: 0, total: 0, sourceVersion: 3 };
   }
   globalThis.LastfmArtworkSource = Object.freeze({ resolve, forBlankScrobble, clear: () => {

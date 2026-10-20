@@ -28,10 +28,12 @@
     const editPath = value => new URL(value).origin === location.origin &&
       /^\/user\/[^/]+\/library\/edit-track$/.test(new URL(value).pathname) &&
       LastfmAdapter.ownProfile(value, settings.username);
+    const artworkPage = settings.username && (LastfmAdapter.ownProfile(location.href, settings.username) ||
+      LastfmAdapter.publicArtistPage(location.href));
     const allowed = value => edit ? editPath(value) : album
-      ? LastfmAdapter.ownProfile(location.href, settings.username) &&
+      ? artworkPage &&
         new URL(value).origin === location.origin && new URL(value).pathname.startsWith('/music/') &&
-        LastfmAdapter.musicItem(value)?.type === 'albums'
+        LastfmAdapter.musicItem(value)?.type === (album === 'track' ? 'tracks' : 'albums')
       : LastfmAdapter.ownProfile(value, settings.username);
     if (target.origin !== location.origin || !allowed(target.href)) {
       throw new Error('Page loading is available only on your configured profile.');
@@ -148,6 +150,7 @@
     chrome.storage.local.set({ [PAUSE]: { at: Date.now() } });
   }
   globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
+    getTrack: (url, options) => get(url, options, 'track'),
     edit: (form, options = {}) => get(form.action, { ...options, form }),
     status: () => ({ rateLimited: paused, lastError }) });
 })();

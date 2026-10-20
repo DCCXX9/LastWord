@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## 20 October 2026: verified cover display and public artist scope
+
+Unverified track artwork and its album link are hidden until the personal winner
+is available. Only fresh sourceVersion-3 selections display directly from cache;
+older records remain hints. This supersedes the earlier retain-old-image policy.
+Scroll insertion applies cached/shared pairs while detached and gives the first
+ten cold rows at most four seconds of preparation, retaining serial pacing.
+
+Public artist roots and their Tracks lists may read/save verified personal winners.
+This artwork scope does not permit preference changes or native scrobble writes.
+Only a verified empty personal history allows an exact public source-album relation;
+such catalogue results remain in page memory, never the personal-winner cache.
+Missing numbered variants are not mapped to neighbouring tracks by similarity.
+
 ## 19 October 2026: explicit scrolling consent and finite batches
 
 The saved infiniteScroll flag controls whether loading is offered, not automatic

@@ -29,7 +29,7 @@
     }
     return null;
   }
-  function context(username) {
+  function context(username, incoming = []) {
     const url = new URL(location.href), artist = A.musicItem(url.href), view = A.libraryView(url.href);
     if (url.search || !A.ownProfile(url.href, username) ||
         !['artistScrobbles', 'tracks'].includes(view) || artist && artist.type !== 'artists' ||
@@ -52,6 +52,10 @@
         url: `${url.origin}/music/${encode(item.artist)}/${encode(item.name)}` });
     }
     const rankedTracks = view === 'tracks';
+    if (rankedTracks) for (const item of incoming) {
+      if (Number.isSafeInteger(item.libraryTotal) && item.libraryTotal > 0 &&
+          (!artist || R.normalize(item.artist) === R.normalize(artist.artist))) totals.set(trackKey(item),item.libraryTotal);
+    }
     // Ranked lists, including mixed-artist library Tracks, reuse saved album
     // hints. Each artist keeps its own bounded candidates and exact proof.
     if (rankedTracks) for (const saved of known.values()) {
@@ -84,7 +88,10 @@
   function proven(item, username, data) {
     const key = trackKey(item), total = data.totals.get(key);
     if (!total) return null;
-    const ranked = [], available = candidates(item, data).filter(album => records.get(albumKey(album, username))?.counts);
+    // The five-request discovery bound must not discard facts already obtained
+    // for an exact album by the individual track's cover lookup.
+    const ranked = [], available = data.albums.filter(album => album.artists.has(R.normalize(item.artist)) &&
+      records.get(albumKey(album, username))?.counts);
     for (const album of available) ranked.push({ album, count: records.get(albumKey(album, username)).counts.get(key) || 0 });
     ranked.sort((a,b) => b.count-a.count);
     const scanned = ranked.reduce((n, entry) => n+entry.count, 0), remaining = total-scanned;
@@ -95,7 +102,7 @@
       fallback: false, scanned, total, sourceVersion: 3 };
   }
   function peekMany(items, username) {
-    const data = context(username);
+    const data = context(username, items);
     const covers = new Map();
     if (data) for (const item of items) {
       const cover = proven(item, username, data);
@@ -161,16 +168,37 @@
     await records.get(key).pending;
   }
   async function resolve(item, username, signal) {
-    const data = context(username);
+    const data = context(username, [item]);
     if (!data?.totals.has(trackKey(item)) || item.placeholder && !data.rankedTracks) return null;
+    if (data.rankedTracks && data.totals.get(trackKey(item)) === 1) return proven(item, username, data);
+    let reads = 0;
     for (const album of candidates(item, data)) {
       if (signal?.aborted) throw new DOMException('Artwork lookup cancelled.', 'AbortError');
       const known = proven(item, username, data);
       if (known) return known;
+      // Ranked pages have no album context. Try one new hint, then go directly
+      // to the track's own history instead of queueing five speculative reads.
+      if (!records.has(albumKey(album, username))) {
+        if (reads >= (data.rankedTracks ? 1 : 5)) break;
+        reads++;
+      }
       await read(album, username, signal);
     }
     return proven(item, username, data);
   }
-  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, remember, hint,
+  async function loadCover(artist, name, username, signal) {
+    const existing = coverForAlbum(artist, name, username);
+    if (existing && !context(username)?.rankedTracks) return existing;
+    const album = { artist, name }, key = albumKey(album, username);
+    try { await read(album, username, signal); }
+    catch (error) {
+      if (error.name === 'AbortError' || LastfmPages.status().rateLimited || !records.get(key)?.cover) throw error;
+      // The individual history already proved the album. Its verified header
+      // can supply artwork even when incomplete totals cannot prove other rows.
+    }
+    const cover = records.get(key)?.cover;
+    return cover ? { artist, album: name, ...cover } : null;
+  }
+  globalThis.LastfmArtworkAlbums = Object.freeze({ resolve, peekMany, coverForAlbum, loadCover, remember, hint,
     clear: () => { records.clear(); known.clear(); } });
 })();

@@ -1,7 +1,30 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.9 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.11 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.11 Combined artwork feedback
+
+Baseline 9ae8197. Unverified native covers and album links stay hidden until an
+exact personal winner is available. Scroll batches receive cached/shared covers
+before insertion, with up to four seconds for the first ten cold rows. Changed
+rows are processed incrementally. One-play tracks avoid speculative album reads;
+exact personal album counts/headers are reused across sibling tracks.
+
+Public artist roots and their Tracks lists use personal winners too. Only a
+verified empty personal history permits Last.fm's exact source-album relation;
+catalogue-only results stay in memory. Public scope does not enable native edits
+or preference mutations. The real extension worker initially rejected artwork
+cache access because of its extension origin; the reproduced scope regression
+and unpacked public-cover integration now pass after fixing the explicit base.
+
+Signed-in tests reached 300 Yeat rows with no page errors, checking first inserted
+cover/link pairs and bounded preparation. Cold loose tracks still need individual
+paced requests. Basinski's exact dlp 1.1.1/1.1.2/1.1.3 variants have no verified
+personal history or source-album association; they are not replaced with dlp 1.1.
+All 56 suites passed in the final combined gate. Windows independently extracted
+and hash-matched all 39 runtime files. Actual public-page results and exact package
+audit: CURRENT.md. Jay's normal Reload acceptance remains pending.
 
 ## v0.9.9 Artwork preparation before scrolling
 

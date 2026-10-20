@@ -40,6 +40,7 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
         return route.fulfill(fails ? { status: 404, body: 'Missing derivative' } : { contentType: 'image/png', body: png }).catch(() => {});
       }
       if (u.hostname !== 'www.last.fm') return route.abort();
+      if(u.pathname==='/music/Drug+Church') return route.fulfill({contentType:'text/html',body:`<main class="col-main"><table class="chartlist">${row(drug,'Drug Church','/music/Drug+Church')}${row(album,'One','/music/Drug+Church/_/One')}</table></main>`});
       if (u.pathname === '/user/DCCXX/library/music/Drug+Church/Hygiene') return route.fulfill({ contentType: 'text/html', body:
         `<!doctype html><main class="col-main"><header class="library-header"><span class="library-header-image"><img width="70" height="70" src="${image(album)}"></span><a href="/music/Drug+Church/Hygiene">Go to album page</a></header><table class="chartlist"><tbody>${row(newer, 'Track one', '/music/Drug+Church/_/One')}${row(newer, 'Track two', '/music/Drug+Church/_/Two')}</tbody></table></main>` });
       const page = Number(u.searchParams.get('page') || 1);
@@ -51,7 +52,8 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
     const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
     await worker.evaluate(() => chrome.storage.local.set({ settings: { username: 'DCCXX', infiniteScroll: true },
       legacyScan: { keep: 42 }, lfmXmlUndoV1: { keep: true } }));
-    const saved = await worker.evaluate(() => chrome.storage.local.get(null));
+    await worker.evaluate(cover=>chrome.storage.local.set({lfmPersonalArtworkCacheV1:[{key:JSON.stringify(['dccxx','drug church','one']),username:'DCCXX',item:{artist:'Drug Church',name:'One'},checkedAt:Date.now(),cover}]}),{artist:'Drug Church',album:'Hygiene',image:image(album,'64s'),url:'https://www.last.fm/music/Drug+Church/Hygiene',fallback:false,sourceVersion:3,scanned:1,total:1});
+    const saved = await worker.evaluate(() => chrome.storage.local.get(['settings','legacyScan','lfmXmlUndoV1']));
     const page = await context.newPage();
     page.setDefaultTimeout(7000);
     page.on('pageerror', error => errors.push(error.message));
@@ -98,6 +100,9 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
     await page.screenshot({ path: path.join(root, 'test-results', 'v094-recovered-album.png') });
     const state = await worker.evaluate(() => chrome.storage.local.get(['settings', 'legacyScan', 'lfmXmlUndoV1']));
     assert.deepEqual(state, saved, 'recovery preserves settings, legacy scans and undo');
+    await page.goto('https://www.last.fm/music/Drug+Church');
+    await page.waitForFunction(({drug,album})=>document.getElementById(drug)?.naturalWidth>0&&document.getElementById(album)?.naturalWidth>0&&document.getElementById(album)?.src.includes('/ar0/'),{drug,album});
+    assert.equal(await page.locator('[id="'+album+'"]').evaluate(i=>i.closest('a').href),'https://www.last.fm/music/Drug+Church/Hygiene','public personal covers and derivative recovery must settle on the same selected image and album link');
     const beforeFriend = imageCalls.length;
     await page.goto('https://www.last.fm/user/Friend/library/artists');
     await page.waitForTimeout(200);

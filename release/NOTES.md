@@ -1,4 +1,31 @@
-# v0.9.8 beta
+# v0.9.11 beta
+
+Artwork feedback combined into one Reload version:
+
+- Unverified covers and album links stay hidden while the personal winner is found.
+- Cached/shared covers apply before scroll-added text is inserted. The first ten
+  cold rows get up to four seconds of preparation; other work continues nearby.
+- Exact personal album headers/counts are reused across sibling tracks. One-play
+  tracks avoid speculative album reads, and row updates avoid full-table rescans.
+- Public artist pages and their Tracks lists use personal winners. Unheard tracks
+  use only Last.fm's explicit exact-track album association, never a nearby variant.
+- Broken selected-image sizes recover on public artist lists too.
+
+Signed-in checks reached 300 Yeat rows and verified initial inserted image/link
+pairs. Six personal Basinski covers applied 301–368ms after text on a cached
+public revisit; another track used its exact public album relation. Three numbered
+variants genuinely lacked that relation and stayed unavailable. Cold loose tracks
+still require paced Last.fm requests and can take time. No instant-artwork promise
+or whole-library audit is claimed. Identity, stored preferences, XML undo, legacy
+records and permissions are preserved. Final checks and package audit: CURRENT.md.
+
+## Included v0.9.9 nearby preparation
+
+Already-loaded rows warm artwork up to 1,200px below the viewport, with on-screen
+priority. Always begins consenting next-page loading at the same distance. Existing
+Last.fm tabs need refresh after an extension Reload to release their old contexts.
+
+## Included v0.9.8 signed-in parsing
 
 Fixed a confirmed signed-in blank-cover failure: Last.fm includes empty loading
 skeleton tables alongside complete album and track-history data. Both artwork

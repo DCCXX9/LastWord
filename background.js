@@ -1,6 +1,6 @@
 /* The worker is the sole writer of preferences. Every operation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js', 'albumless-store.js');
+importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
 
 (() => {
   'use strict';
@@ -101,6 +101,8 @@ importScripts('rules.js', 'store.js', 'albumless-store.js');
     const ownProfile = url.origin === 'https://www.last.fm' && !!current.settings.username &&
       R.normalize(user) === R.normalize(current.settings.username);
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
+    if (['artwork-read', 'artwork-put'].includes(action) && current.settings.username &&
+        LastfmAdapter.publicArtistPage(url.href)) return;
     if (['mutate', 'artwork-read', 'artwork-put', 'albumless'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }

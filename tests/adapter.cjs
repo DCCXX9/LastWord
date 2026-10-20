@@ -5,6 +5,14 @@ const base = 'https://www.last.fm/user/DCCXX/library';
 assert.equal(A.ownProfile(base, 'dccxx'), true);
 assert.equal(A.ownProfile(base.replace('DCCXX', 'Friend'), 'DCCXX'), false);
 assert.equal(A.ownProfile('https://other.example/user/DCCXX', 'DCCXX'), false);
+for(const path of ['/music/Artist','/music/+noredirect/Artist/+tracks','/music/Artist/']) assert.equal(A.publicArtistPage('https://www.last.fm'+path),true);
+for(const path of ['/music/Artist/Album','/music/Artist/_/Track','/music/Artist/+images','/user/Friend/library','/music/']) assert.equal(A.publicArtistPage('https://www.last.fm'+path),false);
+assert.equal(A.publicArtistPage('https://evil.example/music/Artist'),false);
+// The same scope check runs in the background worker, whose origin is the extension.
+globalThis.location={href:'chrome-extension://test/background.js'};
+assert.equal(A.publicArtistPage('https://www.last.fm/music/Artist'),true);
+assert.equal(A.publicArtistPage('https://evil.example/music/Artist'),false);
+delete globalThis.location;
 assert.deepEqual(A.musicItem('/music/+noredirect/Bladee+%26+Ecco2k'),
   { type: 'artists', artist: 'Bladee & Ecco2k', name: 'Bladee & Ecco2k' });
 assert.deepEqual(A.musicItem(base + '/music/Dean+Blunt/Zushi/11'),

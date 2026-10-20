@@ -1,5 +1,15 @@
 # Implementation lessons
 
+## Shared URL guards need worker-origin coverage (2026-10-20)
+
+The first public-artwork check passed in the mocked worker but failed in signed-in
+Supermium: artwork-read/put were refused, forcing fresh requests on every visit.
+The shared adapter defaulted its URL base to location.href. In a real extension
+worker that is chrome-extension://, while the mock had no location and defaulted
+to Last.fm. Public-site scope now passes an explicit HTTPS Last.fm base. Keep both
+the worker-origin negative/positive regression and the real unpacked public-page
+cache integration; a passing content-page URL test does not cover this boundary.
+
 ## Reload timing and inferred album identity (2026-10-15)
 
 The previous startup check assumed Reload during a blocked navigation would

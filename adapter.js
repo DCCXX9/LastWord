@@ -21,6 +21,11 @@
     return Boolean(username && parts[0] === 'user' &&
       normalize(decode(parts[1] || '')) === normalize(username));
   }
+  function publicArtistPage(value) {
+    // This check also runs in the extension worker, not just Last.fm documents.
+    const url = parse(value, 'https://www.last.fm/');
+    return Boolean(url && /^\/music\/(?:\+noredirect\/)?[^/+][^/]*(?:\/\+tracks)?\/?$/.test(url.pathname));
+  }
   function musicParts(url) {
     const parts = url.pathname.split('/').filter(Boolean);
     const start = parts[0] === 'music' ? 1
@@ -118,6 +123,6 @@
         !/\/4128a6eb29f94943c9d206c08e625904\.[^/]+$/i.test(url.pathname) ? url.href : null;
     } catch { return null; }
   }
-  globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, libraryView,
+  globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, publicArtistPage, libraryView,
     nextPage, editRow, editPairs, coverImage });
 })();
