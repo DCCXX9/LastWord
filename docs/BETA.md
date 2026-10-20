@@ -1,7 +1,21 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.8 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.9 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.9 Artwork preparation before scrolling
+
+Baseline b71710a. Resolve already-loaded artwork up to 1,200px below the viewport,
+prioritising on-screen rows without interrupting them for off-screen album-less
+lookups. Always begins the next page at the same distance, retaining initial
+consent and row checkpoints. Request pacing, permissions and stored data are
+unchanged. Real signed-in cached timings and preparation/paint evidence are in
+CURRENT.md. First-ever lookups still need Last.fm responses. Refresh old Last.fm
+tabs after extension Reload; an invalidated hidden context was found holding the
+shared lock during verification and was refreshed without discarding changes.
+All 54 suites are verified across the combined gate and one focused rerun after
+fixing a request-listener race in the history test. Windows independently
+extracted and hash-matched all 39 package files. Exact evidence: CURRENT.md.
 
 ## v0.9.8 Signed-in artwork parsing
 

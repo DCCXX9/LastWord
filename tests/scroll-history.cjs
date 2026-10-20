@@ -60,8 +60,9 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
     });
     await mockExtension(pending, {settings:{username:'DCCXX',infiniteScroll:true}});
     await loadScripts(pending, scripts);
+    const requested = pending.waitForRequest(request => request.url().includes('page=2'));
     await pending.getByRole('button', { name: 'Yes', exact: true }).click();
-    await pending.waitForRequest(request => request.url().includes('page=2'));
+    await requested;
     await pending.evaluate(() => {
       dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
       dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));

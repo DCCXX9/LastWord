@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {inputs,validate,zip}=require('../tools/package-beta.cjs');
 const entries=inputs(),manifest=validate(entries);
-assert.equal(manifest.version,'0.9.8');assert.equal(manifest.version_name,'0.9.8 beta');
+assert.equal(manifest.version,'0.9.9');assert.equal(manifest.version_name,'0.9.9 beta');
 assert.equal(manifest.name,'Last.fm Personal Library');
 assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing package reference/);
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);

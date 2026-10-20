@@ -77,6 +77,13 @@
   function visible(job) {
     return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
   }
+  function onScreen(job) {
+    return [...job.images].some(image => {
+      if (!image.isConnected || !observed.get(image)?.visible) return false;
+      const bounds = image.getBoundingClientRect();
+      return bounds.bottom > 0 && bounds.top < innerHeight;
+    });
+  }
   function finish(job, cover) {
     if (job.state === 'complete' && job.cover?.image === cover.image && job.cover?.url === cover.url &&
         job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
@@ -93,12 +100,15 @@
     const visibleWaiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
     const now = Date.now(), waiting = visibleWaiting.filter(job => !job.retryAt || job.retryAt <= now);
     if (running) {
-      if (!running.job.albumless && waiting.some(job => job.albumless)) running.controller.abort();
+      if (!running.job.albumless && waiting.some(job => job.albumless &&
+          (onScreen(job) || !onScreen(running.job)))) running.controller.abort();
       return;
     }
     // Album-less scrobbles need a title-album fallback. Give those visible rows
     // priority without changing the all-time album counting or request throttle.
-    const job = waiting.find(job => job.albumless) || waiting.find(job => job.placeholder) || waiting[0];
+    const foreground = waiting.filter(onScreen);
+    const candidates = foreground.length ? foreground : waiting;
+    const job = candidates.find(job => job.albumless) || candidates.find(job => job.placeholder) || candidates[0];
     if (!job) {
       const next = Math.min(...visibleWaiting.map(job => job.retryAt));
       if (Number.isFinite(next)) retryTimer = setTimeout(pump, Math.max(1, next - now));
@@ -242,7 +252,9 @@
     }
     if (running && !visible(running.job)) running.controller.abort();
     pump();
-  }, { rootMargin: '100px 0px' });
+    // Warm only already-loaded rows just below the viewport. On-screen work
+    // stays first in pump(); the shared request queue retains its pacing.
+  }, { rootMargin: '100px 0px 1200px 0px' });
   const mutationOptions = { childList: true, subtree: true, attributes: true,
     attributeFilter: ['src', 'data-src', 'srcset', 'data-srcset', 'href', 'style'] };
   const mutations = new MutationObserver(records => {

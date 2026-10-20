@@ -50,6 +50,12 @@ does not reactivate the completed reset watcher or its unbounded allowance overr
 
 ## Results
 
+- 20 October, separately authorised artwork loading performance: v0.9.9 prepares
+  nearby initial/appended covers before entry and begins consenting automatic
+  pages earlier, with on-screen priority and unchanged pacing/checkpoints.
+  Signed-in timing, painted covers, stale-context lock diagnosis and limits:
+  CURRENT.md. The completed reset heartbeat remains paused.
+
 - 20 October, separately authorised real-row tracing: v0.9.8 corrects signed-in
   skeleton-table parsing, reproduced before patching. Verified actual initial
   and scroll-added blank rows resolve and paint their scrobbled album covers.

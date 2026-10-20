@@ -54,6 +54,22 @@ const html=n=>`<main><table class="chartlist"><tbody>${Array.from({length:50},(_
   await mockExtension(page,{settings:{username:'DCCXX',infiniteScroll:true}});await loadScripts(page,scripts);
   await yes.waitFor();assert.equal(await page.locator('tr.chartlist-row').count(),50,'a fresh view asks again');
   await page.close();
+  const ahead=await browser.newPage({viewport:{width:1000,height:800}}),aheadCalls=[];
+  await ahead.route('https://www.last.fm/**',r=>{
+   const n=Number(new URL(r.request().url()).searchParams.get('page')||1);aheadCalls.push(n);
+   return r.fulfill({contentType:'text/html',body:html(n)});
+  });
+  await ahead.goto('https://www.last.fm/user/DCCXX/library/artists');
+  await ahead.evaluate(()=>{let t=Date.now();Date.now=()=>t+=10000;});
+  await mockExtension(ahead,{settings:{username:'DCCXX',infiniteScroll:true}});await loadScripts(ahead,scripts);
+  await ahead.locator('.lfm-scroll-status').scrollIntoViewIfNeeded();
+  await ahead.waitForTimeout(100);assert.deepEqual(aheadCalls,[1],'look-ahead must still require consent');
+  await ahead.getByRole('button',{name:'Always',exact:true}).click();
+  await ahead.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===100&&document.querySelector('.lfm-scroll-status').dataset.state==='ready');
+  await ahead.evaluate(()=>{const b=document.querySelector('.lfm-scroll-status').getBoundingClientRect();scrollBy(0,b.top-innerHeight-800);});
+  await ahead.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===150,null,{timeout:1500});
+  assert.deepEqual(aheadCalls,[1,2,3],'Always prepares one next page before its boundary enters view');
+  await ahead.close();
   console.log('PASS: no automatic default, Yes loads once, No preserves native pagination, Always stops at 500/1000 rows and fresh views ask again');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

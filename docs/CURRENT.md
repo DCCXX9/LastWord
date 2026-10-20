@@ -1,6 +1,57 @@
 # Current state — 20 October 2026
 
-Installed candidate: **v0.9.8 beta**, branch preferences-page.
+Installed candidate: **v0.9.9 beta**, branch preferences-page.
+Baseline: b71710a. Bounded artwork preparation before rows enter the viewport.
+
+Artwork previously started only within 100px of the viewport. The real signed-in
+FiGure5 row took 13,432ms after scrolling into view to resolve I5U5WE5. The shared
+request queue is serial and retains its 1,500ms pacing and rate-warning stops.
+
+Already-loaded rows now start artwork resolution up to 1,200px below the screen.
+Actual on-screen rows retain priority; an off-screen album-less row cannot cancel
+a visible lookup. After choosing Always, next-page loading also starts 1,200px
+ahead. Initial consent, Yes/No behavior and the 500/1,000-row checkpoints remain.
+No whole-library crawl, request concurrency increase, storage migration or new
+permission. Cached verified winners still use the existing immediate application.
+
+Signed-in v0.9.9 verification in the installed Supermium profile:
+
+- A new appended rank-51 row resolved to Snot or Not while still 471px below the
+  viewport; the batch/album reads took about 8.5s, before the row entered view.
+- Initially blank appended Versus resolved to MADNESS; its actual painted image
+  was checked with a viewport capture. This was not a timed cold-row comparison.
+- On a cached revisit, Lif3's cover applied/loaded 566ms after its text; FiGure5
+  took 156ms. Scroll-added Versus applied after 68ms and loaded after 321ms.
+- An invalidated hidden DCCXX profile context held the global request lock for
+  over ten minutes after extension Reload. A normal-tab inventory missed it;
+  direct target inspection found it. Refreshing that target, after confirming
+  both checkboxes matched defaults and there was no unsaved input, released it.
+  This candidate does not add automatic recovery for invalidated old contexts;
+  existing Last.fm tabs still need refresh after an extension Reload.
+
+The look-ahead and early-page-loading regressions both failed before their fixes.
+Focused tests cover initial/appended preparation, visible priority (including
+album-less cancellation), bounded distance, profile isolation and scroll consent.
+Evidence: test-results/v099-live-before.json, v099-live-after.json,
+v099-live-blank-ahead.json, v099-live-blank-window.png, v099-cached-timing.json,
+v099-hidden-target.json, v099-focused.log and v099-priority-focused.log.
+
+First-ever lookups can still take seconds, particularly on an immediate jump or
+manual Yes load. Preparation reduces waiting while scrolling; it does not make
+Last.fm responses instantaneous. No whole-library latency guarantee is claimed.
+
+The first combined gate passed 54/54 suites. After the album-less priority guard,
+53/54 passed; scroll-history missed a request because it installed its listener
+after clicking Yes. Registering that listener before the click corrected the
+test race, and its focused rerun passed. The other 53 suites need no rerun for
+that test-only edit. Logs: v099-combined.log, v099-final-combined.log and
+v099-scroll-history-fixed.log. All 54 suites are verified across these runs.
+Windows independently extracted and hash-matched all 39 runtime files in the
+268,957-byte ZIP (v099-package-verification.json). ZIP SHA-256:
+c8e6eda41824d3bd6515294c497ab547f4c470b8734f676f9d12be57550c3c41.
+
+## v0.9.8 prior candidate — signed-in artwork parsing
+
 Baseline: 83cb6d8. Signed-in Supermium defect isolated and corrected.
 
 The real signed-in history response for lucre 5 contained 18 valid LUCRE

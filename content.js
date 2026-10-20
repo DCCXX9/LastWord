@@ -254,7 +254,7 @@
       else {
         renderScroll(state, 'ready', `${state.loaded + 1} pages loaded. Keep scrolling.`);
         const bounds = state.notice.getBoundingClientRect();
-        if (bounds.bottom > 0 && bounds.top < innerHeight + 400) setTimeout(() => {
+        if (bounds.bottom > 0 && bounds.top < innerHeight + 1200) setTimeout(() => {
           if (state.mode === 'ready' && state.automatic) void loadMore(state);
         }, 0);
       }
@@ -351,7 +351,7 @@
     });
     state.observer = new IntersectionObserver(entries => {
       if (state.mode === 'ready' && state.automatic && entries.some(entry => entry.isIntersecting)) void loadMore(state);
-    }, { rootMargin: '400px 0px' });
+    }, { rootMargin: '400px 0px 1200px 0px' });
     state.observer.observe(notice);
   }
 

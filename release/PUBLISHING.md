@@ -2,7 +2,7 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.9.8 beta**. Keep it in place.
+The installed folder already contains **v0.9.9 beta**. Keep it in place.
 
 1. Click Reload on the existing extension card in `chrome://extensions`.
    Refresh your own Last.fm library. Scroll to the bottom: Yes loads one page,
@@ -27,8 +27,8 @@ isolated regression tests.
 
 | Output | Path relative to project |
 | --- | --- |
-| Upload / download ZIP | `dist/lastfm-personal-library-0.9.8-beta.zip` |
-| ZIP checksum | `dist/lastfm-personal-library-0.9.8-beta.zip.sha256` |
+| Upload / download ZIP | `dist/lastfm-personal-library-0.9.9-beta.zip` |
+| ZIP checksum | `dist/lastfm-personal-library-0.9.9-beta.zip.sha256` |
 | Per-file audit | `dist/package-manifest.json` |
 | Static website including download and privacy page | `dist/site/` |
 | Store copy and review instructions | `release/STORE-LISTING.md` |
