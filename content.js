@@ -233,7 +233,7 @@
     try {
       if (resume && LastfmPages.status().rateLimited) await LastfmPages.resume();
       if (scroller !== state || !state.active || state.controller !== controller || controller.signal.aborted) return;
-      const page = await LastfmPages.get(state.next, { signal: controller.signal });
+      const page = await LastfmPages.get(state.next, { signal: controller.signal, priority: 'navigation' });
       if (scroller !== state || !state.active || state.controller !== controller || !ownProfile() || controller.signal.aborted) return;
       const url = new URL(page.url);
       if (url.pathname !== new URL(currentUrl).pathname &&

@@ -1,4 +1,21 @@
-# v0.9.12 beta
+# v0.9.13 beta
+
+- Keeps a matching scrobbled-album cover visible while checking the track's
+  most-used album. Verified winners still take precedence; unrelated compilation
+  covers remain hidden. Temporary previews are not persisted as winner records.
+- Applies the same display path to scroll-added scrobbles. Incomplete native forms
+  cannot leave an image hidden without a resolution job.
+- Removes the four-second artwork wait from pagination. Next-page requests run
+  before queued artwork reads, retaining shared pacing and Last.fm's rate pause.
+
+Installed-profile checks reached 199 scrobbles and traced an uncached appended
+track through to its proved album cover. Sampled successful page appends took
+1.4 and 2.5 seconds; network delays still vary. The full gate passed 59 suites,
+with four focused suites rerun after restart and all 39 ZIP files independently
+matched to source. Identity, stored preferences, XML undo and scan records remain.
+Evidence, the retained server-error boundary and verification limits: docs/CURRENT.md.
+
+## v0.9.12 beta
 
 Fixes a freeze caused by artwork and redirect protection repeatedly rewriting
 the same album link. Artwork accepts the protected URL for that exact album.

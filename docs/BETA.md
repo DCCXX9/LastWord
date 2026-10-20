@@ -1,7 +1,24 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.12 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.13 beta. One candidate for Jay's Reload and the public package.
+
+## v0.9.13 History covers and faster pagination
+
+Matching native scrobble covers remain visible while the most-used album is
+checked. Both the album link and image label must agree with the actual scrobble
+tags; previews are not stored as proved winners. Unrelated compilations stay
+hidden, and a proved most-used album still replaces the preview. Read-only artwork
+parsing tolerates an omitted album-artist tag without relaxing native edit writes.
+
+Next pages precede queued artwork requests and no longer wait four seconds for
+cold artwork before insertion. Existing request spacing, shared rate pauses,
+consent and ten-page checkpoints remain. The installed signed-in check reached
+199 rows, including an uncached preview becoming a verified 1/1 album winner.
+The combined gate passed 59 suites; focused checks and the 39-file package audit
+also passed after restart. Timings, the single retained server layout failure,
+focus-emulation limits and evidence are recorded in CURRENT.md. Jay's normal
+Reload acceptance remains the next step.
 
 ## v0.9.12 Freeze correction
 

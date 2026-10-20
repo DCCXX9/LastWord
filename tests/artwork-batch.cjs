@@ -49,12 +49,12 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
   const cancelled=await page.evaluate(async html=>{
    const body=document.createElement('tbody');body.innerHTML=html;
    const controller=new AbortController(),start=performance.now();
+   controller.abort();
    const pending=LastfmArtwork.prepareRows([...body.children],{signal:controller.signal}).then(()=>'',e=>e.name);
-   setTimeout(()=>controller.abort(),25);
    return {error:await pending,elapsed:performance.now()-start,connected:body.querySelector('img').isConnected};
   },row('Cancelled'));
   assert.equal(cancelled.error,'AbortError');assert.equal(cancelled.connected,false);
-  assert.ok(cancelled.elapsed<1000,'cancelling a prepared page must not wait for the four-second window');
+  assert.ok(cancelled.elapsed<1000,'cancelled page preparation must settle immediately');
   await page.close();
 
   const publicPage=await browser.newPage();

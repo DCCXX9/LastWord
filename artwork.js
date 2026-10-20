@@ -10,7 +10,7 @@
   let seededGeneration = -1;
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
-  const albumImages = new Map();
+  const albumImages = new Map(), scrobbleImages = new Map();
   const prepared = new Set(), dirtyRows = new Set();
   let fullScan = false;
   const inScope = user => Boolean(user && (A.ownProfile(location.href, user) || A.publicArtistPage(location.href)));
@@ -44,7 +44,8 @@
     // A verified resolved cover must be visible; restore() still keeps native styles.
     if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
     attr('alt', 'Cover for ' + cover.album + ' by ' + cover.artist);
-    attr('title', cover.public ? 'Album associated with this exact track on Last.fm: ' + cover.album
+    attr('title', cover.scrobble ? 'Scrobbled album: ' + cover.album + ' (checking your most-used album)'
+      : cover.public ? 'Album associated with this exact track on Last.fm: ' + cover.album
       : cover.context ? 'Personal cover: ' + cover.album + ' (this album view)'
       : cover.fallback ? 'Personal cover: matching artist/title album page'
       : 'Personal cover: ' + cover.album + ' (your most-scrobbled album for this track)');
@@ -67,6 +68,7 @@
     if (link?.hasAttribute('href')) link.removeAttribute('href');
   }
   function restore(image) {
+    scrobbleImages.delete(image);
     const original = originals.get(image);
     if (!original) return;
     for (const [name, value] of Object.entries(original.attrs)) {
@@ -84,12 +86,12 @@
   function reset() {
     clearTimeout(retryTimer);
     generation++; running?.controller.abort();
-    observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear(); prepared.clear(); dirtyRows.clear();
+    observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear(); scrobbleImages.clear(); prepared.clear(); dirtyRows.clear();
     globalThis.LastfmArtworkSource?.clear();
     for (const image of originals.keys()) restore(image);
   }
   function visible(job) {
-    return job.preparing || [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
+    return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
   }
   function onScreen(job) {
     return [...job.images].some(image => {
@@ -102,7 +104,6 @@
     if (job.state === 'complete' && job.cover?.image === cover.image && job.cover?.url === cover.url &&
         job.cover?.total === cover.total && job.cover?.sourceVersion === cover.sourceVersion) return;
     job.cover = cover; job.state = 'complete';
-    for (const settle of job.settlers || []) settle();
     globalThis.LastfmArtworkAlbums?.remember?.(job.item, cover, username);
     if (!cover.public) cache.set(keyFor(job.item), { item: job.item, cover, checkedAt: Date.now() });
     for (const image of job.images) apply(image, cover);
@@ -150,7 +151,6 @@
       if (error.name !== 'AbortError' && !job.cover) for (const image of job.images) {
         if (image.isConnected || prepared.has(image)) image.title = retry ? 'Waiting to retry this cover…' : 'Cover unavailable: ' + error.message;
       }
-      if (job.state === 'unavailable') for (const settle of job.settlers || []) settle();
     } finally {
       if (running?.controller === controller) running = null;
       pump();
@@ -174,6 +174,22 @@
     // cache or queued history lookup must not replace the selected album.
     return { root, cover: link && image ? { artist: item.artist, album: item.name, image, url: link.href, context: true } : null };
   }
+  function scrobbleCover(image, item, fields) {
+    if (!fields?.album.trim() || R.normalize(fields.artist) !== R.normalize(item.artist) ||
+        R.normalize(fields.track) !== R.normalize(item.name)) return null;
+    const artist = fields.albumArtist.trim() || fields.artist.trim(), album = fields.album.trim();
+    const known = globalThis.LastfmArtworkAlbums?.coverForAlbum?.(artist, album, username);
+    if (known) return { ...known, scrobble: true };
+    const original = originals.get(image), href = original ? original.href : image.closest('a[href]')?.getAttribute('href');
+    const linked = href && A.musicItem(href), attrs = original?.attrs;
+    const source = A.coverImage(attrs ? attrs['data-src'] || attrs.src : image.getAttribute('data-src') || image.getAttribute('src'));
+    const alt = attrs ? attrs.alt : image.getAttribute('alt');
+    // The native image is usable only when both its album link and its label
+    // agree with this user's actual scrobble tags. Never trust a compilation.
+    if (linked?.type !== 'albums' || R.normalize(linked.artist) !== R.normalize(artist) ||
+        R.normalize(linked.name) !== R.normalize(album) || R.normalize(alt) !== R.normalize(album) || !source) return null;
+    return { artist, album, image: source, url: new URL(href, location.href).href, scrobble: true };
+  }
   function scan(incoming = null) {
     if (currentUrl !== location.href) { reset(); currentUrl = location.href; }
     if (!own()) return;
@@ -183,7 +199,8 @@
     }
     const rows = incoming instanceof Set || Array.isArray(incoming) ? [...incoming] : [...document.querySelectorAll('tr.chartlist-row')];
     for (const row of rows) {
-      if (![...row.querySelectorAll('.chartlist-name a[href]')].some(link => A.musicItem(link)?.type === 'tracks')) continue;
+      const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(item => item?.type === 'tracks');
+      if (!item) continue;
       const image = row.querySelector('.chartlist-image img');
       if (!image) continue;
       if (album) {
@@ -192,7 +209,14 @@
         }
         continue;
       }
-      if (!observed.get(image)?.job.cover) hold(image);
+      if (!cacheReady) {
+        const form = row.querySelector('form[data-edit-scrobble]');
+        const fields = form && A.artworkFields(form, location.href, username);
+        if (A.libraryView(location.href) === 'scrobbles' && !fields) continue;
+        const cover = scrobbleCover(image, item, fields);
+        if (cover) { scrobbleImages.set(image, cover); apply(image, cover); }
+        else hold(image);
+      }
     }
     if (album || !cacheReady) return;
     const albums = globalThis.LastfmArtworkAlbums;
@@ -204,7 +228,9 @@
       }
       seededGeneration = generation;
     }
-    for (const [image] of originals) if (!image.isConnected && !prepared.has(image)) originals.delete(image);
+    for (const [image] of originals) if (!image.isConnected && !prepared.has(image)) {
+      originals.delete(image); scrobbleImages.delete(image);
+    }
     for (const [image, value] of observed) if (!image.isConnected && !prepared.has(image)) {
       observer.unobserve(image); observed.delete(image); value.job.images.delete(image);
     }
@@ -215,7 +241,7 @@
       let item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link)).find(value => value?.type === 'tracks');
       if (!item) continue;
       const form = row.querySelector('form[data-edit-scrobble]');
-      const fields = form && A.editRow(form, location.href, username, true);
+      const fields = form && A.artworkFields(form, location.href, username);
       // At document_start the image/link can arrive before the native form.
       // Do not enqueue an unclassified scrobble or bypass its album-less cache.
       if (A.libraryView(location.href) === 'scrobbles' && !fields) continue;
@@ -226,7 +252,12 @@
       if (/^\d+$/.test(total || '') && Number.isSafeInteger(Number(total))) item = {...item,libraryTotal:Number(total)};
       const key = keyFor(item);
       const previous = observed.get(image);
-      if (previous && previous.job === jobs.get(key)) continue;
+      if (previous && previous.job === jobs.get(key)) {
+        const cover = previous.job.cover || scrobbleCover(image, item, fields);
+        if (cover) { if (cover.scrobble) scrobbleImages.set(image, cover); apply(image, cover); }
+        else hold(image);
+        continue;
+      }
       if (previous) {
         previous.job.images.delete(image); observer.unobserve(image); observed.delete(image);
         if (running?.job === previous.job && !visible(previous.job)) running.controller.abort();
@@ -243,7 +274,11 @@
       const job = jobs.get(key); job.images.add(image);
       touched.add(job);
       observed.set(image, { job, visible: false }); observer.observe(image);
-      if (job.cover) apply(image, job.cover);
+      const cover = job.cover || scrobbleCover(image, item, fields);
+      if (cover) {
+        if (cover.scrobble) scrobbleImages.set(image, cover);
+        apply(image, cover);
+      } else hold(image);
     }
     const candidates = [...jobs.values()].filter(job => !job.albumless && ['waiting','unavailable'].includes(job.state) &&
       (!incoming || touched.has(job)));
@@ -265,43 +300,16 @@
   }
   async function prepareRows(rows, {signal} = {}) {
     await ready;
-    if (!own() || signal?.aborted) return;
-    const current = generation, images = rows.map(row => row.querySelector('.chartlist-image img')).filter(Boolean);
+    if (signal?.aborted) throw new DOMException('Artwork preparation cancelled.', 'AbortError');
+    if (!own()) return;
+    const images = rows.map(row => row.querySelector('.chartlist-image img')).filter(Boolean);
     for (const image of images) prepared.add(image);
-    let timer, abort;
-    const waiting = new Set(), settlers = [];
     try {
+      // Apply cached winners and validated scrobble pairs before insertion.
+      // Cold metadata runs after insertion; it must never delay pagination.
       scan(rows);
-      // Cached winners apply while detached. Give the first viewport of cold
-      // rows a bounded head start; never hold a 50-row page for minutes.
-      for (const image of images.slice(0, 10)) {
-        const job = observed.get(image)?.job;
-        if (job?.state === 'waiting' || job?.state === 'loading') waiting.add(job);
-      }
-      if (!waiting.size) return;
-      const completed = [...waiting].map(job => new Promise(resolve => {
-        job.preparing = true; (job.settlers ||= new Set()).add(resolve); settlers.push([job,resolve]);
-      }));
-      pump();
-      await Promise.race([Promise.all(completed), new Promise(resolve => {
-        timer = setTimeout(resolve, 4000); abort = resolve;
-        signal?.addEventListener('abort', abort, {once:true});
-      })]);
-      if (current !== generation || signal?.aborted) throw new DOMException('Artwork preparation cancelled.', 'AbortError');
     } finally {
-      clearTimeout(timer); if (abort) signal?.removeEventListener('abort',abort);
-      for (const [job,settle] of settlers) { job.preparing = false; job.settlers.delete(settle); }
-      for (const image of images) {
-        prepared.delete(image);
-        if ((signal?.aborted || current !== generation) && !image.isConnected) {
-          const job = observed.get(image)?.job;
-          observer.unobserve(image); observed.delete(image); job?.images.delete(image); restore(image);
-          if (job && !job.images.size) {
-            if (running?.job === job) running.controller.abort();
-            else jobs.delete(keyFor(job.item));
-          }
-        }
-      }
+      for (const image of images) prepared.delete(image);
     }
   }
   observer = new IntersectionObserver(entries => {
@@ -322,7 +330,7 @@
     if (own() && currentUrl === location.href) for (const record of records) {
       if (record.type !== 'attributes') continue;
       const image = record.target.matches('img') ? record.target : record.target.querySelector('img');
-      const cover = albumImages.get(image) || observed.get(image)?.job.cover;
+      const cover = albumImages.get(image) || observed.get(image)?.job.cover || scrobbleImages.get(image);
       if (cover) apply(image, cover);
       else if (originals.has(image)) hold(image);
     }

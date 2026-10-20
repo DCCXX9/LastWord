@@ -2,6 +2,18 @@
 
 ## Latest correction — 20 October 2026
 
+v0.9.13 traces loaded native scrobble covers being hidden behind serial winner
+lookups. Matching scrobble previews now remain visible, while unrelated images
+stay withheld and proved winners retain precedence. Pagination no longer waits
+four seconds for artwork and takes priority over queued metadata. The installed
+profile reached 199 rows, including an uncached appended track proved at 1/1.
+Full gate: 59/59; four focused checks rerun after restart; 39-file package audited.
+Exact evidence and the transient page-three response boundary: CURRENT.md.
+Jay directly authorised this correction and its post-limit verification; the old
+maintenance heartbeat remains paused. Next step is normal Reload acceptance.
+
+## Previous correction
+
 v0.9.11 normal-browsing freeze supersedes its earlier passing test checkpoint.
 v0.9.12 corrects the reproduced artwork/redirect href loop; combined regression
 includes cached and appended rows plus setting transitions. Actual checks and

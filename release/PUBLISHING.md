@@ -2,7 +2,7 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.9.12 beta**. Keep it in place.
+The installed folder already contains **v0.9.13 beta**. Keep it in place.
 
 1. Click Reload on the existing extension card in `chrome://extensions`.
    Re-enable it if disabled, then refresh existing Last.fm tabs.
@@ -23,7 +23,7 @@ The installed folder already contains **v0.9.12 beta**. Keep it in place.
 No Console commands are needed. A screenshot or ordinary description of any
 remaining problem is enough. Direct Library Doctor connection/sync is not yet
 enabled; a fresh XML export after cleanup uses the same import flow today.
-The v0.9.12 signed-in responsiveness checks are recorded in CURRENT.md. Last.fm's
+The v0.9.13 signed-in responsiveness checks are recorded in CURRENT.md. Last.fm's
 request pause prevented a live append check and is retained. The prior 300-row
 checkpoint belongs to withdrawn v0.9.11. Jay's Reload test remains the acceptance
 check for normal browsing and remaining examples.
@@ -32,8 +32,8 @@ check for normal browsing and remaining examples.
 
 | Output | Path relative to project |
 | --- | --- |
-| Upload / download ZIP | `dist/lastfm-personal-library-0.9.12-beta.zip` |
-| ZIP checksum | `dist/lastfm-personal-library-0.9.12-beta.zip.sha256` |
+| Upload / download ZIP | `dist/lastfm-personal-library-0.9.13-beta.zip` |
+| ZIP checksum | `dist/lastfm-personal-library-0.9.13-beta.zip.sha256` |
 | Per-file audit | `dist/package-manifest.json` |
 | Static website including download and privacy page | `dist/site/` |
 | Store copy and review instructions | `release/STORE-LISTING.md` |

@@ -99,6 +99,17 @@
     return result.artist.trim() && result.track.trim() && /^\d+$/.test(result.timestamp)
       ? result : null;
   }
+  function artworkFields(form, base, username) {
+    const fields = editRow(form, base, username, true);
+    if (fields) return fields;
+    // Read-only artwork tolerates Last.fm omitting an album-artist tag. Keep
+    // native write validation and the original form untouched.
+    const names = [...form.elements].map(field => field.name);
+    if (names.filter(name => name === 'album_name').length !== 1 || names.includes('album_artist_name')) return null;
+    const copy = form.cloneNode(true), empty = copy.ownerDocument.createElement('input');
+    empty.name = 'album_artist_name'; empty.value = ''; copy.append(empty);
+    return editRow(copy, base, username, true);
+  }
   function editPairs(form) {
     const names = { track: 'track_name', album: 'album_name', artist: 'artist_name',
       albumArtist: 'album_artist_name' };
@@ -124,5 +135,5 @@
     } catch { return null; }
   }
   globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, publicArtistPage, libraryView,
-    nextPage, editRow, editPairs, coverImage });
+    nextPage, editRow, artworkFields, editPairs, coverImage });
 })();

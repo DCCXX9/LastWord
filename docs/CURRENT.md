@@ -1,5 +1,65 @@
 # Current state — 20 October 2026
 
+## v0.9.13 candidate — ready for Reload acceptance
+
+Branch preferences-page; clean starting baseline c8349d8 (v0.9.12).
+Jay authorised finishing verification after the earlier allowance checkpoint.
+
+Signed-in tracing on DCCXX/library confirmed Unicorn Quest™, Paradise Island
+and Vida had loaded No Bad Memories images and valid scrobble tags, but the
+extension hid them while individual history requests waited in its serial queue.
+The native response was not missing the images. A real page-three append took
+6544ms, including about 1474ms for the request and the four-second preparation
+window. Evidence: test-results/library-trace-before.json,
+library-observe-before.json and library-page-before.json.
+
+The candidate retains a native cover only when its album link and label match
+that exact scrobble's tags, then replaces this temporary preview with the proved
+most-used album. Previews are not persisted as winner records. Unrelated
+compilations remain hidden. Detached scroll preparation no longer waits four
+seconds, and pagination precedes queued artwork reads while preserving pacing
+and rate pauses. Incomplete forms cannot create a permanently hidden jobless row.
+
+The full regression gate passed 59/59 suites (test-results/v0913-final.log).
+After the PC restart, the four focused artwork/history, batch, priority and
+release suites passed again (test-results/v0913-resumed-checks.log).
+
+The restarted installed profile confirmed runtime v0.9.13 and all three original
+rows with visible, downloaded No Bad Memories covers and matching album links.
+None of the initial 50 covers was hidden. The seven-second timer probe delivered
+70 callbacks with a 103.4ms maximum gap. Because the launched browser window was
+backgrounded, these probes used CDP focus emulation and restored it afterwards;
+they do not replace Jay's foreground Reload acceptance.
+Evidence: test-results/library-verified-live.json and library-v0913.png.
+
+Actual pagination reached 199 rows. Page two appended in 1424ms and page four in
+2522ms; their requests took approximately 893ms and 876ms respectively. These
+are different batches from the earlier 6544ms page-three baseline, not a fixed
+speedup guarantee. All first ten sampled page-four covers were downloaded and
+visible as validated scrobble previews when insertion was observed. White Folk
+initially had no winner cache record but retained its Fully Loaded cover/link;
+the actual lookup then proved Fully Loaded at 1/1 scrobbles, saved sourceVersion
+3 evidence and kept the same displayed image. The 199-row timer probe continued
+with a maximum gap of 399.3ms. Evidence: test-results/library-page-after1.json,
+library-page-after3.json, library-scroll-live.json and library-scroll-v0913.png.
+
+One page-three HTTP-200 response failed the existing layout check before append.
+The user's Try again action was exercised once: a valid response contained Today
+and Yesterday sections and appended 49 rows with the existing order/duplicate
+guards. A breakpoint trace confirmed tableIndex 0 and two valid source tables
+on that retry; no speculative table-selection fix was made. The first failure's
+body was not retained, so its server-side reason is unknown.
+Evidence: test-results/library-page-after2.json and library-page3-failure.json.
+
+The 39-file ZIP independently matches every source byte and recorded hash.
+Archive size: 281168 bytes. SHA-256:
+21d6cf39ead0dfcea9d9d8fe819808d12137e43f041b87d6715e217a866c557c.
+Evidence: test-results/v0913-package-verification.json. Cold winner discovery
+still needs paced Last.fm responses; unknown or unrelated images remain withheld.
+Identity, preferences, undo data, scan records and network pauses were preserved.
+
+## v0.9.12 verified checkpoint
+
 Installed candidate: **v0.9.12 beta**, branch preferences-page. Baseline: 618afce.
 v0.9.11 is withdrawn after Jay reported freezes during normal browsing.
 

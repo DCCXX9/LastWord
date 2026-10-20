@@ -5,7 +5,8 @@
   const warning = /you[’']?re requesting (?:too many|a lot of) pages/i;
   let paused = false;
   let lastError = '';
-  let queue = Promise.resolve();
+  const queue = [];
+  let draining = false;
   const abortError = () => new DOMException('Loading cancelled.', 'AbortError');
   const check = signal => { if (signal?.aborted) throw abortError(); };
 
@@ -126,13 +127,37 @@
     }
   }
 
+  async function drain() {
+    if (draining) return;
+    draining = true;
+    try {
+      while (queue.length) {
+        // Finish the active request, then prefer a user's next page over
+        // background metadata. The shared lock and request spacing still apply.
+        const first = queue.findIndex(entry => entry.options.priority === 'navigation');
+        const entry = queue.splice(first < 0 ? 0 : first, 1)[0];
+        const {url, options, album, resolve, reject, abort} = entry, {signal} = options;
+        signal?.removeEventListener('abort', abort);
+        try {
+          resolve(await navigator.locks.request('lastfm-personal-library:pages',
+            { ...(signal ? {signal} : {}) }, () => request(url, signal, album, options)));
+        } catch (error) { reject(error); }
+      }
+    } finally { draining = false; }
+  }
   function get(url, options = {}, album = false) {
-    const { signal } = options;
-    const run = () => navigator.locks.request('lastfm-personal-library:pages',
-      { ...(signal ? { signal } : {}) }, () => request(url, signal, album, options));
-    const result = queue.then(run);
-    queue = result.catch(() => {});
-    return result;
+    return new Promise((resolve, reject) => {
+      const {signal} = options;
+      if (signal?.aborted) { reject(abortError()); return; }
+      const entry = {url, options, album, resolve, reject};
+      entry.abort = () => {
+        const index = queue.indexOf(entry);
+        if (index >= 0) queue.splice(index, 1);
+        reject(abortError());
+      };
+      signal?.addEventListener('abort', entry.abort, {once:true});
+      queue.push(entry); void drain();
+    });
   }
 
   async function resume() {
