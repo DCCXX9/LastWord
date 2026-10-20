@@ -1,5 +1,17 @@
 # Implementation lessons
 
+## Artwork and redirect observers must agree on album URL identity (2026-10-20)
+
+v0.9.11 passed separate artwork and redirect tests but froze a real protected
+artist list. Artwork repeatedly removed the +noredirect component that redirect
+protection restored. Test both observers together with an actual cached winner
+and an appended row. Bound the test observer deliveries so failures cannot hang
+the runner. Include settings transitions: copying the redirect setting into the
+artwork module briefly disagreed with the other module's asynchronous state.
+Accepting the same protected album identity avoids the competing writes without
+another settings owner. CPU-idle samples before a lookup finishes and absence of
+page errors are not proof that later callbacks remain responsive.
+
 ## Shared URL guards need worker-origin coverage (2026-10-20)
 
 The first public-artwork check passed in the mocked worker but failed in signed-in

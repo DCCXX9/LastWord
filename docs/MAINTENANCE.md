@@ -1,5 +1,13 @@
 # Unassisted maintenance until the allowance reset
 
+## Latest correction — 20 October 2026
+
+v0.9.11 normal-browsing freeze supersedes its earlier passing test checkpoint.
+v0.9.12 corrects the reproduced artwork/redirect href loop; combined regression
+includes cached and appended rows plus setting transitions. Actual checks and
+the retained Last.fm rate pause are in CURRENT.md. The old maintenance heartbeat
+remains paused; this correction was directly requested by Jay.
+
 Authorised by Jay on 15 October 2026. Work in the existing installed folder.
 Starting checkpoint: `1f21384`, branch `preferences-page`, v0.6.12.
 

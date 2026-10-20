@@ -1,4 +1,12 @@
-# v0.9.11 beta
+# v0.9.12 beta
+
+Fixes a freeze caused by artwork and redirect protection repeatedly rewriting
+the same album link. Artwork accepts the protected URL for that exact album.
+The correction also covers scroll-added rows and switching redirect protection
+off and on. Stored preferences, import undo, scan records and permissions remain.
+Cold artwork lookups still require Last.fm responses. Verification: docs/CURRENT.md.
+
+## v0.9.11 beta — withdrawn
 
 Artwork feedback combined into one Reload version:
 

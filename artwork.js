@@ -55,7 +55,10 @@
       original.wrapper.replaceWith(link); original.replacement = link;
     }
     const link = original.link || original.replacement;
-    if (link && (link.isConnected || prepared.has(image)) && link.href !== cover.url) link.href = cover.url;
+    // A redirect-protected URL still selects this exact album. Preserve it so
+    // the two observers cannot alternate hrefs indefinitely.
+    if (link && (link.isConnected || prepared.has(image)) && link.href !== cover.url &&
+        !globalThis.LastfmRedirects?.samePagePath(link.href, cover.url)) link.href = cover.url;
   }
   function hold(image) {
     remember(image);

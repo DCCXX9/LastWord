@@ -1,9 +1,17 @@
 # Public beta preparation
 
 Baseline: `7de6c8d`, v0.7.0, `preferences-page`; clean installed checkout.
-Current candidate: v0.9.11 beta. One candidate for Jay's Reload and the public package.
+Current candidate: v0.9.12 beta. One candidate for Jay's Reload and the public package.
 
-## v0.9.11 Combined artwork feedback
+## v0.9.12 Freeze correction
+
+v0.9.11 is withdrawn. Artwork now accepts a redirect-protected link to the same
+selected album, preventing an endless href mutation cycle. Cached and appended
+Travis Scott/Lucki rows and redirect setting transitions have a combined regression.
+Signed-in responsiveness checks and their rate-limit boundary are in CURRENT.md.
+Identity, settings, XML undo, legacy records and the stored Last.fm pause remain.
+
+## v0.9.11 Withdrawn artwork candidate
 
 Baseline 9ae8197. Unverified native covers and album links stay hidden until an
 exact personal winner is available. Scroll batches receive cached/shared covers

@@ -1,5 +1,49 @@
 # Current state — 20 October 2026
 
+Installed candidate: **v0.9.12 beta**, branch preferences-page. Baseline: 618afce.
+v0.9.11 is withdrawn after Jay reported freezes during normal browsing.
+
+The reproduced defect is an href feedback loop: artwork restored an unprotected
+album URL while redirect protection immediately added +noredirect again. Both
+MutationObservers ran repeatedly without yielding. Artwork now accepts the
+protected URL when it identifies the exact same album. No resolver, pacing,
+storage, native editing or scrolling policy was changed in this correction.
+
+The bounded regression failed at 101 observer deliveries before the correction.
+It now covers Travis Scott and Lucki cached winners, appended rows, and live
+redirect opt-out/re-enable. An initial state-copy approach was discarded because
+the option transition exposed the same race. The final fix compares URL identity.
+
+The actual signed-in protected Lucki test became unresponsive after its initial
+lookups; page inspection and a new Playwright connection timed out. Only that
+owned test tab was closed. The recording also showed hidden recent-track covers.
+In the corrected profile check, all 20 covers loaded and timer callbacks continued.
+The artist overview remained responsive while cold lookups continued. A real
+next-page attempt was stopped by Last.fm's shared rate warning; that pause is
+retained, and this run does not certify a successful live scroll append.
+
+The final fresh signed-in Lucki tab confirmed the active v0.9.12 runtime. Five
+sampled personal Freewave 3 covers were loaded with protected album links; timer
+callbacks continued (65 ticks, maximum gap 566ms during the seven-second probe).
+Cached covers applied while the stored rate pause prevented further requests.
+Evidence: test-results/freeze-final-live.json and freeze-final-clean.log.
+
+The complete final gate passed 57/57 suites, including the combined observer
+regression, scrolling, native editing, storage preservation and Reload startup.
+Evidence: test-results/v0912-final-combined.log. Fixtures cover appended rows;
+they do not replace the blocked live append check described above.
+
+Package audit: all 39 ZIP entries match their source bytes and recorded hashes.
+The v0.9.12 archive is 279154 bytes; SHA-256:
+6c816c20893110259ba9c2076c536aac727484a5af37394932676870bbdd0104.
+Evidence: test-results/v0912-package-verification.json.
+Uncached metadata can still take time; this fix does not promise instant covers.
+All original preferences, XML undo, legacy scan records and extension identity
+are retained. The extension is returned to its original disabled state after
+verification; Jay can Reload and re-enable the installed folder.
+
+## v0.9.11 withdrawn candidate
+
 Installed candidate: **v0.9.11 beta**, branch preferences-page.
 Baseline: 9ae8197. Combined artwork feedback; one Reload version.
 
