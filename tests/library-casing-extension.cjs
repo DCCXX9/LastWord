@@ -92,5 +92,5 @@ const list = page => `<!doctype html><main class="col-main"><a id="artist" href=
     await importer.setViewportSize({width:1280,height:1000});
     await importer.screenshot({path:path.join(root,'test-results','library-casing-review.png'),fullPage:true});
     console.log('PASS: actual unpacked XML import, all-library field selection, exact names on initial/infinite rows, friend isolation, persistent revert and preserved later edits/legacy records');
-  } finally {await browser.close();}
+  } finally {await browser.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

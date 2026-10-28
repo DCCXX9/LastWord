@@ -88,5 +88,5 @@ const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${
   assert.deepEqual(saved.itunesImportUndo,data.itunesImportUndo);assert.deepEqual(saved.albumlessScanDraft,data.albumlessScanDraft);
   assert.deepEqual(saved.rules,data.rules);assert.deepEqual(errors,[]);
   console.log('PASS: actual unpacked redirect protection, native alias evidence, scroll pages 2/3, public navigation, live opt-out/restore, friend isolation and unchanged native forms/storage');
- } finally {await browser.close();}
+ } finally {await browser.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

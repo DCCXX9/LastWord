@@ -32,4 +32,5 @@ assert.equal(fs.readFileSync(marker, 'utf8'), 'ran', 'execute real scripts, incl
 const timed = runSuites([slow], { timeout: 250, report: () => {} });
 assert.equal(timed[0].passed, false, 'a timeout must never count as success');
 assert.equal(timed[0].error, 'ETIMEDOUT');
+fs.rmSync(folder, { recursive: true, force: true });
 console.log('PASS: suite discovery, explicit selections, unknown flags, path quoting, aggregate failure reporting and timeouts');

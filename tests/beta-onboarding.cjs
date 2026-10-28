@@ -64,5 +64,5 @@ const root=path.resolve(__dirname,'..'),extension=process.env.LFM_TEST_EXTENSION
   for(const name of ['help','privacy']){await page.goto(`chrome-extension://${id}/${name}.html`);assert.equal(await page.locator('h1').count(),1);}
   assert.deepEqual(errors,[]);
   console.log('PASS: actual beta install, profile setup/isolation, import gating, help/privacy, preserved legacy records and no automatic requests/POSTs');
- }finally{await context.close();}
+ }finally{await context.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

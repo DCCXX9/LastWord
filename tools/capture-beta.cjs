@@ -59,5 +59,5 @@ async function icons(browser) {
   await page.evaluate(()=>document.querySelector('#review').scrollIntoView({block:'start'}));
   await page.screenshot({path:path.join(assets,'xml-review.png')});
   console.log('PASS: original icons/promo and three actual extension screenshots (fictional example metadata, network blocked)');
- }finally{await context.close();}
+ }finally{await context.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

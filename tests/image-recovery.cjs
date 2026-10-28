@@ -110,5 +110,5 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
     assert.equal(await page.locator('[id="' + drug + '"]').getAttribute('src'), image(drug));
     assert.deepEqual(errors, []);
     console.log('PASS: real unpacked startup failures, artist/album derivatives, srcset, scroll append, personal-cover coexistence, bounded missing-image retries, stale preference protection and own-profile isolation');
-  } finally { releaseHeld?.(); await context.close(); }
+  } finally { releaseHeld?.(); await context.close(); fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

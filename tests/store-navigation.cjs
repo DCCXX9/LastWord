@@ -57,5 +57,5 @@ const seed = { settings: { username: 'DCCXX', infiniteScroll: false },
     assert.deepEqual(posts, [], 'native save never reaches Last.fm');
     await page.waitForFunction(() => document.querySelector('main > a').textContent === 'Jesus Is King');
     console.log('PASS: real extension saves native album casing after public-to-library pushState; worker rejects navigation away, child frames and foreign origins; saved state preserved');
-  } finally { await context.close(); }
+  } finally { await context.close(); fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

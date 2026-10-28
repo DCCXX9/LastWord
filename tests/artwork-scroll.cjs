@@ -67,5 +67,5 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(['settings','rules'])),before);
   assert.deepEqual(errors,[]);
   console.log('PASS: actual unpacked extension handles 101 distinct uncached tracks, a temporary history failure, page-2/page-3 insertion, painted initial/imported covers and album links; completed controls disappear');
- }finally{await browser.close();}
+ }finally{await browser.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

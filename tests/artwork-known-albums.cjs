@@ -73,5 +73,5 @@ const album = `<main class="col-main"><header class="library-header"><h2 class="
     assert.equal(await page.locator('img').first().getAttribute('src'), placeholder);
     assert.deepEqual(errors, []);
     console.log('PASS: verified known-album counts recover initial and scroll-added covers despite unavailable histories, prove majority, reject guesses, cache winners and isolate profiles/preferences');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

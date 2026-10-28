@@ -51,5 +51,5 @@ const root = path.resolve(__dirname, '..');
     await page.getByRole('link', { name: 'BLADEE', exact: true }).waitFor({ timeout: 3000 });
     assert.deepEqual(exceptions, [], 'ordinary navigation must not initialize feature scripts twice');
     console.log('PASS: Reload during navigation has no dependency crash; the required page refresh activates features and preserves all preferences');
-  } finally { release?.(); await browser.close(); }
+  } finally { release?.(); await browser.close(); fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

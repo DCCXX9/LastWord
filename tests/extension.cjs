@@ -109,5 +109,5 @@ const root = path.resolve(__dirname,'..');
   await popup.setViewportSize({width:380,height:540});
   await popup.screenshot({path:path.join(root,'test-results','popup.png')});
   console.log('PASS: actual extension, album-less settings/default-off storage, sorted preferences, worker, XML apply/revert and 64 MiB scan without writes');
- }finally{await browser.close()}
+ }finally{await browser.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(e=>{console.error(e);process.exitCode=1});

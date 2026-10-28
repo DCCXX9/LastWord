@@ -73,5 +73,5 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   assert.deepEqual(await w.evaluate(()=>chrome.storage.local.get(null)),after,'a disconnected tab cannot change stored data');
   assert.deepEqual(errors,[]);
   console.log('PASS: scoped artwork invalidation, storage/profile safety, actual popup-to-content refresh, native cover and link after reload, persistence and zero background requests');
- }finally{await context.close()}
+ }finally{await context.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1});

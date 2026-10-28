@@ -94,5 +94,5 @@ const scrobbleList = second => `<main class="col-main"><table class="chartlist">
     assert.deepEqual(await worker.evaluate(() => chrome.storage.local.get(['settings','rules'])),{settings,rules});
     assert.deepEqual(errors,[]);
     console.log('PASS: signed-in skeleton tables excluded from album/history proof, mixed-artist Tracks past 50, off-page hints, same-title isolation, cold history, cached revisit and scroll-added native scrobbles');
-  } finally { await browser.close(); }
+  } finally { await browser.close(); fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); }
 })().catch(error => { console.error(error); process.exitCode=1; });

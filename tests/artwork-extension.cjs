@@ -112,5 +112,5 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
   assert.equal(await page.locator('.chartlist-image img').getAttribute('src'),'https://lastfm-img.freetls.fastly.net/i/u/64s/wrong.jpg');
   assert.equal(requests.length,4);
   console.log('PASS: actual unpacked extension injects personal covers, respects selected albums without changing global winners, uses shared requests, preserves preferences and excludes friends');
- }finally{await browser.close();}
+ }finally{await browser.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1});
