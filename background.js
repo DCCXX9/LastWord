@@ -1,6 +1,6 @@
 /* The worker is the sole writer of preferences. Every operation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'library-cache.js');
+importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
 
 (() => {
   'use strict';
@@ -93,7 +93,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html', '/background.js'].includes(url.pathname);
     if (extension) return;
     // Last.fm navigates with pushState. sender.url retains the document's
     // original URL; Chrome's main-frame tab URL describes its current profile.
@@ -264,8 +264,13 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
         ...([2, 3].includes(cover.sourceVersion) ? { sourceVersion: cover.sourceVersion } : {}) }, checkedAt: Date.now() };
   }
   async function execute(message, sender) {
-    const stored = await chrome.storage.local.get(null);
-    const current = snapshot(stored);
+    // Page reads and per-request job guards must not clone a whole library or
+    // XML undo record. Cache growth must not multiply ordinary browsing cost.
+    const cacheAction=message.action==='library-cache';
+    const keys=message.action==='read'?['settings','rules']:cacheAction?
+      ['settings','lfmLibraryJobsV1',...(['active','state'].includes(message.op)?[]:[LastfmLibraryCache.KEY])]:null;
+    const stored = await chrome.storage.local.get(keys);
+    const current = cacheAction?{settings:settings(stored.settings),rules:R.empty()}:snapshot(stored);
     authorize(sender, message.action, current);
     if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put', 'albumless'].includes(message.action)) {
       throw new Error('Connect your Last.fm profile in Settings first.');
@@ -274,21 +279,10 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
       sender.url === `chrome-extension://${chrome.runtime.id}/albumless.html`);
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
-      const C = LastfmLibraryCache, profiles = { ...(stored[C.KEY]?.profiles || {}) };
-      const key = R.normalize(current.settings.username), cached = profiles[key];
-      if (message.op === 'read') return cached || null;
-      if (!current.settings.username || message.username !== current.settings.username) throw new Error('Your connected profile changed.');
-      if (message.op === 'start') {
-        if (sender.url !== `chrome-extension://${chrome.runtime.id}/itunes.html`) throw new Error('Open the XML comparison screen.');
-        profiles[key] = C.create(current.settings.username);
-      } else if (message.op === 'page') {
-        if (new URL(sender.url).origin !== 'https://www.last.fm' || sender.frameId !== 0 || !cached || message.id !== cached.id) {
-          throw new Error('Library pages must come from your connected Last.fm tab.');
-        }
-        profiles[key] = C.accept(cached, message.data);
-      } else throw new Error('Unknown library cache operation.');
-      await chrome.storage.local.set({ [C.KEY]: { version: 1, profiles } });
-      return C.status(profiles[key]);
+      const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
+      if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
+      if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
+      return result;
     }
     if (message.action === 'artwork-read') {
       return (Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : []).filter(record => {
@@ -348,6 +342,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
       }
       const next = validSettings({ ...current.settings, ...message.patch });
       await chrome.storage.local.set({ settings: { ...(stored.settings || {}), ...next } });
+      if(next.username && next.username !== current.settings.username) void LastfmLibraryCacheJobs.connected(next.username);
       return { ...current, settings: next };
     }
     if (message.action === 'replace') {
@@ -367,10 +362,11 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
     throw new Error('Unknown preference request.');
   }
 
+  const enqueue=(message,sender)=>{const pending=queue.then(()=>execute(message,sender));queue=pending.catch(()=>{});return pending};
+  LastfmLibraryCacheJobs.init(message=>enqueue({channel:'lastfm-store-v1',action:'library-cache',...message},{id:chrome.runtime.id,url:'chrome-extension://'+chrome.runtime.id+'/background.js'}));
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (message?.channel !== 'lastfm-store-v1') return false;
-    const pending = queue.then(() => execute(message, sender));
-    queue = pending.catch(() => {});
+    const pending = enqueue(message,sender);
     pending.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
     return true;
   });

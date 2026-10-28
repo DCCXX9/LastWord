@@ -17,7 +17,7 @@ function inputs() {
 function validate(entries) {
   const names = new Set(entries.map(x => x.name));
   const manifest = JSON.parse(entries.find(x => x.name === 'manifest.json').data);
-  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage","unlimitedStorage"]' ||
+  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage","unlimitedStorage","alarms"]' ||
       manifest.host_permissions || manifest.optional_permissions || manifest.key || manifest.update_url ||
       manifest.externally_connectable || manifest.web_accessible_resources) throw new Error('Unexpected manifest authority or identity change.');
   const required = [manifest.background.service_worker,manifest.options_page,manifest.action.default_popup,
@@ -74,7 +74,12 @@ function build() {
     files:entries.map(({name,data})=>({name,bytes:data.length,sha256:hash(data)}))},null,2)+'\n');
   const site=path.join(out,'site');fs.mkdirSync(path.join(site,'downloads'),{recursive:true});
   fs.mkdirSync(path.join(site,'assets'),{recursive:true});
-  for(const name of ['index.html','site.css']) fs.copyFileSync(path.join(root,'release','site',name),path.join(site,name));
+  for(const name of ['index.html','site.css']) {
+    let source=fs.readFileSync(path.join(root,'release','site',name),'utf8');
+    if(name==='index.html')source=source.replace(/Free beta \d+\.\d+\.\d+/g,'Free beta '+version)
+      .replace(/lastfm-personal-library-\d+\.\d+\.\d+-beta\.zip/g,filename);
+    fs.writeFileSync(path.join(site,name),source);
+  }
   for(const name of ['icon128.png','promo440.png','preferences.png','xml-review.png','setup.png']) {
     fs.copyFileSync(path.join(root,'release','assets',name),path.join(site,'assets',name));
   }

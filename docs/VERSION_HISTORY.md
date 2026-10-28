@@ -2,7 +2,14 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Local candidate: v0.9.19
+## Local candidate: v0.9.20
+
+Built from v0.9.19 checkpoint 35d74c3. Adds background caching after profile
+connection, retained-cache rebuild confirmation, cache JSON export/import,
+skipped-row reporting/retry and smaller storage reads/broadcasts. Existing
+progress and preferences remain intact. Not pushed or published.
+
+## Previous local checkpoint: v0.9.19 (35d74c3)
 
 Built from v0.9.18 checkpoint 3176b45. The latest candidate
 adds exact observed-library casing comparison, concise Before → After review,

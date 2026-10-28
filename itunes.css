@@ -34,3 +34,13 @@ summary { cursor: pointer; }
 .backup-details > button, #revert-section { margin-top: 16px; }
 #batch-summary { margin-bottom: 8px; }
 @media (max-width: 700px) { .itunes-page table { min-width: 650px; } .file-controls { align-items: start; flex-direction: column; } }
+.cache-panel { border-top: 1px solid var(--lfm-border); margin-top: 20px; padding-top: 18px; }
+.cache-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.cache-panel p { margin: 10px 0; }
+.cache-panel details { margin-top: 16px; font-size: 13px; }
+.cache-panel summary { cursor: pointer; }
+.cache-import-label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; }
+.cache-import-label input { max-width: 240px; font: inherit; }
+#cache-error:empty, #cache-message:empty { display: none; }
+#cache-skipped-list { padding-left: 20px; line-height: 1.7; }
+#cache-message[data-tone=error] { color: #a04444; }

@@ -7,16 +7,23 @@
   <main>
     <section class="card" aria-label="Compare libraries">
       <div class="file-controls"><div><label for="xml-file">iTunes XML files</label><input id="xml-file" type="file" accept=".xml,text/xml,application/xml" multiple disabled></div><button id="compare" type="button" class="primary" disabled>Compare libraries</button></div>
-      <p class="subtle comparison-note">Caching your Last.fm library and comparing it with your XML can take a while. You can pause and resume.</p>
+      <p class="subtle comparison-note">Keep your Last.fm profile tab open while caching. Large libraries can take an hour or more. Pause and resume below.</p>
       <p class="safety-note">Display casing only. Your scrobbles are never changed.</p>
       <div id="scan-status" class="scan-status" hidden><progress id="scan-progress" aria-label="Comparison progress"></progress><span id="scan-label" role="status"></span><button id="cancel-scan" type="button">Pause</button></div>
       <p id="scan-error" class="message" role="alert" data-tone="error"></p>
-      <details class="cache-details"><summary>Last.fm cache</summary><span id="cache-status">Not cached</span><button id="refresh-cache" type="button">Refresh cache</button></details>
+      <section class="cache-panel" aria-label="Last.fm cache">
+        <div class="section-header"><strong>Last.fm cache</strong><span id="cache-status" role="status">Checking…</span></div>
+        <p id="cache-detail" class="subtle"></p><p id="cache-error" class="message" role="alert" data-tone="error"></p>
+        <div class="cache-actions"><button id="cache-resume" type="button" class="primary">Resume caching</button><button id="cache-pause" type="button" hidden>Pause caching</button><button id="cache-export" type="button">Export cache</button><label class="cache-import-label">Import cache<input id="cache-import" type="file" accept=".json,application/json"></label></div>
+        <p id="cache-message" class="subtle" role="status"></p>
+        <details id="cache-skipped" hidden><summary id="cache-skipped-summary">Skipped items</summary><ul id="cache-skipped-list"></ul><div class="page-controls"><button id="skipped-previous" type="button">Previous</button><span id="skipped-page"></span><button id="skipped-next" type="button">Next</button><button id="cache-retry" type="button">Retry skipped items</button></div></details>
+        <details class="cache-advanced"><summary>Advanced cache controls</summary><p>Rebuilding downloads your library again. Your current cache stays available until the new download completes.</p><button id="cache-rebuild" type="button">Rebuild cache…</button><button id="cache-export-draft" type="button" hidden>Export rebuild progress</button></details>
+      </section>
     </section>
     <section id="review" class="card" aria-labelledby="review-heading" hidden>
       <div class="section-header"><h2 id="review-heading">Casing changes</h2><span id="selected-count" class="badge"></span></div>
       <p id="scan-summary" class="subtle"></p>
-      <div id="stale-notice" class="notice" hidden>Preferences changed. <button id="refresh-review" type="button">Refresh preview</button></div>
+      <div id="stale-notice" class="notice" hidden><button id="refresh-review" type="button">Refresh preview</button></div>
       <div class="filters"><div class="search-field"><label for="search">Search</label><input id="search" type="search" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="tracks">Songs</option><option value="artists">Artists</option><option value="albums">Albums</option></select></div><div><label for="review-filter">Review</label><select id="review-filter"><option value="">All changes</option><option value="unresolved">Needs casing choice</option><option value="replacement">Replaces preference</option></select></div></div>
       <div class="selection-tools"><label><input id="select-all" type="checkbox"> Select all changes</label><span id="shown-count" class="subtle"></span></div>
       <div class="table-wrap"><table><thead><tr><th scope="col">Use</th><th scope="col">Type / artist</th><th scope="col">Before</th><th class="arrow" aria-label="changes to">→</th><th scope="col">After</th></tr></thead><tbody id="candidates"></tbody></table></div>
@@ -28,5 +35,6 @@
     <p id="message" class="message" role="status" aria-live="polite" tabindex="-1"></p>
   </main>
   <dialog id="confirm-dialog" aria-labelledby="confirm-heading"><h2 id="confirm-heading"></h2><p id="confirm-detail"></p><div class="button-group"><button id="cancel-confirm" type="button">Cancel</button><button id="confirm" type="button" class="primary">Save casing changes</button></div></dialog>
-  <script src="rules.js"></script><script src="store.js"></script><script src="library-casing.js"></script><script src="itunes-parser.js"></script><script src="library-cache.js"></script><script src="library-cache-client.js"></script><script src="itunes.js"></script>
+  <dialog id="cache-confirm-dialog" aria-labelledby="cache-confirm-heading"><h2 id="cache-confirm-heading"></h2><p id="cache-confirm-detail"></p><div class="button-group"><button id="cache-cancel" type="button">Cancel</button><button id="cache-confirm" type="button" class="primary">Confirm</button></div></dialog>
+  <script src="rules.js"></script><script src="store.js"></script><script src="library-casing.js"></script><script src="itunes-parser.js"></script><script src="library-cache.js"></script><script src="cache-ui.js"></script><script src="itunes.js"></script>
 </body></html>

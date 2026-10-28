@@ -1,5 +1,21 @@
 # Architecture decisions
 
+## 29 October 2026: resumable background caching and recoverable snapshots
+
+Reuse the existing signed-in, paced GET bridge in a connected own-profile tab.
+The worker persists jobs and uses alarms to recover after suspension; it does
+not require the comparison screen, new host access, an offscreen document or a
+second network transport. First connection starts caching, while existing
+installations keep their paused progress. Missing tabs wait; rate pauses persist.
+
+Keep rebuild drafts separate from the current usable cache, swapping atomically
+only at completion. Cache JSON import is profile-scoped, validated, previewed and
+confirmed; it never restores unrelated extension storage. Record malformed rows
+and continue, retaining whole-page and pagination failures as stop conditions.
+
+Avoid copying whole-library/undo data on ordinary preference reads or job guards.
+Metadata-only job changes must not rewrite and broadcast the complete cache.
+
 ## 29 October 2026: observed names and permanent read-only transport
 
 XML supplies casing, not identity. Match only names positively observed in the

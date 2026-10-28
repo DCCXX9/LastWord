@@ -1,36 +1,16 @@
 (() => {
-  'use strict';
-  const C = LastfmLibraryCache, S = LastfmStore;
-  let controller = null;
-  chrome.runtime.onMessage.addListener((message, sender, reply) => {
-    if (!['lfm:library-page', 'lfm:library-cancel'].includes(message?.type)) return;
-    // Supermium omits sender.url for tabs.sendMessage from an extension page,
-    // but supplies its authenticated extension origin and ID.
-    const origin = `chrome-extension://${chrome.runtime.id}`;
-    if (sender.id !== chrome.runtime.id || !(sender.url === origin + '/itunes.html' ||
-        !sender.url && sender.origin === origin)) {
-      reply({ ok: false, error: 'Open the XML comparison screen to read library pages.' }); return;
-    }
-    if (message.type === 'lfm:library-cancel') { controller?.abort(); reply({ ok: true }); return; }
-    (async () => {
-      if (controller) throw new Error('A library page is already loading.');
-      controller = new AbortController();
-      try {
-        const guard = async () => {
-          const state = await S.read();
-          if (state.settings.username !== message.username || !LastfmAdapter.ownProfile(location.href, message.username)) {
-            throw new Error('Keep your connected Last.fm profile open while caching.');
-          }
-        };
-        await guard();
-        const result = await LastfmPages.get(C.url(message.username, message.group, message.page),
-          { signal: controller.signal, beforeSend: guard });
-        await guard();
-        const data = C.parse(result.doc, result.url, message.username, message.group, message.page);
-        return await S.cacheLibrary('page', { username: message.username, id: message.id, data });
-      } finally { controller = null; }
-    })().then(value => reply({ ok: true, value }), error => reply({ ok: false, error: error.message }));
-    return true;
-  });
+ 'use strict';const C=LastfmLibraryCache,S=LastfmStore;let controller=null;
+ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+  if(!['lfm:library-page','lfm:library-cancel'].includes(m?.type))return;
+  const origin=`chrome-extension://${chrome.runtime.id}`;
+  if(sender.id!==chrome.runtime.id||!(sender.url===origin+'/background.js'||sender.url===origin+'/itunes.html'||!sender.url&&sender.origin===origin)){reply({ok:false,error:'Open the cache screen to manage caching.'});return}
+  if(m.type==='lfm:library-cancel'){controller?.abort();reply({ok:true});return}
+  (async()=>{
+   if(controller)throw Object.assign(Error('A library page is already loading.'),{retryable:true});controller=new AbortController();
+   try{
+    const guard=async()=>{const state=await S.cacheLibrary('active');if(state.username!==m.username||!LastfmAdapter.ownProfile(location.href,m.username))throw Error('Keep your connected Last.fm profile open while caching.');if(m.token&&(!state.running||state.token!==m.token))throw new DOMException('Caching paused.','AbortError')};
+    await guard();const r=await LastfmPages.get(C.url(m.username,m.group,m.page),{signal:controller.signal,beforeSend:guard});await guard();const data=C.parse(r.doc,r.url,m.username,m.group,m.page);return await S.cacheLibrary('page',{username:m.username,id:m.id,token:m.token,data});
+   }finally{controller=null}
+  })().then(value=>reply({ok:true,value}),error=>reply({ok:false,error:error.message,rateLimited:!!error.rateLimited,retryable:!!error.retryable}));return true;
+ });
 })();
-

@@ -14,14 +14,16 @@ const list=(type,page)=>`<!doctype html><main class="col-main"><a id="artist" hr
  const own=await b.newPage();await own.goto(origin+'/user/DCCXX/library/tracks?date_preset=ALL');await own.locator('[data-lfm-ui="scroll"]').waitFor();
  const p=await b.newPage();await p.goto(`chrome-extension://${id}/itunes.html`);await p.locator('#xml-file:enabled').waitFor();
  const xml='<plist><dict><key>Tracks</key><dict>'+Array.from({length:60},(_,i)=>`<key>${i}</key><dict><key>Name</key><string>sOnG${i===1?'+':' '}${i+1}</string><key>Artist</key><string>aRTIST</string><key>Album</key><string>aLbUm</string><key>Location</key><string>file:///private/music.mp3</string></dict>`).join('')+'</dict></dict></plist>';
+ await p.locator('#cache-resume').click();
+ let paused=false;for(let n=0;n<150&&!paused;n++){paused=await p.evaluate(async()=>{const c=await LastfmStore.cacheLibrary('read');if(c?.groups.tracks.page===2&&!c.groups.tracks.done){await LastfmStore.cacheLibrary('pause');return true}return false});if(!paused)await p.waitForTimeout(20)}assert.ok(paused,'pause after first cached page');
  await p.locator('#xml-file').setInputFiles({name:'Library.xml',mimeType:'text/xml',buffer:Buffer.from(xml)});await p.locator('#compare').click();
- let paused=false;for(let n=0;n<150&&!paused;n++){paused=await p.evaluate(async()=>{const c=await LastfmStore.cacheLibrary('read');if(c?.groups.tracks.page===2&&!c.groups.tracks.done){document.querySelector('#cancel-scan').click();return true}return false});if(!paused)await p.waitForTimeout(20)}assert.ok(paused,'pause after first cached page');
  await p.locator('#compare:enabled').waitFor();
  assert.match(await p.locator('#scan-summary').textContent(),/Partial library/);
  assert.equal(await p.locator('#scan-error').textContent(),'','a user pause is not an error');
  assert.equal(await p.locator('#candidates tr').count(),50,'paused preview only contains observed matches');
  const partial=await p.evaluate(()=>LastfmStore.cacheLibrary('read'));assert.equal(partial.groups.tracks.page,2);
  await p.reload();await p.locator('#xml-file:enabled').waitFor();await p.locator('#xml-file').setInputFiles({name:'Library.xml',mimeType:'text/xml',buffer:Buffer.from(xml)});assert.equal((await p.evaluate(()=>LastfmStore.cacheLibrary('read'))).groups.tracks.page,2);
+ await p.locator('#cache-resume').click();await p.waitForFunction(()=>document.querySelector('#cache-status').textContent==='Complete');
  await p.locator('#compare').click();await p.waitForFunction(()=>!document.querySelector('#scan-status').hidden===false&&document.querySelector('#scan-summary').textContent.startsWith('62 changes'));
  assert.equal(await p.locator('#selected-count').textContent(),'62 selected');
  const state=await w.evaluate(()=>chrome.storage.local.get(null));assert.deepEqual(state.rules,seed.rules);assert.deepEqual(state.legacyScan,seed.legacyScan);assert.deepEqual(state.lfmNetworkPause,seed.lfmNetworkPause);

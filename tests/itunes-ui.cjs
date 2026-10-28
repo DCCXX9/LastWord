@@ -9,7 +9,6 @@ const root=path.resolve(__dirname,'..');
  const cached=libraryCache('DCCXX',entries);cached.profiles.dccxx.groups.tracks.items['["artist","same"]']={name:'Same',artist:'Artist'};
  const worker=await mockExtension(page,{settings:{username:'DCCXX',infiniteScroll:false},rules:{artists:{},albums:{},tracks:{'["artist","song 0"]':{from:'song 0',to:'Song 0',artist:'Artist',exact:true}},albumArtists:{}},lfmLibraryCacheV1:cached},{senderUrl:'chrome-extension://test/itunes.html'});
  await loadScripts(page,['rules.js','store.js','library-casing.js','itunes-parser.js','library-cache.js']);
- await page.evaluate(()=>{globalThis.LastfmLibraryCacheClient={scan:()=>LastfmStore.cacheLibrary('read')}});
  await loadScripts(page,['itunes.js']);await page.locator('#xml-file:enabled').waitFor();
  const xml='<plist><dict><key>Tracks</key><dict>'+[...entries.map(e=>e.rule.to),'Same','Song 0','Absent','Song (feat. Guest)'].map((name,i)=>`<key>${i}</key><dict><key>Name</key><string>${name}</string><key>Artist</key><string>Artist</string></dict>`).join('')+'</dict></dict></plist>';
  await page.locator('#xml-file').setInputFiles({name:'Library.xml',mimeType:'text/xml',buffer:Buffer.from(xml)});

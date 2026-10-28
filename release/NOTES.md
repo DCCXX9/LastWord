@@ -1,3 +1,17 @@
+# v0.9.20 local candidate — safer background cache
+
+- First profile connection starts resumable background caching. Keep a connected
+  Last.fm profile tab open; the comparison screen can close.
+- Pause/Resume replaces Refresh cache. Advanced rebuild requires confirmation
+  and retains the current cache until its replacement finishes.
+- Export/import complete or partial cache JSON, with profile checks, preview,
+  confirmation and failed-import preservation.
+- Skip malformed rows, report their names/links/reasons, and retry missed pages.
+- Reduce memory churn by excluding large cache/undo records from ordinary reads
+  and avoiding cache rewrites for job metadata updates.
+- Exact casing-only matching, GET-only transport and existing data are preserved.
+  The alarms permission adds job wakeups without new website/account access.
+
 # v0.9.19 local candidate — exact casing comparison
 
 - Clean Before → After review hides unchanged and unscrobbled XML names.

@@ -10,7 +10,7 @@
     busy = value;
     $('xml-file').disabled = value || !snapshot?.settings.username;
     $('compare').disabled = value || !snapshot?.settings.username || !$('xml-file').files.length;
-    for (const id of ['refresh-cache', 'refresh-review', 'revert', 'select-all']) $(id).disabled = value;
+    for (const id of ['refresh-review', 'revert', 'select-all']) $(id).disabled = value;
     $('apply').disabled = value || stale || !selected().length;
   }
   function filtered() {
@@ -26,7 +26,7 @@
     $('select-all').indeterminate = n > 0 && n < eligible.length;
     $('apply-summary').textContent = n.toLocaleString() + ' casing changes';
     $('apply').disabled = busy || stale || !n;
-    $('stale-notice').hidden = !stale;
+    $('stale-notice').hidden = !scan;
   }
   function draw() {
     const list = filtered(), total = Math.max(1, Math.ceil(list.length / size));
@@ -76,8 +76,7 @@
     if (!snapshot.settings.username) message('Connect your Last.fm profile in Settings before importing XML.', true);
     $('revert-section').hidden = !batch;
     if (batch) $('batch-summary').textContent = batch.remaining.toLocaleString() + ' changes can be undone. Later edits are kept.';
-    const savedCache = await S.cacheLibrary('read');
-    $('cache-status').textContent = savedCache ? (C.status(savedCache).complete ? 'Cached ' : 'Paused · ') + new Date(savedCache.updatedAt).toLocaleString() : 'Not cached';
+
   }
   $('xml-file').addEventListener('change', () => { scan = null; entries = []; $('review').hidden = true; setBusy(false); message(); });
   $('compare').addEventListener('click', async () => {
@@ -99,9 +98,8 @@
         }
       }
       scan = { songs, candidates: [...combined.values()] }; $('scan-progress').removeAttribute('value');
-      cache = await LastfmLibraryCacheClient.scan(user, { signal, onProgress: p => {
-        const g = p.groups[p.group]; $('scan-label').textContent = 'Caching Last.fm · ' + names[p.group] + ' page ' + p.page + (g.total ? ' of ' + g.total : '');
-      } });
+      cache = await S.cacheLibrary('read');
+      if(!cache)throw new Error('Start caching your Last.fm library, then compare again.');
       if (signal.aborted) throw new DOMException('Comparison paused.', 'AbortError');
       await refresh();
       if (snapshot.settings.username !== user || cache.username !== user) throw new Error('Your connected profile changed. Compare again.');
@@ -114,10 +112,6 @@
     } finally { controller = null; $('scan-status').hidden = true; setBusy(false); if (!$('review').hidden) draw(); }
   });
   $('cancel-scan').addEventListener('click', () => controller?.abort());
-  $('refresh-cache').addEventListener('click', async () => {
-    try { await S.cacheLibrary('start', { username: snapshot.settings.username }); cache = null; scan = null; entries = []; $('review').hidden = true; await refresh(); message('Cache ready to refresh. Choose Compare libraries to start.'); }
-    catch (error) { message(error.message, true); }
-  });
   $('select-all').addEventListener('change', e => { for (const entry of entries) entry.selected = e.target.checked && !!entry.choice && entry.choice !== entry.before; draw(); });
   for (const id of ['search', 'type-filter', 'review-filter']) $(id).addEventListener(id === 'search' ? 'input' : 'change', () => { page = 1; draw(); });
   $('previous').addEventListener('click', () => { page--; draw(); }); $('next').addEventListener('click', () => { page++; draw(); });
@@ -155,6 +149,7 @@
       const link = document.createElement('a'); link.href = url; link.download = 'lastfm-display-backup.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { message(error.message, true); }
   });
+  window.addEventListener('lfm-cache-changed',event=>{if(cache&&event.detail?.cache?.id!==cache.id){stale=true;summary()}});
   S.subscribe(next => {
     snapshot = next; $('profile-status').textContent = next.settings.username || 'Not connected';
     if (controller && reviewProfile && reviewProfile !== next.settings.username) controller.abort();

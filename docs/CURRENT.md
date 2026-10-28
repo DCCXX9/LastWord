@@ -1,5 +1,55 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: background cache candidate v0.9.20
+
+Baseline: 35d74c3 on codex/itunes-library-styling; started clean with no competing
+checkout owner. Includes the discussed background cache, safer rebuild, cache
+export/import, malformed-row continuation/report/retry and memory-overhead work.
+First profile connection starts a persisted job. The comparison screen can close;
+a connected own-profile Last.fm tab is required. Alarms recover running jobs after
+suspension; existing installations keep their current cache and paused state.
+Pause/Resume is separate from Compare. Rebuild is under Advanced, confirms its
+cost and keeps the usable cache until an atomic completed replacement. Cache JSON
+supports complete/partial progress, profile/format validation, preview and explicit
+confirmation. Invalid, canceled, stale or failed operations preserve existing data.
+
+Malformed rows now record name/artist/link/page/reason and do not halt subsequent
+rows/pages. Retry downloads affected pages only. Whole-page, sign-in and pagination
+failures still pause safely; the paced GET queue and rate pauses remain intact.
+Ordinary preference reads exclude cache/undo data; job guards read metadata only,
+and pause/status changes no longer rewrite/broadcast the full cache. The obsolete
+comparison polling client is removed. The alarms permission adds wakeups, with no
+new website/account access. Exact casing-only matching and submission rejection
+remain in force. No artwork work, reinstall, storage clearing or scrobble edits.
+
+Installed signed-in Supermium (same extension fpfeckjdjmlnnjbodagebgcdflmbkmik,
+DCCXX) preserved all storage across reload. The real cache advanced from page 548
+to 556 after skipping `.` by `[The User]` on page 548; it now holds 27,712 names
+and one skipped item. It continued after the extra comparison screen was closed.
+The real Export cache button downloaded a valid 2,390,226-byte JSON file. Live
+rebuild/import cancellation and wrong-profile rejection preserved all storage.
+Reimporting the identical partial cache preserved names/cursors/skips, refreshed
+its generation, and persisted after refresh; legacy missing empty skipped arrays
+normalize to empty arrays. All 2,651 preferences, XML undo, scan records, artwork
+records and network pause settings remained unchanged. Caching is left paused.
+
+The actual 95,332,644-byte XML compared in about 20 seconds: 23 casing differences,
+seven choices and a Partial library label, with no saved-storage changes. A 50 ms
+UI heartbeat measured a maximum 104 ms gap; retained JS heap after collection was
+about 15 MB. The intermittent page-unresponsive warning was not reproduced, so
+the measured allocation fixes are not a claim that every browser hang is solved.
+The full 1,024-page cache was not downloaded and no new preferences were applied.
+Private evidence/backups stay ignored under test-results/v20-* and
+test-results/pre-v20-installed-storage.json; never package or publish them.
+
+Final full gate: 73/73 suites passed, including background work with UI closed,
+retained rebuild/atomic swap, cache import/export guards, skip/retry, profile
+isolation, native dialogs, GET-only transport and 56,000-name real extension
+storage. Focused release/background/UI checks also pass after final packaging
+and label changes. A 50,000-name test guards bounded ordinary reads and broadcasts.
+The local package contains 45 allowlisted files; its generated download page now
+points to its own version. Nothing was pushed or published. Rollback: 35d74c3.
+
 ## 29 October 2026: exact casing comparison candidate v0.9.19
 
 Baseline: 3176b45 on codex/itunes-library-styling. Claude's v0.9.17 and the

@@ -1,8 +1,8 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
-const {inputs,validate,zip}=require('../tools/package-beta.cjs');
+const {inputs,validate,zip,build}=require('../tools/package-beta.cjs');
 const entries=inputs(),manifest=validate(entries);
-assert.equal(manifest.version,'0.9.19');assert.equal(manifest.version_name,'0.9.19 beta');
+assert.equal(manifest.version,'0.9.20');assert.equal(manifest.version_name,'0.9.20 beta');
 assert.equal(manifest.name,'Last.fm Personal Library');
 assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing package reference/);
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);
@@ -29,4 +29,8 @@ for(const name of ['preferences','xml-review','setup']){
 }
 const promo=fs.readFileSync(path.join(__dirname,'../release/assets/promo440.png'));
 assert.equal(promo.readUInt32BE(16),440);assert.equal(promo.readUInt32BE(20),280);
+const built=build(),site=fs.readFileSync(path.join(__dirname,'../dist/site/index.html'),'utf8');
+assert.ok(site.includes(built.filename),'download page points to the newly built version');
+assert.ok(site.includes('Free beta '+manifest.version));
+assert.doesNotMatch(site,/lastfm-personal-library-0\.9\.13-beta/);
 console.log(`PASS: ${entries.length} allowlisted files, complete references, approved local-storage permissions, unchanged identity, deterministic ZIP and store image dimensions`);

@@ -52,13 +52,17 @@ const root=path.resolve(__dirname,'..'),extension=process.env.LFM_TEST_EXTENSION
    data.lfmAlbumlessV1.profiles.demolistener.enabled=true;
    await chrome.storage.local.set({...data,itunesImportUndo:null,legacyScan:{nextPage:94},privateFuture:{value:'retain'}});
   });
+  // First connection now starts a read-only library job. Pause that independent
+  // feature before proving legacy correction records never run themselves.
+  await importer.evaluate(()=>LastfmStore.cacheLibrary('pause'));
+  await library.waitForTimeout(100);
   const before=await worker.evaluate(()=>chrome.storage.local.get(null));
   await library.goto('https://www.last.fm/user/DemoListener/library');
   await library.getByRole('link',{name:'GLASS GARDENS',exact:true}).waitFor();
   await library.waitForTimeout(5500); // past the old automatic checker startup
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(null)),before,'previously enabled records do not start writes or migrate on navigation');
   assert.equal(network.filter(r=>r.method==='POST').length,0,'no automatic scrobble edits');
-  assert.equal(network.filter(r=>r.url.includes('?')||r.url.includes('/_/')).length,0,'no hidden history discovery or correction lookup');
+  assert.equal(network.filter(r=>r.url.includes('/_/')).length,0,'no hidden track history or correction lookup');
   await page.reload();await page.locator('#profile-status').filter({hasText:'DemoListener'}).waitFor();
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(null)),before);
   for(const name of ['help','privacy']){await page.goto(`chrome-extension://${id}/${name}.html`);assert.equal(await page.locator('h1').count(),1);}
