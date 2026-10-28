@@ -1,4 +1,28 @@
-# v0.9.13 beta
+# v0.9.16 local candidate — zero-request artwork
+
+- v0.9.16 fixes an uncaught `known?.get is not a function` error in v0.9.15 when artwork lookups are off.
+
+- Artwork no longer fetches Last.fm pages. Rows show Last.fm's own image and link,
+  replaced only by saved personal winners, scrobble-row albums or the viewed album page.
+- Last.fm's rate warning is now a timed cooldown (2–30 min) that ends automatically;
+  answering Yes/Always to the next-page prompt no longer clears it.
+- Background reads share a rolling request budget; the artwork cache holds 3,000 tracks.
+
+# v0.9.14 local candidate — cold ranked acceptance pending
+
+- Ranked discovery no longer chooses an arbitrary saved album when several
+  candidates compete. A native row album link may choose one personal album read,
+  but only verified personal counts can establish the winner and image/link pair.
+- Duplicate native/saved album hints contribute their counts once. Existing
+  placeholder priority, pacing, rate pauses and scroll consent remain intact.
+
+The actual installed Supermium extension reports v0.9.14. Saved covers paint and
+stored settings, rules and scan draft hashes match the pre-Reload state. Last.fm
+paused reads during baseline tracing; that pause is retained. Cold first paint,
+no wrong first-frame artwork, and live ranked rows 200–300 are not certified.
+This candidate is local only. Detailed evidence and checks: docs/CURRENT.md.
+
+## v0.9.13 beta
 
 - Keeps a matching scrobbled-album cover visible while checking the track's
   most-used album. Verified winners still take precedence; unrelated compilation

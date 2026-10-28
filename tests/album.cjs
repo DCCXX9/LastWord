@@ -81,7 +81,7 @@ const data = { settings: { username: 'DCCXX', infiniteScroll: false }, rules: {
 
     await page.locator('.popup_content [name="album_name"]').fill('ZUSHI');
     await page.getByRole('button', { name: 'Save Edit', exact: true }).click();
-    await page.locator('[data-lfm-case-confirmation]').waitFor();
+    await page.locator('[data-lfm-local-toast][data-kind="success"]').waitFor();
     assert.equal(await page.evaluate(() => Boolean(window.realEditSubmitted)), false);
     assert.equal(worker.data.rules.albums['["dean blunt","zushi"]'].to, 'ZUSHI');
     await page.locator('.popup_content [name="track_name"]').fill('Eleven (Remix)');

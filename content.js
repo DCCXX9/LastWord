@@ -336,7 +336,9 @@
       if (state.mode === 'loading') { state.controller.abort(); return; }
       if (state.mode === 'ready') { renderScroll(state, 'paused', 'Loading paused. Your loaded rows are still here.'); return; }
       if (state.mode === 'declined') { askScroll(state); return; }
-      void loadMore(state, true);
+      // Only the explicit 'Resume loading' / 'Try again' button may end a Last.fm
+      // cooldown early. Answering 'Yes' to the next-page prompt must not.
+      void loadMore(state, state.mode === 'paused' || state.mode === 'error');
     });
     no.addEventListener('click', () => {
       if (scroller !== state || !state.active || state.mode !== 'prompt') return;
@@ -348,7 +350,7 @@
       if (scroller !== state || !state.active || state.mode !== 'prompt') return;
       state.automatic = true;
       if (state.loaded + 1 >= state.checkpoint) state.checkpoint = (Math.floor((state.loaded + 1) / 10) + 1) * 10;
-      void loadMore(state, true);
+      void loadMore(state);
       state.action.focus({ preventScroll: true });
     });
     state.observer = new IntersectionObserver(entries => {
@@ -388,6 +390,16 @@
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (message?.type === 'lfm:status') reply(status());
+    if (message?.type === 'lfm:refresh-artwork') {
+      if (sender.id !== chrome.runtime.id || !ownProfile() || !globalThis.LastfmArtwork?.refresh) {
+        reply({ ok: false, error: 'Open your connected Last.fm profile first.' }); return;
+      }
+      LastfmArtwork.refresh().then(result => {
+        reply({ ok: true, ...result });
+        setTimeout(() => location.reload(), 100);
+      }).catch(error => reply({ ok: false, error: error.message }));
+      return true;
+    }
   });
 
   async function init() {

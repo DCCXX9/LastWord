@@ -12,6 +12,8 @@
   let queued = false;
   const pending = new Set();
   const saving = new WeakSet();
+  const confirmed = new WeakSet();
+  let clearNotice = () => {};
   const own = () => A.ownProfile(location.href, username);
   const select = (root, selector) => [
     ...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)
@@ -25,16 +27,40 @@
     return link;
   }
   function notice(text, kind = 'error', action) {
+    clearNotice();
     document.querySelector('[data-lfm-local-toast]')?.remove();
     const note = document.createElement('div');
     note.dataset.lfmLocalToast = ''; note.dataset.kind = kind;
     note.setAttribute('role', kind === 'error' ? 'alert' : 'status');
-    note.append(text);
-    if (kind === 'success') note.append(manageLink());
+    note.addEventListener('click', event => event.stopPropagation());
+    const message = document.createElement('p'); message.textContent = text;
+    const actions = document.createElement('div'); actions.dataset.lfmToastActions = '';
+    note.append(message, actions);
+    if (kind === 'success') actions.append(manageLink());
     const dismiss = document.createElement('button');
     dismiss.type = 'button'; dismiss.textContent = action ? 'Cancel' : 'Dismiss';
-    dismiss.addEventListener('click', () => { action?.(); note.remove(); });
-    note.append(dismiss); document.body.append(note);
+    actions.append(dismiss);
+    for (const control of actions.children) {
+      control.className = 'btn-primary';
+      const label = document.createElement('span'); label.className = 'btn-inner';
+      label.textContent = control.textContent; control.replaceChildren(label);
+    }
+    let expiry, exit;
+    const remove = () => { clearTimeout(expiry); clearTimeout(exit); note.remove(); };
+    const close = () => {
+      if (note.hasAttribute('data-leaving')) return;
+      clearTimeout(expiry);
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { remove(); return; }
+      note.dataset.leaving = '';
+      exit = setTimeout(remove, 280);
+    };
+    note.addEventListener('animationend', event => {
+      if (event.target === note && event.animationName === 'lfm-toast-out') remove();
+    });
+    dismiss.addEventListener('click', () => { action?.(); close(); });
+    clearNotice = remove;
+    document.body.append(note);
+    if (kind === 'success') expiry = setTimeout(close, 5000);
     return note;
   }
   function context() { return A.musicItem(location.href); }
@@ -196,11 +222,17 @@
     }
   }
   function editForm(form) {
-    if (!form?.matches?.('form') || form.hasAttribute('data-edit-scrobble')) return false;
+    if (!form?.matches?.('form') || form.hasAttribute('data-edit-scrobble') ||
+        form.hasAttribute('data-edit-album')) return false;
     try {
       const action = new URL(form.getAttribute('action'), location.href);
       return A.ownProfile(action.href, username) && /^\/user\/[^/]+\/library\/edit-(track|album)$/.test(action.pathname);
     } catch { return false; }
+  }
+  function editPairs(form) {
+    const kind = new URL(form.getAttribute('action'), location.href).pathname.endsWith('/edit-album')
+      ? 'album' : 'track';
+    return A.editPairs(form, kind);
   }
   function casingOperations(pairs) {
     const changes = Object.entries(pairs).filter(([, pair]) => pair.from !== pair.to);
@@ -208,21 +240,58 @@
         R.normalize(pair.from) !== R.normalize(pair.to))) return [];
     const types = { track: 'tracks', album: 'albums', artist: 'artists', albumArtist: 'albumArtists' };
     return changes.map(([type, pair]) => ({ op: 'put', type: types[type], from: pair.from,
-      to: pair.to, ...(['track', 'album'].includes(type) ? { artist: pairs.artist.from } : {}) }));
+      to: pair.to, ...(['track', 'album'].includes(type)
+        ? { artist: (pairs.artist || pairs.albumArtist).from } : {}) }));
   }
-  async function saveCasing(form, operations, error) {
+  async function saveCasing(form, operations, error, closeAfterSave = false) {
     if (saving.has(form)) return;
     saving.add(form);
+    syncCasingButton(form);
     try {
       await S.mutate(operations);
-      form.querySelector('[data-lfm-case-confirmation]')?.remove();
-      const confirmation = document.createElement('div'); confirmation.dataset.lfmCaseConfirmation = '';
-      confirmation.setAttribute('role', 'status');
-      confirmation.append('Case-sensitive changes saved locally. ', manageLink());
-      form.append(confirmation); if (error) error.hidden = true;
+      confirmed.add(form);
+      if (error) error.hidden = true;
+      if (closeAfterSave) form.querySelector('button.js-close[type="button"]')?.click();
       notice('Case-sensitive changes saved locally.', 'success');
     } catch (failure) { notice('Could not save display preferences: ' + failure.message); }
-    finally { saving.delete(form); }
+    finally { saving.delete(form); syncCasingButton(form); }
+  }
+  function syncCasingButton(form) {
+    const button = form.querySelector('[data-lfm-save-casing]');
+    if (!button) return;
+    const pairs = editPairs(form);
+    const available = own() && pairs && casingOperations(pairs).length > 0;
+    button.disabled = saving.has(form) || !available;
+    button.title = available ? 'Save these casing changes locally in this browser.' :
+      'Change only letter casing to save locally. Use Save edit for other changes.';
+  }
+  function casingButtons(root) {
+    const forms = new Set(select(root, MODAL_FORMS));
+    const enclosing = root.closest?.('form');
+    if (enclosing?.closest(MODAL)) forms.add(enclosing);
+    for (const form of forms) {
+      if (!editForm(form) || !editPairs(form)) continue;
+      if (!form.querySelector('[data-lfm-save-casing]')) {
+        const native = form.querySelector('button[type="submit"],input[type="submit"]');
+        if (!native) continue;
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = native.className;
+        button.dataset.lfmSaveCasing = '';
+        const label = native.querySelector('.btn-inner') ? document.createElement('span') : button;
+        if (label !== button) { label.className = 'btn-inner'; button.append(label); }
+        label.textContent = 'Save casing changes';
+        button.addEventListener('click', event => {
+          event.preventDefault(); event.stopImmediatePropagation();
+          if (!own() || !editForm(form)) return;
+          const pairs = editPairs(form);
+          const operations = pairs && casingOperations(pairs);
+          if (operations?.length) void saveCasing(form, operations, undefined, true);
+        });
+        native.after(button);
+        if (native.parentElement.matches('.form-submit')) native.parentElement.dataset.lfmCasingActions = '';
+      }
+      syncCasingButton(form);
+    }
   }
   function intercept(event) {
     if (!own()) return;
@@ -230,7 +299,7 @@
     if (event.type === 'click' && (!button || button.type !== 'submit')) return;
     const form = event.type === 'submit' ? event.target : button.form;
     if (!editForm(form)) return;
-    const pairs = A.editPairs(form);
+    const pairs = editPairs(form);
     if (!pairs) {
       notice('This Last.fm form is not supported for local display changes yet. Its normal edit controls remain available.');
       return;
@@ -244,13 +313,13 @@
     const enclosing = root.closest?.('form');
     if (enclosing?.closest(MODAL)) forms.add(enclosing);
     for (const form of forms) {
-      if (!editForm(form) || form.querySelector('[data-lfm-case-confirmation]')) continue;
+      if (!editForm(form) || confirmed.has(form)) continue;
       // Check only a native dialog's error nodes, never the entire page text.
       const error = [...form.querySelectorAll('[role="alert"],.alert,.errorlist,.alert-danger,span,p,div')]
         .find(node => !node.hidden && ERROR.test(node.textContent) &&
           ![...node.children].some(child => ERROR.test(child.textContent)));
       if (!error) continue;
-      const pairs = A.editPairs(form);
+      const pairs = editPairs(form);
       if (!pairs) { notice('Last.fm rejected this edit, but its fields could not be matched safely. No local preference was saved.'); continue; }
       const operations = casingOperations(pairs);
       if (operations.length) saveCasing(form, operations, error);
@@ -266,7 +335,7 @@
       const roots = [...pending]; pending.clear();
       if (!own()) return;
       for (const node of roots) if (node === document || node.isConnected) {
-        trackMenus(node); artistMenus(node); errors(node);
+        trackMenus(node); artistMenus(node); casingButtons(node); errors(node);
       }
     });
   }
@@ -276,7 +345,8 @@
     if (changed) lookup?.abort();
     if (!own()) {
       document.querySelector('[data-lfm-artist-dialog]')?.close();
-      document.querySelectorAll('[data-lfm-track-action],[data-lfm-artist-action],[data-lfm-local-toast],[data-lfm-case-confirmation]')
+      clearNotice();
+      document.querySelectorAll('[data-lfm-track-action],[data-lfm-artist-action],[data-lfm-save-casing]')
         .forEach(node => node.remove());
     } else queue(document);
   }
@@ -284,6 +354,12 @@
     update(await S.read()); S.subscribe(update);
     document.addEventListener('click', intercept, true);
     document.addEventListener('submit', intercept, true);
+    for (const type of ['input', 'change']) document.addEventListener(type, event => {
+      const form = event.target.form;
+      if (!form || !editForm(form)) return;
+      confirmed.delete(form);
+      syncCasingButton(form);
+    });
     new MutationObserver(records => {
       for (const record of records) {
         if (record.type === 'characterData') {

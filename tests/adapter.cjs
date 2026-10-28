@@ -61,4 +61,15 @@ assert.equal(A.editPairs(form({ ...pairs, track_name: 'ELEVEN' })).track.to, 'EL
 delete pairs.track_name_original;
 assert.equal(A.editPairs(form(pairs)), null);
 assert.equal(A.editPairs(form({ before: '11', after: 'ELEVEN' })), null);
+const albumPairs = {album_name_original:'LUH LEAKYZ Vol. 1',album_name:'Luh Leakyz Vol. 1',
+  album_artist_name_original:'Yeat',album_artist_name:'YEAT'};
+assert.equal(A.editPairs(form(albumPairs)),null,'track callers stay strict');
+assert.deepEqual(A.editPairs(form(albumPairs),'album'),{
+  album:{from:'LUH LEAKYZ Vol. 1',to:'Luh Leakyz Vol. 1'},albumArtist:{from:'Yeat',to:'YEAT'}});
+const incompleteAlbum={...albumPairs}; delete incompleteAlbum.album_artist_name_original;
+assert.equal(A.editPairs(form(incompleteAlbum),'album'),null,'incomplete album pairs rejected');
+const duplicateAlbum=form(albumPairs); duplicateAlbum.elements.push({name:'album_name',value:'Other'});
+assert.equal(A.editPairs(duplicateAlbum,'album'),null,'duplicate album fields rejected');
+assert.equal(A.editPairs(form({...albumPairs,artist_name:'Yeat',artist_name_original:'Yeat'}),'album'),null,
+  'unexpected extra editable pairs are not ignored');
 console.log('PASS: shared URL, pagination and exact form-field contracts; unsupported forms rejected');

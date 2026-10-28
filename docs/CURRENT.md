@@ -1,6 +1,277 @@
 # Current state — 20 October 2026
 
-## v0.9.13 candidate — ready for Reload acceptance
+## 28 October 2026: close dialog after explicit casing save
+
+SAVE CASING CHANGES now invokes the form's native non-submit Cancel control
+after the local preference saves successfully. Last.fm closes its dialog and
+backdrop while the success toast remains visible. A failed save retains the
+dialog and entered values. Native SAVE EDIT/intercept behaviour is unchanged.
+
+Verified in installed signed-in Supermium with real album and track dialogs,
+reusing Jesus Is King and Lying 4 fun preferences. Both dialogs/backdrops closed,
+the success toast remained, and casing persisted after refresh. Zero attempted
+server edits; all stored keys matched the pre-save snapshot. Evidence:
+test-results/close-casing-live-result.json. Focused dialog-close, native-album,
+native-submit and native-toast tests passed, including simulated storage failure.
+Rollback: .codex-backups/pre-close-casing-20261028/; branch preferences-page,
+HEAD 6af06f7. Previous dirty work and installed identity/data are preserved.
+
+## 28 October 2026: single animated local-save toast verified
+
+Local casing saves now show only the top-right confirmation. Success notices
+slide in, start sliding out after five seconds, and reset their timer on another
+save. MANAGE PREFERENCES and DISMISS share a separate row and the casing button's
+green colour, native font, 40px height and 3px corners. Reduced motion disables
+the animation. Toast clicks stay inside the toast so dismissing it does not
+trigger Last.fm's outside-dialog close handler. Error notices remain light red;
+loading cancellation and manual error dismissal remain available.
+
+The former inline confirmation's repeat-save guard now uses a WeakSet, cleared
+on input changes. Regression coverage checks one confirmation, action layout,
+expiry, replacement, dismissal, reduced motion and the retained guard. Existing
+album, track, navigation and storage checks preserve native-edit/profile limits.
+
+Verified in the installed signed-in Supermium native album dialog with the
+existing Jesus Is King preference: matching button metrics, automatic expiry,
+repeat saves, dismissal, reduced motion and casing after refresh. Zero attempted
+server edits; all local storage keys matched the pre-save snapshot. Evidence:
+test-results/save-toast-live-result.json and save-toast-live.png. Rollback for
+this slice: .codex-backups/pre-save-toast-20261028/ (exact previous source/tests,
+CURRENT.md and arrival diff). Branch preferences-page, HEAD 6af06f7; prior work
+is preserved and no version, extension identity or storage migration changed.
+
+## 28 October 2026: explicit casing save and green theme verified
+
+Supported native album and track dialogs now add SAVE CASING CHANGES immediately
+after SAVE EDIT. The local button copies the native button classes/inner label,
+uses type=button, and enables only when all edits are casing-only. Input changes
+update availability; unchanged, mixed and substantive edits cannot use it.
+Saving uses the existing local preference path and own-profile checks. Native
+editing and the existing casing-only submission safeguard remain available.
+
+Extension pages, injected controls, focus indicators, notices and the toolbar
+icon now use a pale green palette with dark green text. Light red is reserved
+for errors; a paused scrolling state uses the normal green surface. Last.fm's
+native controls retain their own styling. The icon capture helper reads the SVG
+source so future captures retain the chosen palette. Help describes the new
+button. No storage, identity, permissions or version changes were made.
+
+Installed signed-in Supermium verification used the real Kanye West album
+dialog. Both buttons measured 40px high with matching font, weight and 3px
+corners. The new button was light green (#bceacb), on the same line as SAVE EDIT.
+Desktop and 390px viewport captures showed all three controls fitting. Its local
+save reused the existing Jesus Is King preference; zero server edits were
+attempted and every stored key, including rules, matched the pre-save snapshot.
+The casing persisted after refresh. All seven extension pages were checked;
+popup/settings/preferences/XML screens and a temporary error appearance preview
+were captured. The preview changed only the temporary popup DOM, then closed.
+Evidence: test-results/green-casing-live-result.json, green-casing-presave.json,
+green-casing-dialog.png, green-casing-dialog-narrow.png and green-casing-*.png.
+The initial post-extension-reload tab lacked injected controls; a normal refresh
+loaded them before the successful live test.
+
+Ten focused suites passed: native-album, native-submit, album, store-navigation,
+storage, beta-onboarding, options, itunes-ui, itunes-store and artwork-refresh.
+The branch remains preferences-page at 6af06f7, preserving all earlier work.
+Rollback snapshots are in .codex-backups/pre-green-casing-20261028/ for the
+changed runtime/styles/help/icon sources and generated PNGs, capture helper,
+tests and this document. No scans, server-side edits or publishing were done.
+
+## 28 October 2026: album save after in-page navigation verified
+
+The earlier album check used a directly loaded library page and missed Last.fm's
+client-side navigation. In the reported Kanye West dialog, Chrome's sender.url
+still identified the original /music/Kanye+West document, while sender.tab.url
+correctly identified /user/DCCXX/library/music/Kanye+West/+albums. The worker
+therefore rejected a valid local casing save at its own-profile boundary.
+
+For same-origin Last.fm main-frame messages only, authorization now uses the
+current Chrome-supplied tab URL. Child frames and foreign origins cannot borrow
+that URL, and navigation away to another profile revokes mutation access.
+The production correction is seven lines in background.js. No permissions,
+identity, version, native form contracts or artwork behavior changed.
+
+The new store-navigation test first failed with the reported profile rejection.
+It now passes an actual loaded-extension public-document/pushState/native-save
+flow and negative worker checks for friends, public pages, child frames and
+foreign origins. Eight suites passed: store-navigation, native-album, storage,
+native-submit, adapter, album, artwork-refresh and artwork-store.
+
+Live signed-in Supermium followed real links from the public Kanye West artist
+page to the own-library album list. The native Save edit saved JESUS IS KING as
+Jesus Is King locally despite the stale public sender URL. The exact casing
+persisted after refresh and was visually checked. Zero server edits were
+attempted under an edit-request guard. Only that album rule changed; all six
+other storage keys matched the immediate backup. Evidence:
+test-results/album-profile-live-result.json, album-profile-presave.json,
+album-profile-saved.png and album-profile-refreshed.png. An initial verification
+tab lacked content scripts after extension reload; checking readiness on the
+public document resolved the setup failure without another product patch.
+
+Rollback: .codex-backups/pre-album-profile-20261028/background.js and CURRENT.md;
+the new test is tests/store-navigation.cjs. The arrival patch preserves the
+existing uncommitted work on preferences-page at 6af06f7. The saved Jesus Is King
+preference can independently be removed in Manage preferences.
+
+## 28 October 2026: popup artwork refresh verified
+
+The popup now has Refresh artwork beneath Settings & backup. On the connected
+profile, it removes saved artwork for tracks loaded on that page (including
+albumless cache variants), suspends pending artwork work, and reloads the page.
+It does not enable background artwork lookups, start scans or submit edits.
+Other profiles and unrelated tracks retain their cache entries. A worker-side
+profile and input check protects the serialized cache mutation.
+
+The installed v0.9.16 extension in signed-in Supermium was refreshed in place.
+HeliMAn had a saved single-cover fallback, while Last.fm's fresh markup already
+contained LUH LEAKYZ Vol. 1. The installed popup document's actual button sent
+the real content-script message with Last.fm as the active tab; no tab-query
+override or fixture was used. Supermium did not expose chrome.action.openPopup
+to automation, so the popup document was opened in a background extension tab
+for this live check rather than the toolbar bubble.
+
+Three matching cache records were removed (897 to 894). All six other existing
+storage keys matched the backup exactly: settings, rules, scan draft, request
+window, last page request and network pause. No XML undo key was present;
+synthetic storage tests cover that boundary. HeliMAn displayed the album cover
+and album link after the button reload and in a fresh library tab. A full native
+viewport capture visually confirmed it; Supermium's element screenshot clips
+were offset and are not visual evidence. No Last.fm POST or background history
+lookup was observed during the recorded button refresh.
+
+Eight focused suites passed: artwork-refresh, artwork-store,
+artwork-zero-request, artwork-history-display, artwork-album-view, native-album,
+storage and beta-onboarding. Evidence: test-results/artwork-refresh-live-result.json,
+artwork-refresh-storage-before.json and artwork-refresh-visible-page.png.
+
+The branch remains preferences-page at 6af06f7 with existing work preserved.
+Source rollback is the exact pre-task snapshot in
+.codex-backups/pre-artwork-refresh-20261028/ (popup.html, popup.js, store.js,
+background.js, artwork.js, content.js and CURRENT.md), plus the new
+tests/artwork-refresh.cjs. No identity/version change, reinstall or publishing.
+
+## 28 October 2026: native album casing verified
+
+Album casing work continued on preferences-page at 6af06f7, preserving the
+arrival artwork candidate and handover/report documents. The actual installed
+folder and extension fpfeckjdjmlnnjbodagebgcdflmbkmik reported **v0.9.16 beta**;
+the older v0.9.14 notes below do not describe its current manifest version.
+
+The signed-in Yeat Edit Album dialog exposes only album_name and
+album_artist_name original/current pairs. The track adapter required artist_name
+and returned null. Album dialogs now select an explicit two-pair contract and
+scope album preferences using the original album artist. Track/correction callers
+retain strict validation. Native album launchers are excluded from interception;
+unchanged and mixed substantive edits keep Last.fm's normal handling.
+
+The captured-form regression failed twice before the fix. Eight focused suites
+passed: native-album, adapter, native-submit, album, albumless-transport,
+albumless-capture, storage and rules. Coverage includes album/album-artist casing,
+combined changes, unchanged/mixed pass-through, malformed fields and own-profile
+isolation. No artwork work was resumed, and no version/identity change was made.
+
+In installed signed-in Supermium, Save edit saved LUH LEAKYZ Vol. 1 as
+Luh Leakyz Vol. 1 locally. An edit-request guard observed zero attempted server
+edits. Exact casing persisted after refresh and was visually checked. Only the
+requested album rule changed; all six other existing storage keys matched the
+backup, including settings, scan draft, artwork cache and network pause. No XML
+undo key was present; synthetic storage checks cover retained undo records.
+The initial post-Reload check ran before content modules were ready; a fully
+loaded refresh and explicit module readiness resolved verification without a
+second product patch. Evidence: test-results/album-casing-live-result.json,
+album-casing-native-form.html, album-casing-saved.png and album-casing-refreshed.png.
+
+Rollback uses the exact pre-task adapter.js and native-edit.js snapshots in
+.codex-backups/pre-album-casing-20261028/, preserving the existing artwork diff.
+That directory also retains the arrival patch/status and CURRENT.md snapshot.
+The one new local preference is independently removable in Manage preferences.
+
+## v0.9.14 local candidate — cold ranked acceptance blocked
+
+Continued from preferences-page at 6af06f7. Arrival diff was exactly the three
+handover documents; no competing active chat owned this checkout. The installed
+Supermium path and extension ID fpfeckjdjmlnnjbodagebgcdflmbkmik were verified.
+
+Before changing runtime code, real v0.9.13 ranked Lucki rows were traced through
+job scheduling, personal proof, fetches and sampled image/link rendering. Fast
+Car (rank 101) stayed hidden for 18.50 seconds; GEMINI! OUTRO (rank 105) for
+9.89 seconds. The latter first read unrelated DR*GS R BAD counts, then its own
+three-play history, then the GEMINI! album. Responses took about 0.75–1.66 seconds
+and retained the 1.5-second request gap. Its visible/downloaded sample followed
+finish by about 18 ms. Pick A Flaw (rank 157) took 8.17 seconds. These are real
+baseline samples, not candidate speed measurements or exact compositor timings.
+Evidence: test-results/ranked-deep-before.json.
+
+The Lucki list completed at 184 real tracks. Intermediate all-tr counts of 248
+and 282 included 98 native skeleton rows; they are NOT evidence of 200–300 tracks.
+BIGGAVEL and BBY GOAT already had fresh GEMINI! records on arrival and were warm.
+Mixed-library baseline tracing separately found cold Dream House, Alberto Balsalm
+and Luna rows, requiring 100/120, 100/110 and 100/101 personal scrobbles to prove
+their albums. The sampled verification delays were about 9, 17 and 26 seconds.
+Native artwork was observed before personal verification on that baseline; a
+universal no-wrong-first-frame guarantee has not been established.
+Evidence: test-results/ranked-mixed-baseline-recovered.json. Its network event
+buffer was lost when the inspection script mistakenly read a main-world probe
+from the extension world; recovered DOM/paint samples and resolver events remain.
+
+Candidate change: skip arbitrary competing saved-album reads on ranked pages.
+If the row supplies a same-artist native album link, treat it only as a request
+hint: its verified own-library counts must prove the winner. Otherwise use the
+authoritative track history. Native and saved hints for one album count once.
+No new storage format, permissions, identity, rate policy or consent behavior.
+The attempted change to placeholder priority was removed after the existing
+scroll-recovery regression showed a delay; final priority matches v0.9.13.
+
+Last.fm's real shared request warning stopped further baseline lookups. The pause
+was NOT resumed or cleared. The installed v0.9.14 check while paused confirmed
+25 visible/downloaded cached covers, album links and no runtime exceptions;
+the screenshot was visually inspected. SHA-256 values for every present non-artwork
+preference key (settings, rules, albumlessScanDraft) matched before/after Reload.
+No separate XML undo key was present in that snapshot; synthetic checks cover
+undo and legacy records. Evidence: test-results/ranked-storage-before.json,
+ranked-candidate-paused.json and ranked-candidate-paused.png.
+
+The new regression fails at the arbitrary-request assertion against 6af06f7's
+v0.9.13 modules and passes on the candidate. It covers native/saved duplicate
+hints, unrelated native albums, generic rows, detached appended cover/link pairs
+and storage preservation. The first combined run passed 58/60 suites. The
+placeholder-priority experiment failed artwork-scroll; restoring the original
+priority passed that suite without changing its timeout. library-casing-extension
+failed to find its isolated fresh-install setup page, then passed unchanged on
+retry. The new ranked fixture was adjusted to exercise native-hint rows without
+depending on the withdrawn priority experiment, and passed again. All 60 suites
+have passing results across the combined run and focused rechecks; this was not
+one clean 60/60 combined run. Logs: v0914-combined.log, v0914-final-focused.log,
+v0914-ranked-final.log and v0914-final-rechecks.log under test-results/.
+
+The final runtime was reloaded in the installed profile after restoring priority.
+It again reported v0.9.14, 25 painted cached covers, no runtime exceptions and the
+retained rate pause. Source remains uncommitted so the candidate can be reviewed;
+baseline source rollback is 6af06f7, preserving the pre-existing handover documents.
+
+**Acceptance remains open:** candidate cold timing, exact image-with-text paint,
+wrong-first-frame prevention and 200–300 actual ranked rows across artists were
+not proved. Cached reloads and fixtures do not satisfy those criteria. Do not
+promise instant cold covers: a ranked response can lack the user's album proof.
+The next live check needs normal read access after Last.fm's break, a naturally
+uncached row, then consented pagination through 300 real (non-skeleton) rows.
+Keep the shared pause until normal explicit resume; no background retry is armed.
+
+## Latest user acceptance — unresolved; handed over
+
+Jay reports that v0.9.13 still takes 20–30 seconds to show the correct artwork
+alongside ranked track text. The latest screenshot appears to be Lucki's Tracks
+table, with BIGGAVEL, BBY GOAT, NEEDED and other rows blank. Its exact route has
+not been verified. This supersedes the earlier ready-for-Reload status.
+
+The checks below proved native scrobble previews and faster appends on
+DCCXX/library history; they did not prove cold ranked Tracks first-paint timing.
+No further runtime patch was made. Jay requested a fresh-chat handover:
+**ARTWORK_HANDOVER.md** records the exact baseline, code path, evidence limits,
+inspection access and next trace. HEAD: 6af06f7, branch preferences-page;
+handover-only documentation changes follow that clean checkpoint.
+
+## v0.9.13 candidate — prior history verification, not final acceptance
 
 Branch preferences-page; clean starting baseline c8349d8 (v0.9.12).
 Jay authorised finishing verification after the earlier allowance checkpoint.

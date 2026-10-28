@@ -50,7 +50,7 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
         </tbody></table>${page === 1 ? '<nav class="pagination"><a class="pagination-next" href="?page=2">Next</a></nav>' : ''}</main>` });
     });
     const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
-    await worker.evaluate(() => chrome.storage.local.set({ settings: { username: 'DCCXX', infiniteScroll: true },
+    await worker.evaluate(() => chrome.storage.local.set({ lfmArtworkLookups: true, settings: { username: 'DCCXX', infiniteScroll: true },
       legacyScan: { keep: 42 }, lfmXmlUndoV1: { keep: true } }));
     await worker.evaluate(cover=>chrome.storage.local.set({lfmPersonalArtworkCacheV1:[{key:JSON.stringify(['dccxx','drug church','one']),username:'DCCXX',item:{artist:'Drug Church',name:'One'},checkedAt:Date.now(),cover}]}),{artist:'Drug Church',album:'Hygiene',image:image(album,'64s'),url:'https://www.last.fm/music/Drug+Church/Hygiene',fallback:false,sourceVersion:3,scanned:1,total:1});
     const saved = await worker.evaluate(() => chrome.storage.local.get(['settings','legacyScan','lfmXmlUndoV1']));

@@ -41,7 +41,7 @@ const album = `<main class="col-main"><header class="library-header"><h2 class="
     // Its obsolete image must be a discovery hint, never the resolved artwork.
     if (legacy) { delete cover.sourceVersion; cover.image = image.replace('6da014dd54bb1082a3a51218fcbf7a89', '11111111111111111111111111111111'); }
     const item = { artist: 'Dean Blunt', name: 'lucre 7' };
-    await worker.evaluate(data => chrome.storage.local.set(data), { ...saved, lfmPersonalArtworkCacheV1: [{ key: JSON.stringify(['dccxx', 'dean blunt', 'lucre 7']), username: 'DCCXX', item, cover, checkedAt: Date.now() - (legacy ? 14 * 86400000 : 0) }] });
+    await worker.evaluate(data => chrome.storage.local.set(data), { ...saved, lfmArtworkLookups: true, lfmPersonalArtworkCacheV1: [{ key: JSON.stringify(['dccxx', 'dean blunt', 'lucre 7']), username: 'DCCXX', item, cover, checkedAt: Date.now() - (legacy ? 14 * 86400000 : 0) }] });
     const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
     await page.goto(origin + library);
     const painted = async name => {
@@ -49,7 +49,10 @@ const album = `<main class="col-main"><header class="library-header"><h2 class="
         const a = [...document.querySelectorAll('.chartlist-name a')].find(a => a.textContent === name);
         const i = a?.closest('tr').querySelector('img');
         return i?.src === image && i.naturalWidth > 0 && getComputedStyle(i).visibility === 'visible';
-      }, { name, image }, { timeout: 7000 });
+      }, { name, image }, { timeout: 7000 }).catch(async error => {
+        console.error('Artwork failure', JSON.stringify({name,calls,errors,rows:await page.locator('img').evaluateAll(xs=>xs.map(i=>({src:i.src,title:i.title,visibility:i.style.visibility}))) }));
+        throw error;
+      });
       const target = page.locator('.chartlist-name a').filter({ hasText: name }).locator('..').locator('..');
       assert.equal(await target.locator('.chartlist-image a').getAttribute('href'), cover.url);
     };

@@ -28,7 +28,7 @@ const html = `<main class="col-main">${header()}<h3>Tracks</h3><table class="cha
       lfmPersonalArtworkCacheV1: [{ key: '["dccxx","yeat","im yeat"]', username: 'DCCXX', item: { artist: 'Yeat', name: 'IM YEAT' }, checkedAt: Date.now(),
         cover: { artist: 'Yeat', album: 'Different all-time winner', url: 'https://www.last.fm/music/Yeat/Other', image: wrong, sourceVersion: 3, total: 20, scanned: 20, fallback: false } }],
       itunesUndo: { preserved: true }, legacyScan: { page: 93 } };
-    const worker = await mockExtension(page, initial);
+    const worker = await mockExtension(page, initial, { artworkLookups: false });
     await loadScripts(page, ['rules.js', 'store.js', 'adapter.js']);
     // The current album already supplies its cover; even a stalled cache read
     // or absent idle-time resolver must not delay any of its track rows.

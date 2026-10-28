@@ -2,7 +2,9 @@
 
 ## Jay's one local test version
 
-The installed folder already contains **v0.9.13 beta**. Keep it in place.
+The installed folder contains **v0.9.14 beta**, a local artwork candidate with
+cold ranked acceptance still pending. Keep it in place. The packaged v0.9.13
+outputs listed below are the previous checkpoint; no v0.9.14 publication is prepared.
 
 1. Click Reload on the existing extension card in `chrome://extensions`.
    Re-enable it if disabled, then refresh existing Last.fm tabs.

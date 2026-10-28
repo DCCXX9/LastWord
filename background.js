@@ -95,6 +95,13 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
       ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html'].includes(url.pathname);
     if (extension) return;
+    // Last.fm navigates with pushState. sender.url retains the document's
+    // original URL; Chrome's main-frame tab URL describes its current profile.
+    // Child frames and foreign origins must not borrow the top-level profile.
+    if (url.origin === 'https://www.last.fm' && sender.frameId === 0 && sender.tab?.url) {
+      try { url = new URL(sender.tab.url); }
+      catch { throw new Error('The requesting page could not be verified.'); }
+    }
     const match = url.pathname.match(/^\/user\/([^/]+)(?:\/|$)/i);
     let user = '';
     try { user = decodeURIComponent(match?.[1] || ''); } catch { /* Invalid profile URL. */ }
@@ -103,7 +110,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
     if (['artwork-read', 'artwork-put'].includes(action) && current.settings.username &&
         LastfmAdapter.publicArtistPage(url.href)) return;
-    if (['mutate', 'artwork-read', 'artwork-put', 'albumless'].includes(action) && ownProfile) return;
+    if (['mutate', 'artwork-read', 'artwork-put', 'artwork-refresh', 'albumless'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }
 
@@ -267,11 +274,30 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
       const record = artworkRecord(message.item, message.cover, current.settings.username);
       const records = Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : [];
       // A bounded, disposable cache has its own key; preference and undo data are untouched.
-      const next = [record, ...records.filter(r => r?.key !== record.key)].slice(0, 1000);
+      // A single artist's ranked list can hold 200-300 tracks; 1,000 records
+      // evicted earlier artists after a few visits and made them cold again.
+      const next = [record, ...records.filter(r => r?.key !== record.key)].slice(0, 3000);
       // Bound serialized size as well as record count for unusually long titles.
-      while (next.length > 1 && JSON.stringify(next).length > 500000) next.pop();
+      let size = JSON.stringify(next).length;
+      while (next.length > 1 && size > 1500000) size -= JSON.stringify(next.pop()).length + 1;
       await chrome.storage.local.set({ [ARTWORK]: next });
       return record;
+    }
+    if (message.action === 'artwork-refresh') {
+      if (!current.settings.username || R.normalize(message.username) !== R.normalize(current.settings.username)) {
+        throw new Error('Your connected profile changed. Refresh the page and try again.');
+      }
+      if (!Array.isArray(message.items) || !message.items.length || message.items.length > 5000 ||
+          message.items.some(item => !object(item) || [item.artist, item.name].some(value =>
+            typeof value !== 'string' || !value.trim() || value.length > 1000))) {
+        throw new Error('No valid tracks were supplied for artwork refresh.');
+      }
+      const keys = new Set(message.items.map(item => R.key([item.artist, item.name])));
+      const records = Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : [];
+      const next = records.filter(record => R.normalize(record?.username) !== R.normalize(current.settings.username) ||
+        !keys.has(R.key([record?.item?.artist, record?.item?.name])));
+      if (next.length !== records.length) await chrome.storage.local.set({ [ARTWORK]: next });
+      return { removed: records.length - next.length };
     }
     if (message.action === 'itunes-status') return { batch: batchSummary(journal(stored)) };
     if (message.action === 'itunes-apply') return applyItunes(stored, current, message);

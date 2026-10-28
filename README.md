@@ -1,13 +1,21 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.13 beta**.
+Last.fm profile. Installed candidate: **v0.9.16 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
 routes in the connected profile and their public music pages. Album/track links,
 scroll-added rows and artwork reads share the policy. Genuine Lucky Twice links
 require original native scrobble evidence before any repair. Toggle in Settings;
 see [scope and testing](docs/REDIRECT_PROTECTION.md).
+
+## Versions and source history
+
+The private GitHub repository preserves the current v0.9.16 source and earlier
+Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
+recoverable snapshots and their acceptance limitations. Tags identify source
+snapshots; they do not certify every historical build as stable.
 
 ## Public beta candidate
 

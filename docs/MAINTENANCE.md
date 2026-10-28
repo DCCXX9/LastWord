@@ -2,6 +2,16 @@
 
 ## Latest correction — 20 October 2026
 
+The fresh chat continued to a local v0.9.14 candidate after tracing cold ranked
+rows. Request selection changed; exact cold first-paint and 200–300 ranked rows
+remain unverified because Last.fm requested a break. That pause and the paused
+heartbeat remain intact. See CURRENT.md for the current evidence.
+
+**Subsequent user acceptance failed:** correct covers still arrive 20–30 seconds
+after ranked track text. The v0.9.13 evidence below concerns Scrobbles history,
+not a cold ranked Tracks timing acceptance. Implementation stopped for Jay's
+requested fresh-chat handover; see ARTWORK_HANDOVER.md. The heartbeat stays paused.
+
 v0.9.13 traces loaded native scrobble covers being hidden behind serial winner
 lookups. Matching scrobble previews now remain visible, while unrelated images
 stay withheld and proved winners retain precedence. Pagination no longer waits
@@ -10,7 +20,8 @@ profile reached 199 rows, including an uncached appended track proved at 1/1.
 Full gate: 59/59; four focused checks rerun after restart; 39-file package audited.
 Exact evidence and the transient page-three response boundary: CURRENT.md.
 Jay directly authorised this correction and its post-limit verification; the old
-maintenance heartbeat remains paused. Next step is normal Reload acceptance.
+maintenance heartbeat remains paused. Next step is tracing an actual failing
+ranked row and the same path on scroll-added rows, as detailed in the handover.
 
 ## Previous correction
 

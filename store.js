@@ -35,6 +35,7 @@
     read: () => request('read'),
     readArtwork: () => request('artwork-read'),
     saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
+    refreshArtwork: (items, username) => request('artwork-refresh', { items, username }),
     albumless: (username, op, values = {}) => request('albumless', { username, op, ...values }),
     subscribe,
     mutate: operations => request('mutate', { operations }),

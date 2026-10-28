@@ -60,7 +60,7 @@ const scrobbleList = second => `<main class="col-main"><table class="chartlist">
     cache.push(...padding.map(i => ({key:JSON.stringify(['dccxx',i.artist.toLowerCase(),i.name.toLowerCase()]),username:'DCCXX',
       item:{artist:i.artist,name:i.name},checkedAt:Date.now(),
       cover:{artist:i.artist,album:i.album,image:image(i),url:origin+albumPath(i),fallback:false,scanned:1,total:1,sourceVersion:3}})));
-    await worker.evaluate(data => chrome.storage.local.set(data), {settings,rules,lfmPersonalArtworkCacheV1:cache});
+    await worker.evaluate(data => chrome.storage.local.set(data), {settings,rules,lfmPersonalArtworkCacheV1:cache,lfmArtworkLookups:true});
     const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
     const painted = async i => {
       const target = page.locator(`.chartlist-name a[href="${trackPath(i)}"]`).locator('..').locator('..');

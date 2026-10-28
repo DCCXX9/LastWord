@@ -52,7 +52,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
    return route.fulfill({status:404,body:'Unexpected request'});
   });
   const worker=browser.serviceWorkers()[0]||await browser.waitForEvent('serviceworker');
-  await worker.evaluate(()=>chrome.storage.local.set({settings:{username:'DCCXX',infiniteScroll:true}}));
+  await worker.evaluate(()=>chrome.storage.local.set({settings:{username:'DCCXX',infiniteScroll:true},lfmArtworkLookups:true}));
   const before=await worker.evaluate(()=>chrome.storage.local.get(['rules','settings']));
   const page=await browser.newPage();
   await page.goto('https://www.last.fm/user/DCCXX/library/tracks');

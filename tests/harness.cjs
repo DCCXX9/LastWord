@@ -69,6 +69,10 @@ function createMockWorker(initialData = {}, options = {}) {
 }
 
 async function mockExtension(page, data = {}, options = {}) {
+  // Most artwork suites exercise the optional background-lookup engine. The
+  // shipped default (no key) is zero-request; pass {artworkLookups:false} or
+  // set the key yourself to test that.
+  if (!options.worker && options.artworkLookups !== false && !('lfmArtworkLookups' in data)) data = { ...data, lfmArtworkLookups: true };
   const worker = options.worker || createMockWorker(data, options);
   const binding = '__lastfmMock' + ++sequence;
   await page.exposeFunction(binding, async ({ action, value, url }) => {

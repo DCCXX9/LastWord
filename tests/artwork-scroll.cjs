@@ -43,7 +43,7 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   await setup.locator('#profile-status').filter({hasText:'Not connected'}).waitFor();
   // Every row is a distinct uncached track, so imported placeholders compete
   // with ordinary visible tracks in the real paced request queue.
-  await worker.evaluate(data=>chrome.storage.local.set(data),{settings,rules});
+  await worker.evaluate(data=>chrome.storage.local.set(data),{settings,rules,lfmArtworkLookups:true});
   const before=await worker.evaluate(()=>chrome.storage.local.get(['settings','rules']));
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+libraryPath);

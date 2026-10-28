@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),assets=path.join(root,'release','assets');
 const executablePath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
-const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect x="16" y="16" width="96" height="96" rx="23" fill="#233b43"/><path d="M31 39v50m10-50v50" stroke="#fbf8f3" stroke-width="5" stroke-linecap="round"/><circle cx="77" cy="64" r="25" fill="#fbf8f3"/><circle cx="77" cy="64" r="18" fill="#233b43"/><circle cx="77" cy="64" r="8" fill="#f29476"/><circle cx="77" cy="64" r="2.5" fill="#233b43"/></svg>`;
+const svg=fs.readFileSync(path.join(root,'icons','source.svg'),'utf8').trim();
 async function icons(browser) {
  fs.mkdirSync(path.join(root,'icons'),{recursive:true});fs.mkdirSync(assets,{recursive:true});
  fs.writeFileSync(path.join(root,'icons','source.svg'),svg+'\n');
@@ -16,7 +16,7 @@ async function icons(browser) {
  }
  fs.copyFileSync(path.join(root,'icons','icon128.png'),path.join(assets,'icon128.png'));
  await page.setViewportSize({width:440,height:280});
- await page.setContent(`<style>*{box-sizing:border-box}body{margin:0;background:#233b43;color:#fbf8f3;font-family:system-ui}main{height:280px;display:flex;align-items:center;padding:26px;gap:16px}svg{width:122px;flex-shrink:0}h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0}p{color:#f29476;font-size:12px;margin:13px 0 0}</style><main>${svg}<div><h1>Your library.<br>Your casing.</h1><p>Last.fm Personal Library</p></div></main>`);
+ await page.setContent(`<style>*{box-sizing:border-box}body{margin:0;background:#bceacb;color:#204b32;font-family:system-ui}main{height:280px;display:flex;align-items:center;padding:26px;gap:16px}svg{width:122px;flex-shrink:0}h1{font-size:29px;line-height:1.12;letter-spacing:-1px;margin:0}p{color:#367d50;font-size:12px;margin:13px 0 0}</style><main>${svg}<div><h1>Your library.<br>Your casing.</h1><p>Last.fm Personal Library</p></div></main>`);
  await page.screenshot({path:path.join(assets,'promo440.png')});await page.close();
 }
 (async()=>{

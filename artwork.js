@@ -8,13 +8,35 @@
   let cacheError = '', lastError = '', startedAt = 0;
   let retryTimer;
   let seededGeneration = -1;
+  // How long a cold ranked row may stay blank while its proof is in flight.
+  // After this, or as soon as proof is blocked (rate pause/failure), Last.fm's
+  // own image is shown, marked unverified, until the personal winner replaces it.
+  const GRACE = 1500;
+  const STALE_LIMIT = 30 * 24 * 60 * 60 * 1000, FRESH = 24 * 60 * 60 * 1000;
+  const heldAt = new Map(), released = new Set();
+  let sweepTimer, unsubscribe;
+  // Zero-request mode (default since v0.9.15): show Last.fm's own image, and
+  // replace it only with a cover the extension already knows — a saved
+  // personal winner, the exact album of a scrobble row, or the album page
+  // being viewed. No Last.fm pages are fetched for artwork. Setting the local
+  // key lfmArtworkLookups to true re-enables the older background lookups.
+  const LOOKUPS = 'lfmArtworkLookups';
+  let lookups = false, refreshing = false;
+  const lookupsRead = chrome.storage.local.get(LOOKUPS).then(data => { lookups = data[LOOKUPS] === true; })
+    .catch(() => { lookups = false; });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[LOOKUPS]) return;
+    lookups = changes[LOOKUPS].newValue === true;
+    scan();
+  });
+  const blocked = () => Boolean(globalThis.LastfmPages?.status().rateLimited);
   const cache = new Map();
   const jobs = new Map(), observed = new Map(), originals = new Map();
   const albumImages = new Map(), scrobbleImages = new Map();
   const prepared = new Set(), dirtyRows = new Set();
   let fullScan = false;
   const inScope = user => Boolean(user && (A.ownProfile(location.href, user) || A.publicArtistPage(location.href)));
-  const own = () => inScope(username) && !document.hidden;
+  const own = () => !refreshing && inScope(username) && !document.hidden;
   const keyFor = item => JSON.stringify([R.normalize(username), R.normalize(item.artist), R.normalize(item.name),
     ...(item.albumless ? ['albumless'] : [])]);
   const imageAttrs = ['src', 'srcset', 'data-src', 'data-srcset', 'title', 'alt', 'loading'];
@@ -37,6 +59,8 @@
     const sized = size ? cover.image.replace(/\/i\/u\/[^/]+\//, '/i/u/' + size + '/') : cover.image;
     const source = globalThis.LastfmImageRecovery?.sourceFor(image, sized) || sized;
     if (prepared.has(image)) image.loading = 'eager';
+    heldAt.delete(image); released.delete(image);
+    if (image.hasAttribute('data-lfm-artwork')) image.removeAttribute('data-lfm-artwork');
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     const attr = (name, value) => { if (image.getAttribute(name) !== value) image.setAttribute(name, value); };
     attr('src', source); attr('data-src', source);
@@ -67,8 +91,63 @@
     const original = originals.get(image), link = original.link || original.replacement;
     if (link?.hasAttribute('href')) link.removeAttribute('href');
   }
+  // Native Last.fm cover and its own album link, shown while the personal proof
+  // is unavailable. Never used when the row's own scrobble fields contradict it.
+  function showNative(image) {
+    remember(image);
+    const original = originals.get(image);
+    heldAt.delete(image); released.add(image);
+    if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
+    if (original.link && original.href !== null && original.link.getAttribute('href') !== original.href) {
+      original.link.setAttribute('href', original.href);
+    }
+    if (!lookups) {
+      // Plain Last.fm display: nothing is pending, so nothing is marked.
+      if (image.hasAttribute('data-lfm-artwork')) image.removeAttribute('data-lfm-artwork');
+      const title = original.attrs.title;
+      if (title === null ? image.hasAttribute('title') : image.getAttribute('title') !== title) {
+        if (title === null) image.removeAttribute('title'); else image.setAttribute('title', title);
+      }
+      return;
+    }
+    if (image.getAttribute('data-lfm-artwork') !== 'unverified') image.setAttribute('data-lfm-artwork', 'unverified');
+    const title = blocked() ? 'Last.fm’s image. Your most-scrobbled album will be checked when Last.fm’s break ends.'
+      : 'Last.fm’s image. Checking your most-scrobbled album…';
+    if (image.title !== title) image.title = title;
+  }
+  function pending(image) {
+    if (released.has(image)) { showNative(image); return; }
+    hold(image);
+    // Without lookups every row falls back to Last.fm's display; with them,
+    // only rows whose native cover is not contradicted by their own fields.
+    if (lookups && !originals.get(image).releasable) return;
+    if (!heldAt.has(image)) heldAt.set(image, performance.now());
+    armSweep(0);
+  }
+  function armSweep(delay) {
+    if (sweepTimer !== undefined) return;
+    sweepTimer = setTimeout(sweep, Math.max(0, delay));
+  }
+  function sweep() {
+    sweepTimer = undefined;
+    // Hold only until saved covers are loaded (milliseconds), so a known
+    // winner never flashes Last.fm's image first.
+    if (!cacheReady) return;
+    const now = performance.now(), stop = blocked() || !lookups;
+    let next = Infinity;
+    for (const [image, at] of heldAt) {
+      if (!image.isConnected && !prepared.has(image)) { heldAt.delete(image); continue; }
+      const job = observed.get(image)?.job;
+      if (job?.cover) { heldAt.delete(image); continue; }
+      if (stop || job?.state === 'unavailable' || now - at >= GRACE) showNative(image);
+      else next = Math.min(next, at + GRACE);
+    }
+    if (Number.isFinite(next)) armSweep(next - now);
+  }
   function restore(image) {
     scrobbleImages.delete(image);
+    heldAt.delete(image); released.delete(image);
+    image.removeAttribute('data-lfm-artwork');
     const original = originals.get(image);
     if (!original) return;
     for (const [name, value] of Object.entries(original.attrs)) {
@@ -84,11 +163,12 @@
     originals.delete(image);
   }
   function reset() {
-    clearTimeout(retryTimer);
+    clearTimeout(retryTimer); clearTimeout(sweepTimer); sweepTimer = undefined;
     generation++; running?.controller.abort();
     observer?.disconnect(); observed.clear(); jobs.clear(); albumImages.clear(); scrobbleImages.clear(); prepared.clear(); dirtyRows.clear();
     globalThis.LastfmArtworkSource?.clear();
     for (const image of originals.keys()) restore(image);
+    heldAt.clear(); released.clear();
   }
   function visible(job) {
     return [...job.images].some(image => image.isConnected && observed.get(image)?.visible);
@@ -111,8 +191,13 @@
   }
   async function pump() {
     clearTimeout(retryTimer);
-    if (!cacheReady || !own() || !globalThis.LastfmArtworkSource ||
-        !globalThis.LastfmPages || LastfmPages.status().rateLimited) return;
+    if (!unsubscribe && globalThis.LastfmPages?.onChange) {
+      // Resume queued rows the moment a cooldown ends, in every tab.
+      unsubscribe = LastfmPages.onChange(() => { sweep(); pump(); });
+    }
+    if (!lookups || !cacheReady || !own() || !globalThis.LastfmArtworkSource ||
+        !globalThis.LastfmPages) return;
+    if (blocked()) { sweep(); return; }
     const visibleWaiting = [...jobs.values()].filter(job => job.state === 'waiting' && visible(job));
     const now = Date.now(), waiting = visibleWaiting.filter(job => !job.retryAt || job.retryAt <= now);
     if (running) {
@@ -123,7 +208,10 @@
     // Album-less scrobbles need a title-album fallback. Give those visible rows
     // priority without changing the all-time album counting or request throttle.
     const foreground = waiting.filter(onScreen);
-    const candidates = foreground.length ? foreground : waiting;
+    const cold = foreground.filter(job => !job.cover);
+    // Rows with no cover at all come first; stale-cache refreshes come last.
+    const candidates = cold.length ? cold : foreground.length ? foreground :
+      waiting.filter(job => !job.cover).length ? waiting.filter(job => !job.cover) : waiting;
     const job = candidates.find(job => job.albumless) || candidates.find(job => job.placeholder) || candidates[0];
     if (!job) {
       const next = Math.min(...visibleWaiting.map(job => job.retryAt));
@@ -144,13 +232,18 @@
       finish(job, cover);
     } catch (error) {
       if (current !== generation) return;
-      const retry = error.retryable && !job.retried && !LastfmPages.status().rateLimited;
-      job.state = error.name === 'AbortError' || retry ? 'waiting' : 'unavailable';
+      // A rate pause says nothing about this track. Keep it queued (not failed)
+      // so it resumes automatically when the cooldown ends.
+      const paused = error.rateLimited || blocked();
+      const retry = !paused && error.retryable && !job.retried;
+      job.state = error.name === 'AbortError' || retry || paused ? 'waiting' : 'unavailable';
       if (retry) { job.retried = true; job.retryAt = Date.now() + 10000; }
       if (error.name !== 'AbortError') lastError = error.message;
       if (error.name !== 'AbortError' && !job.cover) for (const image of job.images) {
-        if (image.isConnected || prepared.has(image)) image.title = retry ? 'Waiting to retry this cover…' : 'Cover unavailable: ' + error.message;
+        if (released.has(image)) continue;
+        if (image.isConnected || prepared.has(image)) image.title = paused ? error.message : retry ? 'Waiting to retry this cover…' : 'Cover unavailable: ' + error.message;
       }
+      if (!job.cover) sweep();
     } finally {
       if (running?.controller === controller) running = null;
       pump();
@@ -190,6 +283,13 @@
         R.normalize(linked.name) !== R.normalize(album) || R.normalize(alt) !== R.normalize(album) || !source) return null;
     return { artist, album, image: source, url: new URL(href, location.href).href, scrobble: true };
   }
+  // Only a real native cover on a row without its own scrobble fields may be
+  // shown provisionally. Scrobble fields that disagree prove it is wrong.
+  function mark(image, fields) {
+    remember(image);
+    const original = originals.get(image);
+    original.releasable = !fields && Boolean(A.coverImage(original.attrs['data-src']) || A.coverImage(original.attrs.src));
+  }
   function scan(incoming = null) {
     if (currentUrl !== location.href) { reset(); currentUrl = location.href; }
     if (!own()) return;
@@ -215,7 +315,7 @@
         if (A.libraryView(location.href) === 'scrobbles' && !fields) continue;
         const cover = scrobbleCover(image, item, fields);
         if (cover) { scrobbleImages.set(image, cover); apply(image, cover); }
-        else hold(image);
+        else { mark(image, fields); pending(image); }
       }
     }
     if (album || !cacheReady) return;
@@ -250,12 +350,19 @@
       if (albumless) item = { ...item, albumless: true };
       const total = row.querySelector('[data-stat-value]')?.getAttribute('data-stat-value');
       if (/^\d+$/.test(total || '') && Number.isSafeInteger(Number(total))) item = {...item,libraryTotal:Number(total)};
+      // Native artwork is not winner evidence. Its original album link can
+      // choose one personal album-count read, which must still prove a majority.
+      const original = originals.get(image);
+      const nativeLink = original ? original.href : image.closest('a[href]');
+      const albumHint = nativeLink && A.musicItem(nativeLink);
+      if (A.libraryView(location.href) === 'tracks' && albumHint?.type === 'albums' &&
+          R.normalize(albumHint.artist) === R.normalize(item.artist)) item = {...item, albumHint};
       const key = keyFor(item);
       const previous = observed.get(image);
       if (previous && previous.job === jobs.get(key)) {
         const cover = previous.job.cover || scrobbleCover(image, item, fields);
         if (cover) { if (cover.scrobble) scrobbleImages.set(image, cover); apply(image, cover); }
-        else hold(image);
+        else { mark(image, fields); pending(image); }
         continue;
       }
       if (previous) {
@@ -264,11 +371,12 @@
         restore(image);
       }
       if (!jobs.has(key)) {
-        const saved = cache.get(key);
-        // Only current verified winners may be displayed before a new lookup.
-        const fresh = saved && Date.now() - saved.checkedAt < 24 * 60 * 60 * 1000 &&
-          (item.albumless || saved.cover.sourceVersion === 3);
-        jobs.set(key, { item, images: new Set(), cover: fresh ? saved.cover : null, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
+        const saved = cache.get(key), age = saved ? Date.now() - saved.checkedAt : Infinity;
+        // A verified winner stays displayable after 24 hours (it only changes if
+        // your plays shift); it is refreshed in the background at low priority.
+        const usable = saved && (age < STALE_LIMIT || !lookups) && (item.albumless || saved.cover.sourceVersion === 3);
+        const fresh = usable && age < FRESH;
+        jobs.set(key, { item, images: new Set(), cover: usable ? saved.cover : null, state: fresh ? 'complete' : 'waiting', albumless: !!albumless,
           placeholder: !A.coverImage(image.getAttribute('data-src') || image.getAttribute('src')) });
       }
       const job = jobs.get(key); job.images.add(image);
@@ -278,11 +386,11 @@
       if (cover) {
         if (cover.scrobble) scrobbleImages.set(image, cover);
         apply(image, cover);
-      } else hold(image);
+      } else { mark(image, fields); pending(image); }
     }
     const candidates = [...jobs.values()].filter(job => !job.albumless && ['waiting','unavailable'].includes(job.state) &&
       (!incoming || touched.has(job)));
-    const known = candidates.length && globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username);
+    const known = lookups && candidates.length ? globalThis.LastfmArtworkAlbums?.peekMany(candidates.map(job => job.item), username) : null;
     for (const job of candidates) {
       const cover = known?.get(job.item);
       if (cover) finish(job, cover);
@@ -332,7 +440,7 @@
       const image = record.target.matches('img') ? record.target : record.target.querySelector('img');
       const cover = albumImages.get(image) || observed.get(image)?.job.cover || scrobbleImages.get(image);
       if (cover) apply(image, cover);
-      else if (originals.has(image)) hold(image);
+      else if (originals.has(image)) pending(image);
     }
     const rows = new Set();
     for (const record of records) {
@@ -357,6 +465,7 @@
       const current = generation;
       if (inScope(username)) {
         try {
+          await lookupsRead;
           const records = await S.readArtwork();
           if (current !== generation) return;
           for (const record of records) if (A.coverImage(record.cover.image)) cache.set(record.key, record);
@@ -375,12 +484,34 @@
   addEventListener('pagehide', () => { reset(); mutations.disconnect(); });
   addEventListener('pageshow', event => { if (event.persisted) { mutations.observe(document, mutationOptions); scan(); } });
   addEventListener('popstate', scan);
-  globalThis.LastfmArtwork = Object.freeze({ start: () => scan(), prepareRows, status: () => ({
-    cacheReady, cachedTracks: cache.size, cacheError: cacheError || null,
+  function refreshItems() {
+    const items = new Map();
+    for (const row of document.querySelectorAll('tr.chartlist-row')) {
+      if (!row.querySelector('.chartlist-image img')) continue;
+      const item = [...row.querySelectorAll('.chartlist-name a[href]')].map(link => A.musicItem(link))
+        .find(item => item?.type === 'tracks');
+      if (item) items.set(R.key([item.artist, item.name]), { artist: item.artist, name: item.name });
+    }
+    return [...items.values()];
+  }
+  async function refreshArtwork() {
+    await ready;
+    if (refreshing) throw new Error('Artwork is already refreshing.');
+    if (!A.ownProfile(location.href, username)) throw new Error('Open your connected Last.fm profile first.');
+    const items = refreshItems();
+    if (!items.length) throw new Error('There are no track covers on this page to refresh.');
+    refreshing = true; reset();
+    try { return { ...await S.refreshArtwork(items, username), tracks: items.length }; }
+    catch (error) { refreshing = false; scan(); throw error; }
+  }
+  globalThis.LastfmArtwork = Object.freeze({ start: () => scan(), prepareRows, refresh: refreshArtwork, status: () => ({
+    cacheReady, refreshing, cachedTracks: cache.size, cacheError: cacheError || null,
+    refreshableTracks: A.ownProfile(location.href, username) ? refreshItems().length : 0,
     visibleImages: [...observed.values()].filter(value => value.visible).length,
     jobs: Object.fromEntries(['waiting', 'loading', 'complete', 'unavailable'].map(state =>
       [state, [...jobs.values()].filter(job => job.state === state).length])),
     activeMilliseconds: running ? Math.max(0, Date.now() - startedAt) : 0,
+    lookups, held: heldAt.size, unverified: lookups ? released.size : 0, native: lookups ? 0 : released.size,
     lastError: lastError || null
   }) });
 })();

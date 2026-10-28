@@ -110,7 +110,7 @@
     empty.name = 'album_artist_name'; empty.value = ''; copy.append(empty);
     return editRow(copy, base, username, true);
   }
-  function editPairs(form) {
+  function editPairs(form, kind = 'track') {
     const names = { track: 'track_name', album: 'album_name', artist: 'artist_name',
       albumArtist: 'album_artist_name' };
     const pairs = {};
@@ -121,8 +121,10 @@
       if (from === null || to === null) return null;
       pairs[key] = { from, to };
     }
-    // Track fields are confirmed by the user's signed-in form inspection.
-    // Album forms are supported only if they expose the same complete named pairs.
+    // The native album dialog has only album and album-artist pairs. Keep this
+    // explicit so track/correction callers retain their stricter contract.
+    if (kind === 'album') return pairs.album && pairs.albumArtist &&
+      !pairs.artist && !pairs.track ? pairs : null;
     if (!pairs.album || !pairs.artist || !pairs.albumArtist) return null;
     return pairs;
   }

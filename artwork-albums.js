@@ -63,6 +63,11 @@
         albums.push({ ...saved.album, artists: saved.artists });
       }
     }
+    if (rankedTracks) for (const item of incoming) {
+      const hint = item.albumHint;
+      if (hint?.type !== 'albums' || R.normalize(hint.artist) !== R.normalize(item.artist)) continue;
+      albums.push({artist:hint.artist,name:hint.name,artists:new Set([R.normalize(item.artist)])});
+    }
     return albums.length && totals.size ? { albums, totals, rankedTracks } : null;
   }
   const candidates = (item, data) => {
@@ -90,8 +95,8 @@
     if (!total) return null;
     // The five-request discovery bound must not discard facts already obtained
     // for an exact album by the individual track's cover lookup.
-    const ranked = [], available = data.albums.filter(album => album.artists.has(R.normalize(item.artist)) &&
-      records.get(albumKey(album, username))?.counts);
+    const ranked = [], available = [...new Map(data.albums.filter(album => album.artists.has(R.normalize(item.artist)) &&
+      records.get(albumKey(album, username))?.counts).map(album => [albumKey(album, username), album])).values()];
     for (const album of available) ranked.push({ album, count: records.get(albumKey(album, username)).counts.get(key) || 0 });
     ranked.sort((a,b) => b.count-a.count);
     const scanned = ranked.reduce((n, entry) => n+entry.count, 0), remaining = total-scanned;
@@ -162,7 +167,12 @@
         globalThis.LastfmArtwork?.start();
       })();
       record.pending.catch(error => {
-        if (error.name === 'AbortError' && records.get(key) === record) records.delete(key);
+        // A cancelled, rate-paused or temporary failure is not an album fact.
+        // Leaving it cached made every later read of this album fail instantly,
+        // even after the cooldown, until the page was reloaded.
+        const transient = error.name === 'AbortError' || error.rateLimited || error.retryable ||
+          LastfmPages.status().rateLimited;
+        if (transient && records.get(key) === record) records.delete(key);
       });
     }
     await records.get(key).pending;
@@ -171,8 +181,20 @@
     const data = context(username, [item]);
     if (!data?.totals.has(trackKey(item)) || item.placeholder && !data.rankedTracks) return null;
     if (data.rankedTracks && data.totals.get(trackKey(item)) === 1) return proven(item, username, data);
+    let choices = candidates(item, data);
+    if (data.rankedTracks) {
+      const hint = item.albumHint && data.albums.find(album =>
+        R.normalize(album.artist) === R.normalize(item.albumHint.artist) &&
+        R.normalize(album.name) === R.normalize(item.albumHint.name));
+      // Several saved albums do not identify this new track. An arbitrary
+      // first hint adds a paced request ahead of its authoritative history.
+      if (hint) choices = [hint];
+      else if (data.albums.filter(album => album.artists.has(R.normalize(item.artist))).length > 1) {
+        return proven(item, username, data);
+      }
+    }
     let reads = 0;
-    for (const album of candidates(item, data)) {
+    for (const album of choices) {
       if (signal?.aborted) throw new DOMException('Artwork lookup cancelled.', 'AbortError');
       const known = proven(item, username, data);
       if (known) return known;

@@ -1,7 +1,10 @@
-.lfm-scroll-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; padding: 14px 16px; border: 1px solid #dedede; border-radius: 6px; color: #555; background: #fafafa; font: 14px/1.5 Arial, sans-serif; }
-.lfm-scroll-status button { flex-shrink: 0; padding: 7px 12px; border: 1px solid #aaa; border-radius: 4px; color: #222; background: #fff; font: inherit; cursor: pointer; }
-.lfm-scroll-status button:focus-visible { outline: 3px solid #b90000; outline-offset: 3px; }
+.lfm-scroll-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; padding: 14px 16px; border: 1px solid var(--lfm-border, #c6dfce); border-radius: 6px; color: var(--lfm-ink, #204b32); background: var(--lfm-surface, #f4fbf6); font: 14px/1.5 Arial, sans-serif; }
+.lfm-scroll-status button { flex-shrink: 0; padding: 7px 12px; border: 1px solid var(--lfm-border, #c6dfce); border-radius: 4px; color: var(--lfm-ink, #204b32); background: var(--lfm-accent, #bceacb); font: inherit; cursor: pointer; }
+.lfm-scroll-status button:focus-visible { outline: 3px solid var(--lfm-focus, #367d50); outline-offset: 3px; }
 .lfm-scroll-actions { display: flex; flex: 0 0 auto; flex-wrap: nowrap; gap: 8px; }
 .lfm-scroll-status [hidden] { display: none !important; }
-.lfm-scroll-status[data-state=error], .lfm-scroll-status[data-state=paused] { color: #8c241e; border-color: #dfb6b3; background: #fff6f5; }
+.lfm-scroll-status[data-state=error] { color: #8c241e; border-color: #dfb6b3; background: #fff6f5; }
 @media (max-width: 500px) { .lfm-scroll-status { align-items: flex-start; flex-direction: column; } }
+
+/* Last.fm's own cover, shown while your most-scrobbled album is still being checked. */
+.chartlist-image img[data-lfm-artwork="unverified"] { opacity: .6; transition: opacity .2s; }
