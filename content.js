@@ -23,6 +23,12 @@
 
   function replaceName(element, item) {
     if (!item) return;
+    // Verify Last.fm's double-escaped literal '+' against the actual text.
+    // Never substitute a different title based on a decoded URL alone.
+    if (/%2b/i.test(item.name)) {
+      const literal = item.name.replace(/%2b/gi, '+');
+      if (nameNode(element, literal)) item = { ...item, name: literal };
+    }
     let saved = changed.get(element);
     if (saved && !saved.node.isConnected) {
       changed.delete(element);

@@ -1,5 +1,23 @@
 # Architecture decisions
 
+## 29 October 2026: observed names and permanent read-only transport
+
+XML supplies casing, not identity. Match only names positively observed in the
+connected user's all-time track/album/artist lists, with NFC case comparison and
+artist scope. Preserve punctuation, accents, inner whitespace and suffixes.
+Before includes applicable existing local casing; identical values disappear.
+Ambiguous raw spellings are skipped. Do not infer separate album-artist values.
+
+Persist name/artist metadata and page cursors per profile. Use the existing
+paced GET queue and pauses. Partial review proves presence for observed names
+only and is labeled. Apply revalidates cache generation and spelling in the
+sole writer, alongside the existing profile/stale-rule guards and atomic undo.
+
+Enforce cosmetic-only behavior at both boundaries: rendering ignores retained
+substantive rename rules, while transport submissions are unconditionally
+rejected even for old experimental callers. Native site controls remain
+Last.fm's separate user action. No new permissions, migration or upload.
+
 ## 28 October 2026: whole-library local styling capacity
 
 Keep the existing streaming XML collector, rule identities and atomic apply/undo

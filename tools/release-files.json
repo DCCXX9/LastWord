@@ -5,6 +5,6 @@
   "albumless-store.js", "albumless-reader.js", "albumless-engine.js", "albumless-scan.js",
   "albumless.html", "albumless-ui.js", "options.html", "options.js",
   "popup.html", "popup.js", "preferences.html", "preferences.js", "extension-ui.css",
-  "itunes.html", "itunes.js", "library-casing.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
+  "itunes.html", "itunes.js", "library-casing.js", "library-cache.js", "library-cache-client.js", "library-cache-bridge.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
   "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png"
 ]

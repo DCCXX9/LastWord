@@ -1,76 +1,57 @@
-# Library casing import framework
+# iTunes casing comparison
 
-Prepared from `b134285` on `preferences-page`. This extension owns local Last.fm
-display preferences. Library Doctor owns its library cleanup and reviewed XML
-export. This change does not connect the apps or write to iTunes/Last.fm.
+Copy letter casing from selected XML exports onto the connected user's displayed
+Last.fm names. This never changes scrobbles, XML or iTunes metadata.
 
-## User flow
+## Review flow
 
-Settings or Display names → Import iTunes XML → local streaming scan → review →
-Apply. Artist, album, song and album-artist checkboxes select across the entire
-XML, independently of search and the 100-row review page. Individual row choices
-remain available. Conflicting casings require a choice; different existing
-preferences are initially unchecked. A group selection explicitly includes such
-replacements. Apply still requires confirmation and has a persistent Revert.
+Choose XML files, then Compare libraries. The screen warns that caching Last.fm
+and comparing XML can take a while. The streaming XML reader supports standard
+Apple and older Apple Computer plist headers, rejects custom DTDs/entities, and
+never fetches external XML resources. XML locations, playlists and IDs are discarded.
 
-The Select whole library button selects every eligible name across all pages.
-The Review filter isolates unresolved casing choices, replacements, already
-matching preferences and new names. Counts explain which conflicts are skipped
-and how many selected names would replace saved preferences before confirmation.
-Standard plist headers from both Apple and older Apple Computer exports work;
-custom DTDs and entity declarations remain rejected, with no external fetches.
+The persisted Last.fm cache visits all-time track, album and artist lists through
+the shared paced GET queue. Pause stops the active request; compare resumes at
+the next unsaved page, including after reopening. Refresh cache starts a new
+generation. Opening the screen or choosing files alone starts no requests.
+Incomplete review is labeled Partial library and includes observed matches only.
 
-Names are copied from the XML with outer whitespace removed and NFC Unicode
-normalisation. There is no automatic title-case conversion. Rules match existing
-names ignoring case, with artist scope for songs/albums. They apply across the
-connected user's library, including later visits, new plays with matching names,
-and infinite-scroll rows. They do not reconcile renamed tracks or alter raw tags.
+Review shows Type/artist, Before → After, selection, search and 100-row pages.
+Before includes applicable existing local casing. Identical names are omitted.
+Conflicting XML casings require a choice; replacements start unchecked. Save
+casing changes confirms counts and writes local rules plus persistent undo.
+Undo preserves subsequent manual edits. Existing backup/scan/pause state survives.
 
-## Shared adapter boundary (version 1)
+## Identity and cosmetic-only boundaries
 
-Load `rules.js`, then `library-casing.js`. `LastfmLibraryCasing.VERSION` is 1.
-`fromTracks(records)` accepts an array of plain metadata records using iTunes
-field names: `Name`, `Artist`, optional `Album` and optional `Album Artist`.
-The streaming interface is `createCollector()` with `addTrack(record)`,
-`skipTrack(reason)`, `counts()` and `result()`.
+Compare NFC-normalized names ignoring case only. Preserve punctuation, accents,
+inner whitespace and suffixes; songs/albums also need the exact artist identity.
+Song (feat. Artist) cannot match Song unless Song itself appears in the cache.
+Unobserved XML names and ambiguous raw casings never create preferences.
+Separate album-artist metadata cannot be proved by these aggregate lists, so it
+is not imported speculatively; native manual album-artist casing still works.
 
-`result()` returns `{songs,total,skipped,duplicates,candidates,issues}`. A candidate
-has `{type,id,from,to,artist?,variants,occurrences}`. `type` uses the existing
-artists/albums/tracks/albumArtists groups; `id` uses `LastfmRules.idFor`.
-`from` is the normalised matching name; `to` retains source casing. Multiple
-`variants` require user selection, regardless of their frequency in the XML.
-Album candidates include track-artist and distinct album-artist scopes for
-compilations. Missing/invalid required names skip the track; invalid optional
-fields are reported and omitted.
+library-cache.js owns parsing/comparison, library-cache-bridge.js reads raw lists
+in the connected tab, library-cache-client.js coordinates the XML screen, and
+background.js is the sole storage writer. Last.fm's double-escaped literal plus
+signs are decoded only for link verification; matching retains the raw plus sign.
 
-Only these four name fields enter the plan. Paths, playlists, play counts,
-persistent IDs and other private metadata are discarded. The builder has no
-DOM, Chrome, network or storage dependencies. XML parsing remains a separate
-incremental adapter with cancellation, progress and full-file validation.
+Apply revalidates profile, cache generation, observed spelling, casing-only rules
+and expected previous preferences. Rules and undo save atomically. The renderer
+rejects substantive replacements even from old backups. pages.js uses literal
+GET requests and unconditionally rejects edits/forms, including old experimental
+correction callers. Normal native site edits remain separate user actions.
+No reinstall, permission change or storage migration is required.
 
-A future Library Doctor adapter can pass its reviewed `track.values` records
-to this boundary, or users can import a fresh XML export today. No native
-messaging, localhost listener, automatic syncing, app launch or shared storage
-is enabled. A direct hand-off format/transport must be agreed when that work is
-requested; this is not a promise that arbitrary Doctor reports are importable.
+The approved unlimitedStorage permission supports large local caches, rules and
+undo. Allocation failures surface without a partial preference transaction.
+Cache metadata remains on this device. JSON backups can contain these records
+and should be kept private. The original XML is never retained or uploaded.
 
-## Persistence and limits
+## Checks
 
-The existing sole-writer `itunes-apply` operation validates exact casing,
-current profile and expected previous rules. Rules and undo are saved together.
-Revert preserves subsequent manual edits. Storage keys/formats,
-extension identity and legacy scan records are unchanged. No user-data
-migration occurs. Only the latest XML import is reversible here; keep a JSON
-backup for earlier states. Version 0.9.18 adds the explicitly approved
-unlimitedStorage permission for whole-library preferences and undo beyond the
-usual local quota. Allocation/write failures still fail without a partial write.
-
-Checks: shared-builder contract, existing 128 MiB streaming parser, review UI,
-storage/undo guards, and actual isolated unpacked-extension import covering
-initial and infinite-scroll rows plus friend isolation. These are constructed
-fixtures, not proof of Library Doctor integration. The supplied 55,835-song XML
-also completed scan, apply, reload and revert in a disposable extension profile
-with all network requests blocked: 69,043 applied names and 42 unresolved choices.
-A separate synthetic 56,000-name test persisted over 26 MB with undo and preserved
-a later manual edit when reverting. Installed signed-in Supermium acceptance
-covers scanning/review only; applying the user's library remains their choice.
+Coverage includes exact intersection, unchanged exclusion, suffix/artist mismatch,
+original/current Before values, profile/stale-cache guards, read-only transport,
+pause/reopen/resume, apply/undo, later edits, infinite-scroll display, friend
+isolation and large-storage capacity. Fixtures do not substitute for installed
+signed-in acceptance. See CURRENT.md for actual results and full-cache limits.

@@ -43,6 +43,7 @@
     replace: (backup, expectedSnapshot) => request('replace', { backup, expectedSnapshot }),
     backup: () => request('backup'),
     itunesStatus: () => request('itunes-status'),
+    cacheLibrary: (op, values = {}) => request('library-cache', { op, ...values }),
     applyItunes: values => request('itunes-apply', values),
     revertItunes: values => request('itunes-revert', values)
   });

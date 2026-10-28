@@ -1,4 +1,42 @@
-# Current state — 20 October 2026
+# Current state — 29 October 2026
+
+## 29 October 2026: exact casing comparison candidate v0.9.19
+
+Baseline: 3176b45 on codex/itunes-library-styling. Claude's v0.9.17 and the
+v0.9.18 checkpoint remain intact. The importer now shows concise Before → After
+rows, only for observed Last.fm names that differ from XML in letter casing.
+Unchanged names, unscrobbled XML titles, punctuation/spacing differences and
+featuring/edition suffix differences are excluded. Artist scope stays exact.
+
+Compare libraries starts/resumes a persisted, own-profile, all-time cache of
+tracks, albums and artists through the existing paced GET queue and pauses.
+An incomplete cache previews only positively observed matches and is labeled
+Partial library. Separate album-artist names are not inferred from these lists.
+Opening the screen or choosing files alone starts no requests. XML stays local.
+
+The shared transport hard-rejects submissions and uses literal GET fetches,
+including for retained experimental callers. The renderer ignores substantive
+rename rules retained in backups; new preference writes reject non-casing
+changes. Existing records are preserved. Native Last.fm controls remain the
+site's separate user action. No XML changes were saved in Jay's profile.
+
+Installed Supermium read the real 55,835-song XML and cached 250 actual track
+names over five pages, yielding nine before/after casing differences. The cache
+cursor survived an extension reload; all preferences, undo, scan records and
+pause state stayed unchanged. This is partial live acceptance, not a completed
+1,024-page track cache or a real-profile import. Evidence stays ignored/local:
+test-results/comparison-installed-result.json and comparison-installed-preview.png.
+Last.fm double-escapes literal plus signs; parsing now verifies those links
+without changing the raw name or relaxing XML identity matching.
+
+All 69 suites passed across the full regression run and focused reruns. The
+initial run found stale expectations for title replacement, POST transport and
+the old XML-only interface, plus a service-worker startup timeout. Expectations
+now cover the stricter behavior; the supported scrobbles-list GET route is
+retained. Final isolated extension coverage verifies pause/reopen/resume, literal
+plus signs, apply/undo, later manual edits, friend isolation and GET-only reads.
+A separate 56,000-name capacity check persisted over 34 MB including cache/undo.
+Rollback: 3176b45. No artwork work, publishing, reinstall or storage clearing.
 
 ## 28 October 2026: whole iTunes library styling candidate v0.9.18
 

@@ -2,7 +2,14 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Local candidate: v0.9.18
+## Local candidate: v0.9.19
+
+Built from v0.9.18 checkpoint 3176b45. The latest candidate
+adds exact observed-library casing comparison, concise Before → After review,
+unchanged exclusion, a persistent read-only cache and a permanent transport
+submission block. It has not been pushed or published.
+
+## Previous local checkpoint: v0.9.18 (3176b45)
 
 Whole-library XML import accepts older Apple Computer headers, exposes a
 Select whole library action and review filters, and reports unresolved casing

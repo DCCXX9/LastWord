@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Local candidate: **v0.9.18 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm profile. Local candidate: **v0.9.19 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
@@ -17,13 +17,11 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The v0.9.18 whole-library XML improvements are a local candidate until pushed.
-Older Apple Computer XML headers are supported. Select whole library selects
-every unambiguous stylisation across all pages; the Review filter finds unresolved
-casings and replacements for saved preferences. Confirmation lists both counts.
-The approved `unlimitedStorage` permission supports large libraries and their
-undo record without adding website access. Review before applying; imports do
-not change scrobbles, spelling differences or the source XML.
+The v0.9.19 local candidate compares XML casing with an observed Last.fm library
+cache and shows only changes in a Before → After table. Exact spelling and artist
+identity are required; featuring text, punctuation and titles stay intact.
+Caching can take time and supports pause/resume. Preferences are local only;
+the shared transport hard-blocks submissions. See [comparison details](docs/LIBRARY_CASING.md).
 
 ## Public beta candidate
 

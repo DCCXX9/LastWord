@@ -27,23 +27,28 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'test-resul
     return { type: 'tracks', id: LastfmRules.idFor('tracks', to, 'Artist'),
      rule: { from: LastfmRules.normalize(to), to, artist: 'Artist', exact: true }, expected: null };
    });
-   const saved = await LastfmStore.applyItunes({ username: 'LibraryTest', entries });
+   const cache = LastfmLibraryCache.create('LibraryTest');
+   for (const group of Object.values(cache.groups)) group.done = true;
+   for (const entry of entries) cache.groups.tracks.items[entry.id] = {name:entry.rule.to.toUpperCase(),artist:'Artist'};
+   await chrome.storage.local.set({lfmLibraryCacheV1:{version:1,profiles:{librarytest:cache}}});
+   const saved = await LastfmStore.applyItunes({ username: 'LibraryTest', cacheId:cache.id, entries });
    const bytes = await chrome.storage.local.getBytesInUse(null);
    const status = await LastfmStore.itunesStatus();
-   await LastfmStore.mutate([{op:'put',type:'tracks',from:entries[0].rule.from,to:'Later manual choice',artist:'Artist'}]);
+   const later = entries[0].rule.to.toUpperCase();
+   await LastfmStore.mutate([{op:'put',type:'tracks',from:entries[0].rule.from,to:later,artist:'Artist'}]);
    const reverted = await LastfmStore.revertItunes({id:status.batch.id});
    const stored = await chrome.storage.local.get(null);
    return { applied: saved.applied, bytes, undoCount: status.batch.count,
     reverted: reverted.reverted, kept: reverted.kept,
     trackCount: Object.keys(stored.rules.tracks).length,
-    laterChoice: stored.rules.tracks[entries[0].id].to,
+    laterChoicePreserved: stored.rules.tracks[entries[0].id].to === later,
     legacy: stored.legacyScan, pause: stored.lfmNetworkPause, settings: stored.settings,
     permissions: chrome.runtime.getManifest().permissions };
   });
   assert.equal(result.applied, 56000); assert.equal(result.undoCount, 56000);
   assert.ok(result.bytes > 10 * 1024 * 1024, 'real Chrome storage exceeds its ordinary 10 MB quota');
   assert.equal(result.reverted, 55999); assert.equal(result.kept, 1);
-  assert.equal(result.trackCount, 1); assert.equal(result.laterChoice, 'Later manual choice');
+  assert.equal(result.trackCount, 1); assert.equal(result.laterChoicePreserved, true);
   assert.deepEqual(result.legacy, {page:93}); assert.deepEqual(result.pause, {until:12345});
   assert.equal(result.settings.username, 'LibraryTest');
   assert.deepEqual(result.permissions, ['storage', 'unlimitedStorage']);

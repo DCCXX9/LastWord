@@ -1,3 +1,13 @@
+# v0.9.19 local candidate — exact casing comparison
+
+- Clean Before → After review hides unchanged and unscrobbled XML names.
+- Exact spelling/artist matching preserves featuring text, punctuation and titles.
+- Read-only Last.fm caching supports persistent pause/resume and labeled partial
+  previews. Multiple XML files are read locally without uploads.
+- Transport submissions are permanently blocked; retained substantive rename
+  preferences cannot change displayed titles. Native site edits stay separate.
+- Installed identity, preferences, undo, scan records and pauses are preserved.
+
 # v0.9.18 local candidate — whole-library XML stylisations
 
 - Older iTunes XML exports with the Apple Computer public identifier now scan.

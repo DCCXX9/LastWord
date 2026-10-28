@@ -31,13 +31,8 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   await page.waitForFunction(()=>window.delegated);
   assert.equal(await page.evaluate(()=>Object.fromEntries(window.delegated).artist_name),'Lucki');
   assert.equal(calls.some(c=>c.method==='POST'),false,'opening native editing delegates without a network write');
-  // Only this isolated fixture submits a POST, to verify the read guard leaves
-  // Last.fm's exact native action and fields alone. No real service is contacted.
-  await page.evaluate(()=>LastfmPages.edit(document.querySelector('form[data-edit-scrobble]')));
-  const post=calls.find(c=>c.method==='POST');
-  assert.equal(post.url,'https://www.last.fm/user/DCCXX/library/edit-track');
-  assert.equal(new URLSearchParams(post.body).get('artist_name'),'Lucki');
-  assert.equal(new URLSearchParams(post.body).get('csrfmiddlewaretoken'),'fixture-token');
+  await assert.rejects(page.evaluate(()=>LastfmPages.edit(document.querySelector('form[data-edit-scrobble]'))),/read-only/);
+  assert.equal(calls.some(c=>c.method==='POST'),false,'extension transport cannot submit native forms');
   await worker.request('settings',{patch:{redirectProtection:false}});
   await page.evaluate(()=>LastfmPages.getAlbum('/music/Travis+Scott/Album'));
   assert.equal(calls.at(-1).url,'https://www.last.fm/music/Travis+Scott/Album');

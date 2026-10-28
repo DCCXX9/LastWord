@@ -32,7 +32,7 @@ const profileSender = { id: 'test', url: 'https://www.last.fm/user/DCCXX/library
   assert.equal(worker.data.rules.artists[id('Bladee')].to, 'bLaDeE');
 
   const beforeAtomic = structuredClone(worker.data);
-  await assert.rejects(change([preference('First', 'FIRST'), { op: 'put', type: 'albums', from: 'Album', to: '' }]), /Enter/);
+  await assert.rejects(change([preference('First', 'FIRST'), { op: 'put', type: 'albums', from: 'Album', to: '' }]), /Only letter casing/);
   assert.deepEqual(worker.data, beforeAtomic, 'a failed batch must not partially save');
 
   const backup = await worker.request('backup', {}, optionsSender);

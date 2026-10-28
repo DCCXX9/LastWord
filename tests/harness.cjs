@@ -127,4 +127,12 @@ async function loadScripts(page, files) {
   }
 }
 
-module.exports = { createMockWorker, mockExtension, loadScripts };
+function libraryCache(username, entries) {
+  const groups = Object.fromEntries(['artists', 'albums', 'tracks'].map(type => [type, {page:2,total:1,done:true,items:{}}]));
+  for (const entry of entries) if (groups[entry.type]) {
+    const to = entry.rule.to, name = to === to.toUpperCase() ? to.toLowerCase() : to.toUpperCase();
+    groups[entry.type].items[entry.id] = {name,...(entry.rule.artist ? {artist:entry.rule.artist} : {})};
+  }
+  return {version:1,profiles:{[username.toLowerCase()]:{id:'test-library',username,updatedAt:1,groups}}};
+}
+module.exports = { createMockWorker, mockExtension, loadScripts, libraryCache };

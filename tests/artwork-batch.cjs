@@ -108,7 +108,7 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
   assert.equal(requests.length,2);
   await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/user/Friend/library/music/Artist/_/First')),/configured/);
   await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/Official')),/configured/);
-  await assert.rejects(transport.evaluate(()=>{const f=document.createElement('form');f.method='post';f.action='/user/DCCXX/library/edit-track';return LastfmPages.edit(f)}),/connected/);
+  await assert.rejects(transport.evaluate(()=>{const f=document.createElement('form');f.method='post';f.action='/user/DCCXX/library/edit-track';return LastfmPages.edit(f)}),/read-only/);
   assert.equal(requests.length,2,'public catalogue reads must not enable friend reads or native writes');
   await transport.close();
   console.log('PASS: no wrong compilation flash/link, detached cache preparation, incremental 300-row append, public personal covers and verified catalogue-only fallback');
