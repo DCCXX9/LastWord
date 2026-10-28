@@ -2,7 +2,15 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Current snapshot: v0.9.16
+## Current snapshot: v0.9.17
+
+v0.9.17 adds no new features. The popup, Settings, Help and Privacy pages show
+the manifest version instead of hard-coded labels, and Refresh artwork asks for a
+second click before it removes saved covers. Test suites now delete their
+temporary browser profiles. Checked with the full test suite and the real
+extension pages in Supermium; see [release notes](../release/NOTES.md).
+
+### v0.9.16
 
 The initial GitHub checkpoint preserves the existing artwork work together with
 the verified native album/track casing integration, green controls, single
@@ -32,6 +40,7 @@ v0.9.16 checkpoint. The original commits and branches are retained unchanged.
 
 | Version | Original commit | Recorded change |
 | --- | --- | --- |
+| v0.9.16 | [43c113d](https://github.com/DCCXX9/lastfm-personal-library/commit/43c113d0b6941330b0583d936e577c75296b8b65) | Preserve v0.9.16 casing fixes and current artwork candidate for private GitHub |
 | v0.9.13 | [6af06f7](https://github.com/DCCXX9/lastfm-personal-library/commit/6af06f73ab396b3a468a8df5f26af5f0668de054) | Keep scrobble covers visible and speed pagination in v0.9.13 |
 | v0.9.12 | [c8349d8](https://github.com/DCCXX9/lastfm-personal-library/commit/c8349d8cf1e4d3804898d13e3eb54ce26dd41c0b) | Fix artwork and redirect observer freeze in v0.9.12 |
 | v0.9.11 | [618afce](https://github.com/DCCXX9/lastfm-personal-library/commit/618afce5104944c22732cb65a241d37bb661430c) | Prepare verified artwork batches and public artist covers in v0.9.11 |

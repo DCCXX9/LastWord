@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.16 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm profile. Installed candidate: **v0.9.17 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
@@ -12,7 +12,7 @@ see [scope and testing](docs/REDIRECT_PROTECTION.md).
 
 ## Versions and source history
 
-The private GitHub repository preserves the current v0.9.16 source and earlier
+The private GitHub repository preserves the current v0.9.17 source and earlier
 Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.

@@ -1,3 +1,12 @@
+# v0.9.17 local candidate — labels and safer artwork refresh
+
+- The popup, Settings, Help and Privacy pages read their version label from the
+  manifest (they previously showed v0.8.0 or v0.9.13).
+- Refresh artwork asks for a second click before removing saved covers, because
+  removed covers are not looked up again while artwork lookups are off.
+- Test suites delete their temporary browser profiles. No behaviour, storage or
+  permission changes otherwise.
+
 # v0.9.16 local candidate — zero-request artwork
 
 - v0.9.16 fixes an uncaught `known?.get is not a function` error in v0.9.15 when artwork lookups are off.
