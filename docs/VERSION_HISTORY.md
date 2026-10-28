@@ -2,7 +2,15 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Current snapshot: v0.9.17
+## Local candidate: v0.9.18
+
+Whole-library XML import accepts older Apple Computer headers, exposes a
+Select whole library action and review filters, and reports unresolved casing
+choices and replacements before Apply. With approval, `unlimitedStorage`
+allows large local preference/undo records. The raw XML is never stored or
+uploaded. v0.9.17 remains unchanged in history; v0.9.18 is not yet pushed.
+
+## Previous snapshot: v0.9.17
 
 v0.9.17 adds no new features. The popup, Settings, Help and Privacy pages show
 the manifest version instead of hard-coded labels, and Refresh artwork asks for a

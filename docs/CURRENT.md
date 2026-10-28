@@ -1,5 +1,48 @@
 # Current state — 20 October 2026
 
+## 28 October 2026: whole iTunes library styling candidate v0.9.18
+
+Claude's clean v0.9.17 baseline is 17b1fc84ecf968ac698bd227d5bc52681e6403c1,
+preserved on preferences-page. Work continues on codex/itunes-library-styling.
+The existing whole-library importer rejected the supplied export's standard
+legacy Apple Computer plist header. A narrow parser fix accepts that header,
+retaining custom-DTD/entity rejection and zero external XML fetches.
+
+The review now offers Select whole library and filters for unresolved choices,
+saved-preference replacements, already matching names and new preferences.
+Confirmation reports skipped conflicts and selected replacements. Jay explicitly
+approved unlimitedStorage for local rules plus undo beyond the usual quota.
+There is no storage migration or identity change; Claude's version labels,
+artwork-refresh confirmation and disposable test-profile cleanup remain intact.
+
+The actual 95 MB Library.xml scanned in installed signed-in Supermium v0.9.18:
+55,835 songs, zero skipped, 69,085 distinct candidates and 42 casing conflicts.
+Installed review verified all 42 conflicts, five possible replacements and
+whole-library selection of 68,944 changes (99 preferences already match).
+Apply confirmation was canceled. All stored keys hash-identical before/after;
+zero network requests from the import. User preferences have NOT been imported.
+
+In a disposable extension profile with networking blocked, the actual XML
+completed scan, UI apply of 69,043 names, reload/persistent undo and full revert.
+The 42 unresolved conflicts were skipped. A separate synthetic 56,000-song
+capacity check saved 26,197,649 bytes including undo, then reverted 55,999 rules
+while preserving a later manual edit, profile, scan records and pause settings.
+These isolated apply checks do not claim a full import in the user's profile.
+
+Regression: 66/68 suites passed on the full run. The onboarding suite encountered
+an install-time options-page navigation collision; startup missed the initial
+service-worker event. Both passed on focused reruns, with no source changes.
+All 68 suites therefore passed across the full run and those two reruns.
+The parser, review UI, 26 MB capacity, storage/undo, own-profile isolation,
+native-dialog and release/package checks all passed.
+
+Local evidence, excluded from Git: test-results/itunes-real-review-result.json,
+itunes-installed-ui-result.json, itunes-installed-review.png and
+itunes-real-roundtrip-result.json. The supplied XML and derived personal names
+remain local. No server edits, Last.fm scans, artwork work or publishing.
+Rollback baseline: 17b1fc8; recovery bundle:
+.codex-backups/pre-itunes-library-20261028/history.bundle.
+
 ## 28 October 2026: close dialog after explicit casing save
 
 SAVE CASING CHANGES now invokes the form's native non-submit Cancel control

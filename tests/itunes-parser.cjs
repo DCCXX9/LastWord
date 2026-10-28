@@ -38,6 +38,14 @@ const entry = (id, name = 'Song', artist = 'Artist') => `<key>${id}</key><dict><
     assert.equal(unicode.candidates.find(item => item.type === 'tracks').occurrences, 2);
     const empty = await page.evaluate(xml => LastfmItunes.scan(xml), wrap(''));
     assert.deepEqual(empty, { songs: 0, total: 0, skipped: 0, duplicates: 0, candidates: [], issues: [] });
+    // Older iTunes exports use Apple Computer rather than Apple in the public ID.
+    for (const vendor of ['Apple', 'Apple Computer']) {
+      const legacy = `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//${vendor}//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n` +
+        wrap(entry(1, 'sTylë &amp; CASE', 'aRTIST'));
+      const scanned = await page.evaluate(xml => LastfmItunes.scan(xml), legacy);
+      assert.equal(scanned.songs, 1);
+      assert.equal(scanned.candidates.find(x => x.type === 'tracks').to, 'sTylë & CASE');
+    }
     for (const xml of ['<plist><dict>', '<html/>', '<plist><dict/></plist>',
       '<plist><dict><key>Tracks</key><array/></dict></plist>',
       '<plist><dict><key>Tracks</key><dict/><key>Tracks</key><dict/></dict></plist>',

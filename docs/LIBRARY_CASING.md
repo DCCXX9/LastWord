@@ -13,6 +13,13 @@ remain available. Conflicting casings require a choice; different existing
 preferences are initially unchecked. A group selection explicitly includes such
 replacements. Apply still requires confirmation and has a persistent Revert.
 
+The Select whole library button selects every eligible name across all pages.
+The Review filter isolates unresolved casing choices, replacements, already
+matching preferences and new names. Counts explain which conflicts are skipped
+and how many selected names would replace saved preferences before confirmation.
+Standard plist headers from both Apple and older Apple Computer exports work;
+custom DTDs and entity declarations remain rejected, with no external fetches.
+
 Names are copied from the XML with outer whitespace removed and NFC Unicode
 normalisation. There is no automatic title-case conversion. Rules match existing
 names ignoring case, with artist scope for songs/albums. They apply across the
@@ -51,13 +58,19 @@ requested; this is not a promise that arbitrary Doctor reports are importable.
 
 The existing sole-writer `itunes-apply` operation validates exact casing,
 current profile and expected previous rules. Rules and undo are saved together.
-Revert preserves subsequent manual edits. Storage keys/formats, permissions,
+Revert preserves subsequent manual edits. Storage keys/formats,
 extension identity and legacy scan records are unchanged. No user-data
 migration occurs. Only the latest XML import is reversible here; keep a JSON
-backup for earlier states. Storage quota can still prevent an oversized plan
-from being applied; it fails without a partial write.
+backup for earlier states. Version 0.9.18 adds the explicitly approved
+unlimitedStorage permission for whole-library preferences and undo beyond the
+usual local quota. Allocation/write failures still fail without a partial write.
 
 Checks: shared-builder contract, existing 128 MiB streaming parser, review UI,
 storage/undo guards, and actual isolated unpacked-extension import covering
 initial and infinite-scroll rows plus friend isolation. These are constructed
-fixtures, not proof of signed-in Supermium or Library Doctor integration.
+fixtures, not proof of Library Doctor integration. The supplied 55,835-song XML
+also completed scan, apply, reload and revert in a disposable extension profile
+with all network requests blocked: 69,043 applied names and 42 unresolved choices.
+A separate synthetic 56,000-name test persisted over 26 MB with undo and preserved
+a later manual edit when reverting. Installed signed-in Supermium acceptance
+covers scanning/review only; applying the user's library remains their choice.

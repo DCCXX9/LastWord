@@ -43,6 +43,10 @@ async function confirm(page, button) {
     assert.equal(await page.locator('#scan-file').innerText(), 'File: Library.xml');
     assert.match(await page.locator('#scan-summary').innerText(), /108 songs checked. 1 skipped/);
     assert.match(await page.locator('#review-totals').innerText(), /106 tracks/);
+    assert.match(await page.locator('#review-coverage').innerText(), /1 name needs a casing choice/);
+    await page.locator('#review-filter').selectOption('unresolved');
+    assert.equal(await page.locator('#candidates tr').count(), 1, 'conflicts are easy to find across the whole library');
+    await page.locator('#review-filter').selectOption('');
     // Type selection reaches beyond both the active search and the 100-row page.
     await page.locator('#clear-all').click();
     await page.locator('#search').fill('lowercase');
@@ -75,6 +79,11 @@ async function confirm(page, button) {
       'choosing XML casing must keep keyboard focus on the replacement control');
     assert.equal(await artist.locator('input').isChecked(), false, 'choosing a variant does not overwrite an existing preference');
     await artist.locator('input').check();
+    assert.match(await page.locator('#review-coverage').innerText(), /0 names need a casing choice/);
+    assert.match(await page.locator('#review-coverage').innerText(), /1 selected name replaces a saved preference/);
+    await page.locator('#review-filter').selectOption('replacement');
+    assert.equal(await page.locator('#candidates tr').count(), 1);
+    await page.locator('#review-filter').selectOption('');
     await page.locator('#clear-all').click();
     await page.locator('#type-filter').selectOption('tracks');
     await page.locator('#search').fill('lowercase');

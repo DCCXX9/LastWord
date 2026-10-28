@@ -7,7 +7,7 @@
 </head>
 <body class="settings-page itunes-page">
   <a class="back-link" href="options.html">← Settings &amp; backup</a>
-  <header class="page-header"><div><p class="eyebrow">Local library import</p><h1>Use your iTunes casing</h1></div><span id="profile-status" class="badge">Loading profile…</span></header>
+  <header class="page-header"><div><p class="eyebrow">Local library import</p><h1>Copy your iTunes library stylisations</h1></div><span id="profile-status" class="badge">Loading profile…</span></header>
   <main>
     <section class="card" aria-labelledby="file-heading">
       <h2 id="file-heading">Choose an iTunes library XML</h2>
@@ -22,17 +22,18 @@
     <section id="review" class="card" aria-labelledby="review-heading" hidden>
       <div class="section-header"><div><h2 id="review-heading">Review display names</h2><p id="scan-file" class="subtle"></p><p id="scan-summary" class="subtle"></p></div><span id="selected-count" class="badge"></span></div>
       <p id="review-totals" class="subtle"></p>
+      <p id="review-coverage" class="subtle" role="status"></p>
       <details id="issues" hidden><summary>Skipped items &amp; scan details</summary><p id="issues-summary"></p><ul id="issues-list"></ul></details>
       <p class="review-help">New names are selected. Existing preferences that differ stay unchecked. Where your XML contains several casings, choose the spelling you want and select it.</p>
-      <fieldset id="library-groups" aria-describedby="library-groups-help"><legend>Select across the entire XML library</legend><div class="library-groups">
+      <fieldset id="library-groups" aria-describedby="library-groups-help"><legend>Select across the entire XML library</legend><div class="button-group library-selection"><button id="select-all" type="button" class="primary">Select whole library</button><button id="clear-all" type="button">Clear all selections</button></div><div class="library-groups">
         <label><input id="select-artists" type="checkbox"><span>Artists<small id="selection-artists"></small></span></label>
         <label><input id="select-albums" type="checkbox"><span>Albums<small id="selection-albums"></small></span></label>
         <label><input id="select-tracks" type="checkbox"><span>Songs<small id="selection-tracks"></small></span></label>
         <label><input id="select-albumArtists" type="checkbox"><span>Album artists<small id="selection-albumArtists"></small></span></label>
       </div><p id="library-groups-help" class="subtle">These boxes select all eligible names of that type, across every results page and outside your search. Conflicting casings still need a choice. Checking a group also selects replacements for existing preferences; review them before applying.</p></fieldset>
       <div id="stale-notice" class="notice" hidden><span>Saved preferences changed during this review. Load the latest values before applying. Your casing choices will be kept; selections will reset.</span><button id="refresh-review" type="button">Review current preferences</button></div>
-      <div class="filters"><div class="search-field"><label for="search">Search all scanned names</label><input id="search" type="search" placeholder="Name, artist, or current preference" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="tracks">Tracks</option><option value="albumArtists">Album artists</option></select></div></div>
-      <div class="selection-tools"><span id="shown-count" class="subtle"></span><div class="button-group"><button id="select-filtered" type="button">Select filtered names</button><button id="clear-filtered" type="button">Clear filtered names</button><button id="select-all" type="button">Select all eligible names</button><button id="clear-all" type="button">Clear all selections</button></div></div>
+      <div class="filters"><div class="search-field"><label for="search">Search all scanned names</label><input id="search" type="search" placeholder="Name, artist, or current preference" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="tracks">Tracks</option><option value="albumArtists">Album artists</option></select></div><div><label for="review-filter">Review</label><select id="review-filter"><option value="">All names</option><option value="unresolved">Needs casing choice</option><option value="replacement">Replaces saved preference</option><option value="matching">Already matching</option><option value="new">New preference</option></select></div></div>
+      <div class="selection-tools"><span id="shown-count" class="subtle"></span><div class="button-group"><button id="select-filtered" type="button">Select filtered names</button><button id="clear-filtered" type="button">Clear filtered names</button></div></div>
       <div class="table-wrap"><table><thead><tr><th scope="col">Use</th><th scope="col">Type</th><th scope="col">Preferred casing from XML</th><th scope="col">Artist</th><th scope="col">Current preference</th><th scope="col">Review</th></tr></thead><tbody id="candidates"></tbody></table></div>
       <p id="empty" class="empty-state" hidden>No names match your search.</p>
       <nav class="page-controls" aria-label="Results pages"><button id="previous" type="button">Previous</button><span id="page-label"></span><button id="next" type="button">Next</button></nav>

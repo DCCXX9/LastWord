@@ -1,5 +1,24 @@
 # Architecture decisions
 
+## 28 October 2026: whole-library local styling capacity
+
+Keep the existing streaming XML collector, rule identities and atomic apply/undo
+store. Accept the exact legacy Apple Computer public plist identifier alongside
+Apple's current identifier, retaining the fixed Apple DTD URL and rejection of
+custom DTDs/entities; parsing never fetches that URL. No additional XML parser,
+network service or library-data upload is needed.
+
+Jay explicitly approved unlimitedStorage for local extension data. The real
+55,835-song library requires about 20 MB for rules plus undo, exceeding Chrome's
+usual 10 MB storage.local quota. This permission increases local capacity without
+adding site/account access. Extension identity, existing keys, profile guards,
+scan records, pause settings and undo format remain unchanged. See
+[Chrome storage documentation](https://developer.chrome.com/docs/extensions/reference/api/storage).
+
+Whole-library selection remains review-first. Unresolved spelling variants are
+never chosen automatically, differing saved preferences start unchecked, and
+explicit bulk selection can include replacements. The confirmation explains both.
+
 ## 20 October 2026: verified cover display and public artist scope
 
 Unverified track artwork and its album link are hidden until the personal winner

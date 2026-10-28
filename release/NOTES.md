@@ -1,3 +1,14 @@
+# v0.9.18 local candidate — whole-library XML stylisations
+
+- Older iTunes XML exports with the Apple Computer public identifier now scan.
+- Select whole library reaches every review page and type. Review filters find
+  casing conflicts, replacements, matching preferences and new names.
+- Review and Apply confirmation report unresolved names and saved preferences
+  that would be replaced. Conflicts still require an explicit casing choice.
+- Approved `unlimitedStorage` supports the preferences and undo for large
+  libraries. File reading and preference storage remain local; no new site access.
+- v0.9.17's labels, artwork-refresh confirmation and test cleanup are retained.
+
 # v0.9.17 local candidate — labels and safer artwork refresh
 
 - The popup, Settings, Help and Privacy pages read their version label from the

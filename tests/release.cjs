@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {inputs,validate,zip}=require('../tools/package-beta.cjs');
 const entries=inputs(),manifest=validate(entries);
-assert.equal(manifest.version,'0.9.17');assert.equal(manifest.version_name,'0.9.17 beta');
+assert.equal(manifest.version,'0.9.18');assert.equal(manifest.version_name,'0.9.18 beta');
 assert.equal(manifest.name,'Last.fm Personal Library');
 assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing package reference/);
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);
@@ -29,4 +29,4 @@ for(const name of ['preferences','xml-review','setup']){
 }
 const promo=fs.readFileSync(path.join(__dirname,'../release/assets/promo440.png'));
 assert.equal(promo.readUInt32BE(16),440);assert.equal(promo.readUInt32BE(20),280);
-console.log(`PASS: ${entries.length} allowlisted files, complete references, unchanged authority/identity, deterministic ZIP and store image dimensions`);
+console.log(`PASS: ${entries.length} allowlisted files, complete references, approved local-storage permissions, unchanged identity, deterministic ZIP and store image dimensions`);

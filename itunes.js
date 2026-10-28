@@ -21,19 +21,23 @@
   function chosen(entry) { return entry.choice || ''; }
   function matching(entry) { return !!chosen(entry) && entry.expected?.to === chosen(entry); }
   function eligible(entry) { return !!chosen(entry) && !matching(entry); }
+  function reviewKind(entry) {
+    return !chosen(entry) ? 'unresolved' : matching(entry) ? 'matching' : entry.expected ? 'replacement' : 'new';
+  }
   function selected() { return entries.filter(entry => entry.selected && eligible(entry)); }
   function filtered() {
-    const query = R.normalize($('search').value), type = $('type-filter').value;
-    return entries.filter(entry => (!type || type === entry.type) && (!query ||
+    const query = R.normalize($('search').value), type = $('type-filter').value, review = $('review-filter').value;
+    return entries.filter(entry => (!type || type === entry.type) && (!review || reviewKind(entry) === review) && (!query ||
       [entry.from, entry.artist || '', entry.expected?.to || '', ...entry.variants].some(value => R.normalize(value).includes(query))));
   }
   function updateSummary() {
     const counts = Object.fromEntries(R.TYPES.map(type => [type, { eligible: 0, selected: 0 }]));
-    let n = 0;
+    let n = 0, unresolved = 0, replacements = 0;
     for (const entry of entries) {
+      if (!chosen(entry)) unresolved++;
       if (!eligible(entry)) continue;
       counts[entry.type].eligible++;
-      if (entry.selected) { counts[entry.type].selected++; n++; }
+      if (entry.selected) { counts[entry.type].selected++; n++; if (entry.expected) replacements++; }
     }
     for (const type of R.TYPES) {
       const control = $('select-' + type), count = counts[type];
@@ -44,6 +48,8 @@
     }
     $('selected-count').textContent = n.toLocaleString() + ' selected';
     $('apply-summary').textContent = n.toLocaleString() + (n === 1 ? ' display preference' : ' display preferences') + ' selected for ' + reviewProfile + '.';
+    $('review-coverage').textContent = unresolved.toLocaleString() + (unresolved === 1 ? ' name needs' : ' names need') + ' a casing choice and will not be applied yet. ' +
+      replacements.toLocaleString() + (replacements === 1 ? ' selected name replaces a saved preference.' : ' selected names replace saved preferences.') + ' Use the Review filter to inspect them.';
     $('apply').disabled = busy || stale || n === 0;
     $('stale-notice').hidden = !stale;
   }
@@ -170,7 +176,7 @@
     for (const entry of entries) if (entry.type === type) entry.selected = event.target.checked && eligible(entry);
     draw();
   });
-  for (const id of ['search', 'type-filter']) $(id).addEventListener(id === 'search' ? 'input' : 'change', () => { page = 1; draw(); });
+  for (const id of ['search', 'type-filter', 'review-filter']) $(id).addEventListener(id === 'search' ? 'input' : 'change', () => { page = 1; draw(); });
   $('previous').addEventListener('click', () => { page--; draw(); });
   $('next').addEventListener('click', () => { page++; draw(); });
   for (const [id, all, select] of [['select-filtered', false, true], ['clear-filtered', false, false], ['select-all', true, true], ['clear-all', true, false]]) {
@@ -202,6 +208,8 @@
       rule: { from: entry.from, to: entry.choice, ...(entry.artist ? { artist: entry.artist } : {}), exact: true }, expected: entry.expected
     })) };
     confirm('apply', structuredClone(payload), 'Apply these display names?', 'Save ' + selected().length.toLocaleString() + ' selected preferences for ' + reviewProfile + '? ' +
+      entries.filter(entry => !chosen(entry)).length.toLocaleString() + ' unresolved names will be skipped. ' +
+      selected().filter(entry => entry.expected).length.toLocaleString() + ' saved preferences will be replaced. ' +
       (batch?.remaining ? 'This replaces the undo record for the previous XML import. ' : '') + 'Your Last.fm scrobbles will not change.', 'Apply selected names');
   });
   $('revert').addEventListener('click', () => {

@@ -15,7 +15,7 @@
     if (!number || !xmlChar(parseInt(number[1], value.startsWith('&#x') ? 16 : 10))) throw malformed();
   }
   function validateDoctype(raw) {
-    const apple = /^<!DOCTYPE\s+plist\s+PUBLIC\s+(["'])-\/\/Apple\/\/DTD PLIST 1\.0\/\/EN\1\s+(["'])https?:\/\/www\.apple\.com\/DTDs\/PropertyList-1\.0\.dtd\2\s*>$/;
+    const apple = /^<!DOCTYPE\s+plist\s+PUBLIC\s+(["'])-\/\/Apple(?: Computer)?\/\/DTD PLIST 1\.0\/\/EN\1\s+(["'])https?:\/\/www\.apple\.com\/DTDs\/PropertyList-1\.0\.dtd\2\s*>$/;
     const system = /^<!DOCTYPE\s+plist\s+SYSTEM\s+(["'])https?:\/\/www\.apple\.com\/DTDs\/PropertyList-1\.0\.dtd\1\s*>$/;
     if (!apple.test(raw) && !system.test(raw)) throw new Error('Custom XML document types or entity declarations are not supported.');
   }

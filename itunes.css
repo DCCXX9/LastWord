@@ -12,6 +12,7 @@ progress { height: 13px; flex: 1; min-width: 120px; accent-color: var(--lfm-focu
 .review-help { margin-top: 18px; font-size: 13px; color: #555; }
 #library-groups { margin: 20px 0; padding: 16px; border: 1px solid #ddd; border-radius: 5px; }
 #library-groups legend { padding: 0 6px; font-weight: 600; }
+.library-selection { margin-bottom: 16px; }
 .library-groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .library-groups label { display: flex; gap: 9px; align-items: center; padding: 12px; margin: 0; background: var(--lfm-surface); border-radius: 5px; cursor: pointer; }
 .library-groups input { flex-shrink: 0; }
