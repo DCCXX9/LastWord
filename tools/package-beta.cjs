@@ -80,7 +80,9 @@ function build() {
   }
   fs.writeFileSync(path.join(site,'privacy.html'),fs.readFileSync(path.join(root,'privacy.html'),'utf8')
     .replaceAll('options.html','index.html').replaceAll('help.html','index.html#help')
-    .replace('← Settings &amp; backup','← Beta download'));
+    .replace('← Settings &amp; backup','← Beta download')
+    // The hosted copy has no extension runtime, so write the version in directly.
+    .replace(/<span data-version>[^<]*<\/span>/g,'v'+manifest.version).replace(/<script src="version\.js"><\/script>\r?\n/,''));
   fs.copyFileSync(path.join(root,'extension-ui.css'),path.join(site,'extension-ui.css'));
   fs.copyFileSync(path.join(out,filename),path.join(site,'downloads',filename));
   fs.copyFileSync(path.join(out,filename+'.sha256'),path.join(site,'downloads',filename+'.sha256'));

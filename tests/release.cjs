@@ -8,6 +8,8 @@ assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing pack
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);
 assert.throws(()=>validate(invalid),/authority/);
 assert.ok(entries.every(x=>!/(?:test|backup|\.xml$|\.log$|\.git|profile)/i.test(x.name)));
+for(const page of entries.filter(x=>x.name.endsWith('.html')))
+ assert.doesNotMatch(page.data.toString(),/\bv\d+\.\d+\.\d+/,page.name+' must show the manifest version through version.js');
 for(const size of [16,32,48,128]){
  const png=entries.find(x=>x.name===`icons/icon${size}.png`).data;
  assert.equal(png.subarray(1,4).toString(),'PNG');assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);
