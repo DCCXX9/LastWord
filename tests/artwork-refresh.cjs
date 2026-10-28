@@ -53,7 +53,10 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   await popup.goto(`chrome-extension://${id}/popup.html`);
   const button=popup.getByRole('button',{name:'Refresh artwork',exact:true});
   await button.waitFor();await popup.waitForFunction(()=>!document.querySelector('#refresh-artwork').disabled);
-  await button.click();await popup.getByText('Saved artwork refreshed for this page. Reloading…',{exact:true}).waitFor();
+  const confirm=popup.getByRole('button',{name:'Remove saved covers',exact:true});
+  await button.click();await popup.getByText('Saved covers for tracks on this page will be removed and Last.fm’s own images shown instead. Click again to confirm.',{exact:true}).waitFor();
+  assert.deepEqual((await w.evaluate(()=>chrome.storage.local.get(null))).lfmPersonalArtworkCacheV1,saved.lfmPersonalArtworkCacheV1,'the first click only asks');
+  await confirm.click();await popup.getByText('Saved artwork refreshed for this page. Reloading…',{exact:true}).waitFor();
   await page.waitForEvent('domcontentloaded');await page.bringToFront();
   await page.waitForFunction(()=>document.querySelector('.chartlist-image img')?.src.endsWith('/album.jpg'));
   assert.match(await page.locator('.chartlist-image a').getAttribute('href'),/LUH\+LEAKYZ\+Vol\.\+1/);
@@ -69,9 +72,9 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   await page.goto(origin+'/user/DCCXX/library');await popup.reload();
   await popup.waitForFunction(()=>!document.querySelector('#refresh-artwork').disabled);
   await popup.evaluate(()=>{chrome.tabs.sendMessage=async()=>{throw Error('No content script')}});
-  await button.click();await popup.getByText('Could not refresh artwork: No content script',{exact:true}).waitFor();
+  await button.click();await confirm.click();await popup.getByText('Could not refresh artwork: No content script',{exact:true}).waitFor();
   assert.deepEqual(await w.evaluate(()=>chrome.storage.local.get(null)),after,'a disconnected tab cannot change stored data');
   assert.deepEqual(errors,[]);
-  console.log('PASS: scoped artwork invalidation, storage/profile safety, actual popup-to-content refresh, native cover and link after reload, persistence and zero background requests');
+  console.log('PASS: scoped artwork invalidation, storage/profile safety, confirmed popup-to-content refresh, native cover and link after reload, persistence and zero background requests');
  }finally{await context.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1});

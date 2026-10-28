@@ -2,7 +2,7 @@
   'use strict';
   const S = globalThis.LastfmStore;
   const $ = id => document.getElementById(id);
-  let snapshot, status = null, refreshingArtwork = false;
+  let snapshot, status = null, refreshingArtwork = false, confirmingRefresh = false;
   const views = { artists: 'Artists', albums: 'Albums', tracks: 'Tracks', scrobbles: 'Scrobbles',
     artistAlbums: 'Artist albums', artistScrobbles: 'Artist scrobbles', album: 'Album tracks', track: 'Track history', profile: 'Profile' };
   const scrollLabels = { prompt: 'Waiting for your choice', declined: 'Paused for this view', ready: 'Ready', loading: 'Loading', paused: 'Paused', complete: 'All pages loaded', error: 'Paused after an error', off: 'Off', unavailable: 'Unavailable' };
@@ -53,6 +53,13 @@
   $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
   $('refresh-artwork').addEventListener('click', async () => {
     if (refreshingArtwork) return;
+    // Removed covers are not looked up again by default, so ask once first.
+    if (!confirmingRefresh) {
+      confirmingRefresh = true; $('refresh-artwork').textContent = 'Remove saved covers';
+      message('Saved covers for tracks on this page will be removed and Last.fm’s own images shown instead. Click again to confirm.');
+      return;
+    }
+    confirmingRefresh = false;
     refreshingArtwork = true; $('refresh-artwork').disabled = true;
     $('refresh-artwork').textContent = 'Refreshing artwork…';
     try {
