@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
-const row = (artist, name, n, raw = artist) => `<tr class="chartlist-row"><td class="chartlist-name"><a href="/music/${artist}/_/${name}">${name}</a></td>
-  <td class="chartlist-artist"><a href="/music/${artist}">${artist}</a></td><td><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track">
-  <input name="artist_name" value="${raw}"><input name="track_name" value="${name}"><input name="album_name" value="Album"><input name="album_artist_name" value="${raw}"><input name="timestamp" value="${1700000100-n}"><input name="csrfmiddlewaretoken" value="fixture-token"></form></td></tr>`;
+const row = (artist, name, n, raw = artist, albumArtist = raw) => `<tr class="chartlist-row"><td class="chartlist-name"><a href="/music/${artist}/_/${name}">${name}</a></td>
+  <td class="chartlist-artist"><a href="/music/${artist}">${artist}</a></td><td class="chartlist-album"><a href="/music/${artist}/Album">Album ${name}</a></td><td class="chartlist-image"><a href="/music/Unrelated/Other">Related ${name}</a></td><td><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track">
+  <input name="artist_name" value="${raw}"><input name="track_name" value="${name}"><input name="album_name" value="Album"><input name="album_artist_name" value="${albumArtist}"><input name="timestamp" value="${1700000100-n}"><input name="csrfmiddlewaretoken" value="fixture-token"></form></td></tr>`;
 const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${row('Lucki','Song'+n,n)}
- ${n === 1 ? row('Lucky+Twice','Native',2,'Lucki') + row('Lucky+Twice','Genuine',3,'Lucky Twice') : ''}</tbody></table>
+ ${n === 1 ? row('Lucky+Twice','Native',2,'Lucki') + row('Lucky+Twice','Genuine',3,'Lucky Twice') + row('Canonical','Verified',4,'Original','Compilation Artist') : ''}</tbody></table>
  ${n < 3 ? `<nav class="pagination"><a class="pagination-next" href="/user/DCCXX/library/music/Lucki/+tracks?page=${n+1}">Next</a></nav>` : ''}
  <a id="travis" href="/music/Travis+Scott/Album?x=1#tracks"><img alt="Cover" src="https://lastfm-img.freetls.fastly.net/i/u/64s/abcdef0123456789abcdef0123456789.jpg"></a>
  <a id="gallery" href="/music/Lucki/+images/abc">Gallery</a><a id="friend" href="/user/Friend/library/music/Lucki">Friend library</a>
- <a id="unrelated" href="/music/Other">Other</a></main>`;
+ <a id="unrelated" href="/music/Other">Other</a><a id="generic-album" href="/music/Radiohead/OK+Computer">Album</a><a id="generic-song" href="/music/Bj%C3%B6rk/_/J%C3%B3ga">Song</a></main>`;
 
 (async () => {
  fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
@@ -39,9 +39,14 @@ const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${
   await page.locator(`a[href="https://www.last.fm${protectedLink}"]`).waitFor();
   assert.equal(await page.locator('#travis').getAttribute('href'),'https://www.last.fm/music/+noredirect/Travis+Scott/Album?x=1#tracks');
   assert.equal(await page.getByRole('link',{name:'Native',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Lucki/_/Native');
-  assert.equal(await page.getByRole('link',{name:'Genuine',exact:true}).getAttribute('href'),'/music/Lucky+Twice/_/Genuine');
+  assert.equal(await page.getByRole('link',{name:'Genuine',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Lucky+Twice/_/Genuine');
   assert.equal(await page.locator('#friend').getAttribute('href'),'/user/Friend/library/music/Lucki');
   assert.equal(await page.locator('#gallery').getAttribute('href'),'/music/Lucki/+images/abc');
+  assert.equal(await page.getByRole('link',{name:'Verified',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Original/_/Verified');
+  assert.equal(await page.locator('#generic-album').getAttribute('href'),'https://www.last.fm/music/+noredirect/Radiohead/OK+Computer');
+  assert.equal(await page.locator('#generic-song').getAttribute('href'),'https://www.last.fm/music/+noredirect/Bj%C3%B6rk/_/J%C3%B3ga');
+  assert.equal(await page.getByRole('link',{name:'Album Verified',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Compilation+Artist/Album','album links use the original album artist');
+  assert.equal(await page.getByRole('link',{name:'Related Verified',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Unrelated/Other','related cover links do not inherit row identity');
   const nativeBefore=await page.locator('form[data-edit-scrobble]').evaluateAll(forms=>forms.map(f=>f.outerHTML));
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get(null)),data,'redirect startup performs no user data writes');
 
@@ -52,29 +57,29 @@ const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${
   assert.ok(calls.some(c=>c.path==='/user/DCCXX/library/music/+noredirect/Lucki/+tracks'),'pagination fetch bypasses correction');
   await page.getByRole('button',{name:'Yes',exact:true}).click();
   await page.getByRole('link',{name:'Song3',exact:true}).waitFor();
-  assert.deepEqual((await page.locator('form[data-edit-scrobble]').evaluateAll(forms=>forms.map(f=>f.outerHTML))).slice(0,3),nativeBefore,'raw edit forms are never rewritten');
+  assert.deepEqual((await page.locator('form[data-edit-scrobble]').evaluateAll(forms=>forms.map(f=>f.outerHTML))).slice(0,4),nativeBefore,'raw edit forms are never rewritten');
 
   // Options changes apply to existing rows immediately and restore exact hrefs.
   const options=await browser.newPage();await options.goto(`chrome-extension://${extensionId}/options.html`);
-  await options.getByLabel('Keep links on the correct artist',{exact:true}).uncheck();
+  await options.getByLabel('Keep music links on their original pages',{exact:true}).uncheck();
   await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#travis').getAttribute('href')==='/music/Travis+Scott/Album?x=1#tracks');
   assert.equal(await page.getByRole('link',{name:'Native',exact:true}).getAttribute('href'),'/music/Lucky+Twice/_/Native');
-  await options.getByLabel('Keep links on the correct artist',{exact:true}).check();
+  await options.getByLabel('Keep music links on their original pages',{exact:true}).check();
   await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#travis').href.includes('/+noredirect/'));
   // A Last.fm hydration update must replace the remembered href, not resurrect it.
   await page.locator('#travis').evaluate(a=>a.setAttribute('href','/music/Other'));
-  await options.getByLabel('Keep links on the correct artist',{exact:true}).uncheck();
+  await options.getByLabel('Keep music links on their original pages',{exact:true}).uncheck();
   await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('a[href="/music/Lucki/_/Song1"]'));
   assert.equal(await page.locator('#travis').getAttribute('href'),'/music/Other');
-  await options.getByLabel('Keep links on the correct artist',{exact:true}).check();
+  await options.getByLabel('Keep music links on their original pages',{exact:true}).check();
   await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('a[href$="/_/Song1"]').href.includes('/+noredirect/'));
 
   // Public protected pages keep their downstream navigation protected; genuine
-  // Lucky Twice and other people's libraries remain native.
+  // Lucky Twice retains its identity; other people's libraries remain native.
   await page.goto('https://www.last.fm/music/+noredirect/Lucki');
   await page.locator('#travis').filter({has:page.locator('img')}).waitFor();
   await page.waitForFunction(()=>document.querySelector('#travis').href.includes('/+noredirect/'));
@@ -82,8 +87,9 @@ const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${
   await page.waitForURL('**/music/+noredirect/Travis+Scott/Album?x=1#tracks');
   await page.goto('https://www.last.fm/user/Friend/library');
   assert.equal(await page.locator('#travis').getAttribute('href'),'/music/Travis+Scott/Album?x=1#tracks');
-  await page.goto('https://www.last.fm/music/Lucky+Twice');
-  assert.equal(await page.locator('#travis').getAttribute('href'),'/music/Travis+Scott/Album?x=1#tracks');
+  await page.goto('https://www.last.fm/music/Drug+Church');
+  await page.waitForFunction(()=>document.querySelector('#unrelated').href.includes('/+noredirect/Other'));
+  assert.equal(await page.getByRole('link',{name:'Verified',exact:true}).getAttribute('href'),'https://www.last.fm/music/+noredirect/Canonical/_/Verified','public pages have no own-row identity authority');
   const saved=await worker.evaluate(()=>chrome.storage.local.get(null));
   assert.deepEqual(saved.itunesImportUndo,data.itunesImportUndo);assert.deepEqual(saved.albumlessScanDraft,data.albumlessScanDraft);
   assert.deepEqual(saved.rules,data.rules);assert.deepEqual(errors,[]);

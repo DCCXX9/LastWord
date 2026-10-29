@@ -24,12 +24,12 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   await browser.route('https://lastfm-img.freetls.fastly.net/**',r=>r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l1sAAAAASUVORK5CYII=','base64')}));
   await browser.route(origin+'/**',async r=>{
    const u=new URL(r.request().url());
-   if(u.pathname===libraryPath){if(u.search)requests.push('list'+u.search);return r.fulfill({contentType:'text/html',body:list(Number(u.searchParams.get('page'))||1)});}
+   if(u.pathname.replace('/music/+noredirect/','/music/')===libraryPath){if(u.search)requests.push('list'+u.search);return r.fulfill({contentType:'text/html',body:list(Number(u.searchParams.get('page'))||1)});}
    requests.push(u.pathname);
    await new Promise(resolve=>setTimeout(resolve,100));
    if(u.pathname.endsWith('/_/FiGure5+%5BINTERLUDE%5D')&&++historyAttempts===1)return r.fulfill({status:503,body:'Last.fm - Temporarily Unavailable'});
    if(u.pathname.includes('/_/'))return r.fulfill({contentType:'text/html',body:history(decodeURIComponent(u.pathname.split('/_/')[1].replace(/\+/g,' ')))});
-   if(u.pathname==='/music/Homixide+Gang/I5U5WE5')return r.fulfill({contentType:'text/html',body:`<div class="cover-art"><img src="${cover}"></div>`});
+   if(u.pathname==='/music/+noredirect/Homixide+Gang/I5U5WE5')return r.fulfill({contentType:'text/html',body:`<div class="cover-art"><img src="${cover}"></div>`});
    return r.fulfill({status:404,body:'Unexpected request'});
   });
   const settings={username:'DCCXX',infiniteScroll:true},rules={artists:{},albums:{},tracks:{},albumArtists:{}};
@@ -54,7 +54,7 @@ const history = name => `<main class="col-main"><p class="metadata-display">12</
   const painted = async rank => {
    await page.locator('tr.chartlist-row').nth(rank-1).scrollIntoViewIfNeeded();
    await page.waitForFunction(({rank,cover})=>{const i=document.querySelectorAll('tr.chartlist-row')[rank-1].querySelector('img');return i.src===cover&&i.naturalWidth>0&&getComputedStyle(i).visibility==='visible';},{rank,cover},{timeout:20000}).catch(async e=>{console.error(await page.evaluate(()=>[...document.querySelectorAll('img')].map(i=>({src:i.src,title:i.title,visibility:i.style.visibility})).filter(i=>i.title.startsWith('Cover unchanged'))),requests);throw e;});
-   assert.equal(await page.locator('tr.chartlist-row').nth(rank-1).locator('.chartlist-image a').getAttribute('href'),origin+'/music/Homixide+Gang/I5U5WE5');
+   assert.equal(await page.locator('tr.chartlist-row').nth(rank-1).locator('.chartlist-image a').getAttribute('href'),origin+'/music/+noredirect/Homixide+Gang/I5U5WE5');
   };
   for(const rank of [42,53,55,57])await painted(rank);
   await page.locator('tr.chartlist-row').nth(99).scrollIntoViewIfNeeded();

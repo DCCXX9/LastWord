@@ -65,7 +65,7 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
     await page.waitForFunction(hash => document.getElementById(hash).naturalWidth > 0 && document.getElementById(hash).src.includes('/ar0/'), album);
     assert.equal(await page.locator('[id="' + drug + '"]').getAttribute('alt'), 'Drug Church');
     assert.equal(await page.locator('[id="' + drug + '"]').getAttribute('title'), 'Native title');
-    assert.equal(await page.locator('[id="' + drug + '"]').evaluate(i => i.closest('a').getAttribute('href')), '/music/Drug+Church');
+    assert.equal(await page.locator('[id="' + drug + '"]').evaluate(i => i.closest('a').getAttribute('href')), 'https://www.last.fm/music/+noredirect/Drug+Church');
     assert.equal(await page.locator('[id="' + drug + '"]').evaluate(i => getComputedStyle(i).borderRadius), '50%');
     await page.getByRole('button', { name: 'Yes', exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll('tr.chartlist-row').length === 4);
@@ -96,13 +96,13 @@ const row = (hash, name, href, extra = '') => `<tr class="chartlist-row"><td cla
     await page.waitForTimeout(250);
     assert.equal(calls.length, personalCalls, 'personal-cover and recovery observers must settle without a source rewrite loop');
     assert.equal(await page.locator('.chartlist-image img').first().getAttribute('title'), 'Personal cover: Hygiene (this album view)');
-    assert.equal(await page.locator('.chartlist-image a').first().getAttribute('href'), 'https://www.last.fm/music/Drug+Church/Hygiene');
+    assert.equal(await page.locator('.chartlist-image a').first().getAttribute('href'), 'https://www.last.fm/music/+noredirect/Drug+Church/Hygiene');
     await page.screenshot({ path: path.join(root, 'test-results', 'v094-recovered-album.png') });
     const state = await worker.evaluate(() => chrome.storage.local.get(['settings', 'legacyScan', 'lfmXmlUndoV1']));
     assert.deepEqual(state, saved, 'recovery preserves settings, legacy scans and undo');
     await page.goto('https://www.last.fm/music/Drug+Church');
     await page.waitForFunction(({drug,album})=>document.getElementById(drug)?.naturalWidth>0&&document.getElementById(album)?.naturalWidth>0&&document.getElementById(album)?.src.includes('/ar0/'),{drug,album});
-    assert.equal(await page.locator('[id="'+album+'"]').evaluate(i=>i.closest('a').href),'https://www.last.fm/music/Drug+Church/Hygiene','public personal covers and derivative recovery must settle on the same selected image and album link');
+    assert.equal(await page.locator('[id="'+album+'"]').evaluate(i=>i.closest('a').href),'https://www.last.fm/music/+noredirect/Drug+Church/Hygiene','public personal covers and derivative recovery must settle on the same selected image and album link');
     const beforeFriend = imageCalls.length;
     await page.goto('https://www.last.fm/user/Friend/library/artists');
     await page.waitForTimeout(200);

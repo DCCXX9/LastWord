@@ -1,5 +1,43 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: Settings buttons and universal music protection v0.9.24
+
+Baseline: dd447bf95554c95c9e192f6b6e91ce9a2379eec7 on
+codex/itunes-library-styling. Started clean, one worktree, no competing owner.
+Settings navigation is presented as green buttons, including Manage preferences.
+The duplicate Cache progress & backup link is removed. Redirect protection uses
+matching tile spacing with its description above the checkbox and save control.
+
+Protection no longer has an artist allowlist. All supported artist/song/album
+links receive +noredirect in the configured profile and public music pages.
+Artist repair uses only unique validated original native row fields in matching
+named cells; song/album names must match, and album cells use album artist.
+Unrelated links retain identity; ambiguous/changed titles are never guessed.
+Protected GET responses changing artist, song or album identity are rejected.
+Native form actions/fields, request pacing, pauses and permissions are unchanged.
+See REDIRECT_PROTECTION.md for explicit limits.
+
+Installed signed-in Supermium v0.9.24, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID:
+DCCXX, 4,780 preferences. Verified Settings desktop/mobile, green navigation,
+removed redundant link and tile order. Verified 350 real protected library
+links, refresh persistence and actual Yeat / Alivë / Always Alivë navigation
+retaining requested identities and protected downstream links. Navigation sent
+no write requests. All installed extension storage matched the original snapshot
+exactly: preferences, XML undo, completed cache/jobs, legacy/scan records, artwork
+and network pauses retained. Generic canonical artist repair and friend isolation
+are fixture verified; no real misdirected scrobble was manufactured for testing.
+Private evidence is ignored under test-results/pre-v24-* and v24-*.
+
+All 70 suites pass across the full gate and focused reruns after updating six
+artwork fixtures for the intentional protected URL policy. The image-recovery
+fixture twice timed out waiting for the extension worker before assertions; a
+diagnostic startup run and then the unchanged fixture passed. This remains a test
+startup flake, not a diagnosed runtime failure. Added regressions cover arbitrary
+artists, album artist separation, related links and wrong song/album responses.
+The 41-file ZIP is 300,497 bytes, SHA-256
+2f69f4f77381abf72e27bde0cc7854bb5d5968806ee95d251fc4ed9ec1569f6f.
+Rollback: v0.9.23 checkpoint dd447bf. Local only, no push/publication or data edit.
+
 ## 29 October 2026: cleaner Settings v0.9.23
 
 Baseline: f7f11dc00d98e4b5c03fdea239e0e7ca5a786709 on

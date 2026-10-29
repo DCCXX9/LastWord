@@ -1,14 +1,14 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Local candidate: **v0.9.23 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm profile. Local candidate: **v0.9.24 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
-Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
-routes in the connected profile and their public music pages. Album/track links,
-scroll-added rows and artwork reads share the policy. Genuine Lucky Twice links
-require original native scrobble evidence before any repair. Toggle in Settings;
-see [scope and testing](docs/REDIRECT_PROTECTION.md).
+Redirect protection uses `+noredirect` for all supported artist, song and album
+links in the connected profile and public music pages. Scroll-added rows and
+artwork reads share the policy. Repairing an already changed artist requires
+matching original native scrobble fields; no alias guesses or display text are
+used. Toggle in Settings; see [scope and testing](docs/REDIRECT_PROTECTION.md).
 
 ## Versions and source history
 
@@ -17,7 +17,7 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The v0.9.23 local candidate compares XML casing with an observed Last.fm library
+The v0.9.24 local candidate compares XML casing with an observed Last.fm library
 cache through three collapsible steps and shows only changes in a Before → After table.
 Saving and Complete feedback follow the actual commit. Exact spelling and artist
 identity are required; featuring text, punctuation and titles stay intact.

@@ -19,7 +19,7 @@
     </section>
     <section class="card" aria-labelledby="profile-heading">
       <h2 id="profile-heading">Profile &amp; browsing</h2>
-      <p class="subtle">Preferences apply only to your profile in this browser. Caching starts when you connect. Keep a Last.fm profile tab open; large libraries can take an hour or more. <a href="itunes.html">Cache progress &amp; backup →</a></p>
+      <p class="subtle">Preferences apply only to your profile in this browser. Caching starts when you connect. Keep a Last.fm profile tab open; large libraries can take an hour or more.</p>
       <form id="settings-form">
         <div class="settings-fields">
           <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required></div>
@@ -31,21 +31,22 @@
     </section>
     <section class="card" aria-labelledby="redirect-heading">
       <h2 id="redirect-heading">Redirect protection</h2>
+      <p id="redirects-help" class="subtle">Keeps artist, song and album links on their original Last.fm pages.</p>
       <form id="redirect-form">
-        <label class="check-label"><input id="redirects" type="checkbox" aria-describedby="redirects-help"> Keep links on the correct artist</label>
-        <p id="redirects-help" class="subtle">Keeps Travis Scott and Lucki links on the intended artist in your profile and their music pages. <a href="help.html#redirect-protection">Scope &amp; Last.fm settings →</a></p>
+        <label class="check-label"><input id="redirects" type="checkbox" aria-describedby="redirects-help"> Keep music links on their original pages</label>
         <button id="save-redirects" class="primary" type="submit">Save redirect settings</button>
         <span id="redirect-note" class="subtle" role="status"></span>
       </form>
+      <p class="settings-link"><a href="help.html#redirect-protection">Scope &amp; Last.fm settings</a></p>
     </section>
     <section class="card" aria-labelledby="names-heading">
       <div class="section-header"><div><h2 id="names-heading">Display names</h2><p class="subtle">Local spelling and casing. Your Last.fm scrobbles stay unchanged.</p></div><span id="count" class="subtle"></span></div>
-      <p class="settings-link"><a href="preferences.html">Manage artist, album and song preferences →</a></p>
+      <p class="settings-link"><a href="preferences.html">Manage preferences</a></p>
     </section>
     <section class="card" aria-labelledby="itunes-heading">
       <h2 id="itunes-heading">Import your iTunes casing</h2>
       <p class="subtle">Mass import your casing preferences from your iTunes/Apple Music library.</p>
-      <p><a href="itunes.html">Review an iTunes library XML →</a></p>
+      <p class="settings-link"><a href="itunes.html">Review an iTunes library XML</a></p>
     </section>
     <details id="troubleshooting" class="card">
       <summary>Troubleshooting</summary>

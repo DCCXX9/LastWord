@@ -2,7 +2,15 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Local candidate: v0.9.23
+## Local candidate: v0.9.24
+
+Built from v0.9.23 checkpoint dd447bf. Settings uses green navigation buttons,
+removes redundant cache navigation and aligns the redirect tile. Music redirect
+protection covers all supported artists/songs/albums with verified original-row
+identity repair and strict response checks. Saved data and permissions retained.
+Not pushed or published.
+
+## Previous local checkpoint: v0.9.23 (dd447bf)
 
 Built from v0.9.22 checkpoint f7f11dc. Cleans up Settings copy and heading,
 separates redirect protection, clarifies scroll controls and moves artwork

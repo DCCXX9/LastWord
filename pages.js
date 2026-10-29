@@ -122,10 +122,13 @@
       }
       const directUrl = target.href.replace('/music/+noredirect/', '/music/');
       if (globalThis.LastfmRedirects &&
-          LastfmRedirects.protect(directUrl, settings, location.href) !== directUrl &&
-          LastfmAdapter.musicItem(target.href)?.artist.toLowerCase() !==
-            LastfmAdapter.musicItem(response.url)?.artist.toLowerCase()) {
-        throw new Error('Last.fm returned a different artist. Redirect protection stopped loading.');
+          LastfmRedirects.protect(directUrl, settings, location.href) !== directUrl) {
+        const requested = LastfmAdapter.musicItem(target.href), received = LastfmAdapter.musicItem(response.url);
+        const same = (a, b) => String(a || '').normalize('NFC').toLowerCase() === String(b || '').normalize('NFC').toLowerCase();
+        if (!received || !same(requested?.artist, received.artist))
+          throw new Error('Last.fm returned a different artist. Redirect protection stopped loading.');
+        if (requested.type !== received.type || !same(requested.name, received.name))
+          throw new Error('Last.fm returned a different song or album. Redirect protection stopped loading.');
       }
       check(signal);
       lastError = '';

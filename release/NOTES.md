@@ -1,3 +1,17 @@
+# v0.9.24 local candidate — Settings buttons and music redirect protection
+
+- Replace Settings navigation links with light-green buttons; simplify the
+  Manage preferences label and remove the redundant cache navigation link.
+- Put redirect description above its checkbox and independent save controls.
+- Protect supported artist, song and album links for every artist, including
+  appended rows and public music pages. Repair a changed artist only from
+  matching original native row fields; never infer from display preferences.
+- Reject protected read responses that change artist, song or album identity.
+  Preserve native edit forms, GET-only transport, pacing and saved user data.
+- Installed signed-in Supermium checks cover library refresh and real Yeat
+  artist/album/song navigation. No Last.fm data edits or new permissions.
+- Rollback: v0.9.23 checkpoint dd447bf. Not pushed or published.
+
 # v0.9.23 local candidate — cleaner Settings
 
 - Rename the Settings heading to Jay's Last.fm tool; remove the top tagline and

@@ -9,6 +9,8 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   await page.route('https://www.last.fm/**',r=>{
    const url=new URL(r.request().url());calls.push({url:url.href,method:r.request().method(),body:r.request().postData()});
    if(url.pathname.endsWith('/get-wrong'))return r.fulfill({status:302,headers:{location:'/user/DCCXX/library/music/Lucky+Twice/+tracks'}});
+   if(url.pathname.endsWith('/WrongSong'))return r.fulfill({status:302,headers:{location:'/music/+noredirect/Radiohead/_/Different'}});
+   if(url.pathname.endsWith('/WrongAlbum'))return r.fulfill({status:302,headers:{location:'/music/+noredirect/Radiohead/Different'}});
    return r.fulfill({contentType:'text/html',body:`<!doctype html><table><tr class="chartlist-row"><td class="chartlist-name"><a href="/music/Lucki/_/Song">Song</a></td><td><ul class="chartlist-more-menu"></ul><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Lucki"><input name="track_name" value="Song"><input name="timestamp" value="1700000000"><input name="csrfmiddlewaretoken" value="fixture-token"><button type="submit">Native edit</button></form></td></tr></table>`});
   });
   await page.goto('https://www.last.fm/user/DCCXX/library/music/Lucki/Album');
@@ -23,6 +25,9 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   });
   assert.equal(result.album,'https://www.last.fm/music/+noredirect/Lucki/Album');
   assert.match(result.error,/different artist/,'a bad response cannot enter the library even if the server ignores the bypass');
+  assert.equal(await page.evaluate(async()=>(await LastfmPages.getAlbum('/music/Radiohead/Album')).url),'https://www.last.fm/music/+noredirect/Radiohead/Album');
+  for (const path of ['/music/Radiohead/_/WrongSong','/music/Radiohead/WrongAlbum'])
+   await assert.rejects(page.evaluate(path=>path.includes("/_/")?LastfmPages.getTrack(path):LastfmPages.getAlbum(path),path),/different song or album/);
   await page.evaluate(()=>document.addEventListener('submit',event=>{
    event.preventDefault();window.delegated=[...new FormData(event.target)];
   }));

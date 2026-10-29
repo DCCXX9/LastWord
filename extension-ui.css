@@ -118,6 +118,10 @@ dialog .button-group { justify-content: flex-end; margin-top: 24px; }
 .settings-page #refresh-artwork { margin-top: 14px; }
 
 #redirect-form { margin-top: 16px; }
+#redirect-form .check-label { margin-bottom: 20px; }
+.settings-page a { display: inline-flex; align-items: center; justify-content: center; padding: 8px 13px; border: 1px solid var(--lfm-accent); border-radius: 5px; background: var(--lfm-accent); color: var(--lfm-ink); font-weight: 600; line-height: 1.4; text-decoration: none; }
+.settings-page a:hover { background: var(--lfm-accent-hover); border-color: var(--lfm-accent-hover); }
+.settings-page .app-footer { align-items: center; }
 #redirects-help { margin: 6px 0 14px; }
 #redirect-note { margin-left: 10px; font-size: 13px; }
 #troubleshooting > summary { cursor: pointer; font-size: 19px; font-weight: 600; }
