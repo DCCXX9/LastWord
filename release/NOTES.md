@@ -1,3 +1,13 @@
+# Chrome Web Store package · v0.9.24 beta
+
+29 October 2026. Packaging baseline fa293fe. Runtime version and extension identity are retained. Updated privacy wording for universal redirect scope; no feature, permission or storage-format changes.
+
+Includes current synthetic store screenshots, listing/reviewer text, storage/unlimitedStorage/alarms justifications, runtime file hashes and a separate store handoff ZIP. No personal XML, browser storage, profiles or logs are packaged. Public publisher/support details and a hosted privacy URL remain required; no Chrome submission is performed.
+
+Source and packages are intended for the existing private GitHub repository. Previous versions are preserved. The installed browser and its saved records are left untouched. Kesha-specific source checks passed; new live Kesha verification remains pending. Existing signed-in v0.9.24 acceptance and limits are in docs/CURRENT.md.
+
+---
+
 # v0.9.24 local candidate — Settings buttons and music redirect protection
 
 - Replace Settings navigation links with light-green buttons; simplify the

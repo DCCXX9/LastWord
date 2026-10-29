@@ -80,7 +80,8 @@ function build() {
   for(const name of ['index.html','site.css']) {
     let source=fs.readFileSync(path.join(root,'release','site',name),'utf8');
     if(name==='index.html')source=source.replace(/Free beta \d+\.\d+\.\d+/g,'Free beta '+version)
-      .replace(/lastfm-personal-library-\d+\.\d+\.\d+-beta\.zip/g,filename);
+      .replace(/lastfm-personal-library-\d+\.\d+\.\d+-beta\.zip/g,filename)
+      .replace(/v\d+\.\d+\.\d+ beta/g,'v'+version+' beta');
     fs.writeFileSync(path.join(site,name),source);
   }
   for(const name of ['icon128.png','promo440.png','preferences.png','xml-review.png','setup.png']) {

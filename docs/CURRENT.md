@@ -1,5 +1,37 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: Chrome Web Store / private GitHub handoff
+
+Packaging baseline fa293fea314aeea16081c6806b7fa438865ba759; clean existing
+codex/itunes-library-styling worktree, no competing owner. Prepared v0.9.24
+without changing its version, permissions, extension identity or saved data.
+Updated store copy, reviewer instructions and permission justifications; refreshed
+three 1280×800 screenshots from the actual extension in a network-blocked,
+isolated synthetic profile. Original icons and promotional graphic retained.
+Privacy wording now reflects universal artist/song/album redirect protection.
+Added tools/package-store.cjs and corrected generated site's version footer.
+
+Runtime ZIP: 41 files, 300,553 bytes; SHA-256
+1b3bb098cbc49350204f56934d3f8159235eec1679c9f9d1dbeba1f6abb44efa.
+Submission ZIP: 23 files, 956,005 bytes; SHA-256
+137bcde1531b56861a34f1c381822ea64a7f20c32d6b90eca783bb1bbea64112.
+Independent ZIP CRCs, exact source bytes, per-file hashes, inner/outer consistency,
+checksum files and manifest summary limit verified. release, release-site,
+beta-store, beta-onboarding, redirects and redirect-requests all pass (6/6).
+The extracted upload ZIP separately passes actual-extension onboarding in an
+isolated browser. Screenshots were visually inspected. Earlier full feature gate
+and signed-in evidence are below; they were not rerun or relabelled as new live
+acceptance. Kesha-specific source checks passed in the preceding task; a new
+installed-browser Kesha check remains pending because access is unavailable.
+
+Delivery: requested source branch, annotated v0.9.24 tag and ZIP/checksum assets
+are prepared for the existing private DCCXX9/lastfm-personal-library prerelease.
+No old branches/tags/releases are replaced. Publisher identity/support fields,
+a publicly hosted privacy-policy URL and Chrome dashboard submission remain
+pending; no store upload, website hosting or visibility change is performed.
+Installed signed-in browser data, XML undo, caches and pauses are untouched.
+Rollback for this packaging-only change: fa293fe. Release files: release/PUBLISHING.md.
+
 ## 29 October 2026: Settings buttons and universal music protection v0.9.24
 
 Baseline: dd447bf95554c95c9e192f6b6e91ce9a2379eec7 on

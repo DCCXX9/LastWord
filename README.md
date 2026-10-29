@@ -12,7 +12,7 @@ used. Toggle in Settings; see [scope and testing](docs/REDIRECT_PROTECTION.md).
 
 ## Versions and source history
 
-The private GitHub repository preserves the v0.9.17 source and earlier
+The private GitHub repository preserves the extension source and earlier
 Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
@@ -41,8 +41,10 @@ preferences remain available.
 
 The local ZIP, original store assets, static download site and submission draft
 are prepared by `tools/package-beta.cjs`. See [release/PUBLISHING.md](release/PUBLISHING.md)
-for delivery, publication gates and the one Reload test. Nothing has been publicly
-uploaded or submitted; signed-in acceptance is still pending.
+for the v0.9.24 Chrome Web Store submission bundle and remaining publisher fields.
+The package is prepared for private GitHub delivery; it has not been submitted to
+Chrome or publicly hosted. Existing signed-in checks and their limits are recorded
+in `docs/CURRENT.md`. Run `node tools/package-store.cjs` to rebuild the handoff.
 
 ## Updating this installed copy
 
