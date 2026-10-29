@@ -56,21 +56,21 @@ const html = (n = 1) => `<!doctype html><main><table class="chartlist"><tbody>${
 
   // Options changes apply to existing rows immediately and restore exact hrefs.
   const options=await browser.newPage();await options.goto(`chrome-extension://${extensionId}/options.html`);
-  await options.getByLabel('Protect artist redirects',{exact:true}).uncheck();
-  await options.getByRole('button',{name:'Save settings',exact:true}).click();
+  await options.getByLabel('Keep links on the correct artist',{exact:true}).uncheck();
+  await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#travis').getAttribute('href')==='/music/Travis+Scott/Album?x=1#tracks');
   assert.equal(await page.getByRole('link',{name:'Native',exact:true}).getAttribute('href'),'/music/Lucky+Twice/_/Native');
-  await options.getByLabel('Protect artist redirects',{exact:true}).check();
-  await options.getByRole('button',{name:'Save settings',exact:true}).click();
+  await options.getByLabel('Keep links on the correct artist',{exact:true}).check();
+  await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#travis').href.includes('/+noredirect/'));
   // A Last.fm hydration update must replace the remembered href, not resurrect it.
   await page.locator('#travis').evaluate(a=>a.setAttribute('href','/music/Other'));
-  await options.getByLabel('Protect artist redirects',{exact:true}).uncheck();
-  await options.getByRole('button',{name:'Save settings',exact:true}).click();
+  await options.getByLabel('Keep links on the correct artist',{exact:true}).uncheck();
+  await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('a[href="/music/Lucki/_/Song1"]'));
   assert.equal(await page.locator('#travis').getAttribute('href'),'/music/Other');
-  await options.getByLabel('Protect artist redirects',{exact:true}).check();
-  await options.getByRole('button',{name:'Save settings',exact:true}).click();
+  await options.getByLabel('Keep links on the correct artist',{exact:true}).check();
+  await options.getByRole('button',{name:'Save redirect settings',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('a[href$="/_/Song1"]').href.includes('/+noredirect/'));
 
   // Public protected pages keep their downstream navigation protected; genuine

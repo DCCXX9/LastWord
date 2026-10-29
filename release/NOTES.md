@@ -1,3 +1,16 @@
+# v0.9.23 local candidate — cleaner Settings
+
+- Rename the Settings heading to Jay's Last.fm tool; remove the top tagline and
+  username helper line.
+- Clarify the infinite-scroll label and move redirect protection into its own
+  tile with independent save feedback. Drafts in the other tile are preserved.
+  Existing Travis Scott/Lucki behavior is unchanged; no new artists are added.
+- Use the supplied iTunes import description exactly.
+- Remove Connection & artwork; keep confirmed artwork refresh and tab selection
+  in collapsed Troubleshooting. Keep profile/preference status where relevant.
+- Preserve extension identity, permissions, preferences, undo, cache and pauses.
+- Rollback: v0.9.22 checkpoint f7f11dc. Local only; no GitHub publication.
+
 # v0.9.22 local candidate — guided iTunes casing
 
 - Three numbered, collapsible steps: cache Last.fm, import XML, review/accept.

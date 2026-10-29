@@ -116,3 +116,11 @@ dialog .button-group { justify-content: flex-end; margin-top: 24px; }
 .popup-footer #diagnostics:hover { text-decoration: underline; }
 .settings-page #artwork-tab { max-width: 360px; margin-bottom: 10px; }
 .settings-page #refresh-artwork { margin-top: 14px; }
+
+#redirect-form { margin-top: 16px; }
+#redirects-help { margin: 6px 0 14px; }
+#redirect-note { margin-left: 10px; font-size: 13px; }
+#troubleshooting > summary { cursor: pointer; font-size: 19px; font-weight: 600; }
+#troubleshooting > h2 { margin: 18px 0 6px; }
+#artwork-guidance:empty { display: none; }
+#artwork-guidance { margin-bottom: 14px; }

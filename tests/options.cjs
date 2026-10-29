@@ -103,6 +103,35 @@ const project = path.resolve(__dirname, '..');
     await page.waitForFunction(() => document.querySelector('#count').textContent.includes('preferences'));
     assert.equal(await page.locator('#rules, #search, #type-filter').count(),0,'main options has no preference list');
     assert.equal(await page.locator('a[href="preferences.html"]').count(),1);
+    assert.equal(await page.locator('h1').innerText(), "Jay's Last.fm tool");
+    assert.equal(await page.locator('.page-header .eyebrow, #username-help, #activity-heading, #active-status').count(), 0);
+    assert.equal(await page.locator('#troubleshooting').evaluate(e=>e.open), false);
+    assert.match(await page.locator('[aria-labelledby="itunes-heading"]').innerText(), /Mass import your casing preferences from your iTunes\/Apple Music library\./);
+    assert.equal(await page.getByLabel('Load more library pages as you scroll').count(), 1);
+    // Separate cards must not save or discard each other's unsaved drafts.
+    await page.locator('#username').fill('UnsavedDraft');
+    await page.getByLabel('Keep links on the correct artist').uncheck();
+    await page.locator('#save-redirects').click();
+    await page.locator('#redirect-note').filter({hasText:'Saved'}).waitFor();
+    assert.equal(worker.data.settings.username, 'DCCXX');
+    assert.equal(worker.data.settings.redirectProtection, false);
+    assert.equal(await page.locator('#username').inputValue(), 'UnsavedDraft');
+    await page.getByLabel('Keep links on the correct artist').check();
+    await page.locator('#username').fill('DCCXX');await page.locator('#save-settings').click();
+    await page.waitForFunction(()=>!document.querySelector('#save-settings').disabled);
+    assert.equal(worker.data.settings.redirectProtection, false, 'profile save does not commit redirect draft');
+    assert.equal(await page.locator('#redirects').isChecked(), true);
+    await page.locator('#save-redirects').click();await page.locator('#redirect-note').filter({hasText:'Saved'}).waitFor();
+    await page.evaluate(()=>{const send=chrome.runtime.sendMessage;chrome.runtime.sendMessage=async m=>{if(m.action==='settings'&&m.patch?.redirectProtection===false)throw Error('Storage unavailable');return send(m)}});
+    await page.locator('#redirects').uncheck();await page.locator('#save-redirects').click();
+    await page.locator('#redirect-note').filter({hasText:'Not saved'}).waitFor();
+    assert.equal(worker.data.settings.redirectProtection, true, 'failure preserves saved setting');
+    assert.equal(await page.locator('#redirects').isChecked(), false, 'failure keeps the draft');
+    assert.equal(await page.locator('#redirects').isDisabled(), false);
+    await page.locator('#redirects').check();
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth), true);
+    await page.setViewportSize({width:1180,height:1000});
     await page.screenshot({path:path.join(project,'test-results','options.png'),fullPage:true});
 
     const backup = { version: 1, settings: { username: 'DCCXX', infiniteScroll: false },

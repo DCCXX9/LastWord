@@ -2,42 +2,20 @@
   'use strict';
   const S = LastfmStore, $ = id => document.getElementById(id);
   let snapshot, status = null, refreshingArtwork = false, confirmingRefresh = false;
-  const views = { artists: 'Artists', albums: 'Albums', tracks: 'Tracks', scrobbles: 'Scrobbles',
-    artistAlbums: 'Artist albums', artistScrobbles: 'Artist scrobbles', album: 'Album tracks', track: 'Track history', profile: 'Profile' };
-  const scrollLabels = { prompt: 'Waiting for your choice', declined: 'Paused for this view', ready: 'Ready', loading: 'Loading', paused: 'Paused', complete: 'All pages loaded', error: 'Paused after an error', off: 'Off', unavailable: 'Unavailable' };
   function message(text, error = false) {
     $('artwork-message').textContent = text; $('artwork-message').dataset.tone = error ? 'error' : 'success';
   }
   function render(next) {
     snapshot = next;
-    $('profile').textContent = next.settings.username || 'Not connected';
     $('refresh-artwork').disabled = refreshingArtwork || !status?.ownProfile ||
       status.username?.toLowerCase() !== next.settings.username.toLowerCase() ||
       !status.artwork?.cacheReady || status.artwork?.refreshing || !status.artwork?.refreshableTracks;
-    $('scroll').textContent = next.settings.infiniteScroll === false ? 'Off' :
-      status?.ownProfile ? (scrollLabels[status.scrollState] || 'On') : 'On for your library';
-    $('status-dot').dataset.state = '';
-    if (!next.settings.username) {
-      $('active-status').textContent = 'Connect your profile';
-      $('page-detail').textContent = 'Enter your Last.fm username in Settings to get started. Your password is not needed.';
-    } else if (!status) {
-      $('active-status').textContent = 'Waiting for your library';
-      $('page-detail').textContent = 'Open your Last.fm profile. If it is already open, refresh that tab after reloading the extension.';
-    } else if (status.rateLimited) {
-      $('status-dot').dataset.state = 'warning';
-      $('active-status').textContent = 'Requests paused';
-      $('page-detail').textContent = 'Last.fm asked for a break. ' + (status.pausedUntil
-        ? 'Requests resume automatically at ' + new Date(status.pausedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.'
-        : 'Requests resume automatically shortly.') + ' Covers show Last.fm’s own image until then.';
-    } else if (!status.ownProfile || status.username?.toLowerCase() !== next.settings.username.toLowerCase()) {
-      $('active-status').textContent = 'Inactive on this page';
-      $('page-detail').textContent = 'Preferences apply only to the profile ' + next.settings.username + '.';
-    } else {
-      $('status-dot').dataset.state = 'active';
-      $('active-status').textContent = 'Active on ' + next.settings.username;
-      $('page-detail').textContent = (views[status.view] || 'Your profile') + ' · Display preferences are enabled.';
-    }
+    $('artwork-guidance').textContent = !next.settings.username
+      ? 'Connect your profile to refresh artwork.'
+      : !status ? 'Open your connected Last.fm library tab. Refresh that tab if it was already open when the extension reloaded.'
+      : status.rateLimited ? 'Last.fm requests are paused. Refreshing artwork keeps that pause.' : '';
   }
+
   async function refreshStatus() {
     status = null;
     try {

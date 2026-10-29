@@ -1,5 +1,37 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: cleaner Settings v0.9.23
+
+Baseline: f7f11dc00d98e4b5c03fdea239e0e7ca5a786709 on
+codex/itunes-library-styling. Started clean; one worktree, no competing owner.
+Settings now uses Jay's Last.fm tool without the top tagline or username helper.
+Infinite scroll says Load more library pages as you scroll. Redirect protection
+has its own tile, clear label and independent save; unsaved profile/scroll and
+redirect drafts cannot commit or discard each other. Existing artist scope and
+redirect implementation are unchanged. The iTunes import tile uses Jay's exact
+supplied copy. Connection & artwork is removed; tab selection and the original
+two-click artwork refresh live in collapsed Troubleshooting with relevant
+missing-tab/pause guidance. Backups and preference management remain available.
+
+Installed Supermium verification: same fpfeckjdjmlnnjbodagebgcdflmbkmik extension,
+DCCXX / 4,780 preferences, v0.9.23. Checked heading, removed text/status fields,
+separate form ownership, independent redirect save preserving an unsaved username,
+reload, collapsed Troubleshooting and 390px mobile width. All installed storage
+matched the pre-check snapshot exactly. XML undo, completed cache/jobs, scan/legacy records,
+artwork and network pauses are preserved. Artwork refresh remains disabled when
+no connected own-profile Last.fm tab is available; no personal covers were removed.
+Its actual refresh/confirmation behavior is exercised in isolated extension tests.
+No clearing, reinstall, Last.fm edits, scans, new permissions or publishing.
+Private evidence: ignored test-results/pre-v23-* and test-results/v23-*.
+Rollback: f7f11dc. All 14 relevant regression suites pass: options, popup,
+artwork-refresh, redirect-browser, backup-preview, beta-onboarding, release,
+release-site, extension, itunes-ui, itunes-feedback, startup, store-navigation
+and beta-store. Initial artwork test still looked up a role inside the newly
+collapsed section after reload; its hidden-control assertion now uses the ID.
+An onboarding same-URL navigation race passed on rerun without product changes.
+The 41-file ZIP is 299,506 bytes, SHA-256
+6b17c82c6a6ba26d20e7e666281c5358b933af06b7ebb37ef9959545b669d20e.
+
 ## 29 October 2026: guided iTunes workflow v0.9.22
 
 Baseline: 51c81698d92904c79f8d35c5424f6f44d587e460 on

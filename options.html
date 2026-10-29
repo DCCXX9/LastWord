@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Last.fm Personal Library settings</title>
+  <title>Jay's Last.fm tool settings</title>
   <link rel="stylesheet" href="extension-ui.css">
 </head>
 <body class="settings-page">
   <header class="page-header">
-    <div><p class="eyebrow">Your library, your display names</p><h1>Last.fm Personal Library</h1></div>
+    <h1>Jay's Last.fm tool</h1>
     <span id="profile-status" class="badge">Loading profile…</span>
   </header>
   <main>
@@ -22,13 +22,20 @@
       <p class="subtle">Preferences apply only to your profile in this browser. Caching starts when you connect. Keep a Last.fm profile tab open; large libraries can take an hour or more. <a href="itunes.html">Cache progress &amp; backup →</a></p>
       <form id="settings-form">
         <div class="settings-fields">
-          <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="username-help" required><p id="username-help" class="subtle">Username only, without the profile URL.</p></div>
-          <label class="check-label"><input id="infinite" type="checkbox"> Offer to load more library pages</label>
-          <label class="check-label"><input id="redirects" type="checkbox" aria-describedby="redirects-help"> Protect artist redirects</label>
+          <div><label for="username">Last.fm username</label><input id="username" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required></div>
+          <label class="check-label"><input id="infinite" type="checkbox"> Load more library pages as you scroll</label>
         </div>
-        <p id="redirects-help" class="subtle">Keeps Travis Scott and Lucki links on the intended artist in your profile and their music pages. <a href="help.html#redirect-protection">Scope &amp; Last.fm settings →</a></p>
         <button id="save-settings" class="primary" type="submit">Save settings</button>
         <span id="settings-note" class="subtle"></span>
+      </form>
+    </section>
+    <section class="card" aria-labelledby="redirect-heading">
+      <h2 id="redirect-heading">Redirect protection</h2>
+      <form id="redirect-form">
+        <label class="check-label"><input id="redirects" type="checkbox" aria-describedby="redirects-help"> Keep links on the correct artist</label>
+        <p id="redirects-help" class="subtle">Keeps Travis Scott and Lucki links on the intended artist in your profile and their music pages. <a href="help.html#redirect-protection">Scope &amp; Last.fm settings →</a></p>
+        <button id="save-redirects" class="primary" type="submit">Save redirect settings</button>
+        <span id="redirect-note" class="subtle" role="status"></span>
       </form>
     </section>
     <section class="card" aria-labelledby="names-heading">
@@ -37,19 +44,18 @@
     </section>
     <section class="card" aria-labelledby="itunes-heading">
       <h2 id="itunes-heading">Import your iTunes casing</h2>
-      <p class="subtle">Use your XML's exact artist, album and song casing across your Last.fm library. Scan locally, choose whole groups or individual names, then review and apply.</p>
+      <p class="subtle">Mass import your casing preferences from your iTunes/Apple Music library.</p>
       <p><a href="itunes.html">Review an iTunes library XML →</a></p>
     </section>
-    <section class="card" aria-labelledby="activity-heading">
-      <h2 id="activity-heading">Connection &amp; artwork</h2>
-      <div class="popup-status"><span id="status-dot" class="status-dot" aria-hidden="true"></span><strong id="active-status">Checking your library…</strong></div>
-      <p id="page-detail" class="subtle"></p>
-      <dl class="popup-details"><div><dt>Configured profile</dt><dd id="profile">…</dd></div><div><dt>Infinite scroll</dt><dd id="scroll">…</dd></div></dl>
+    <details id="troubleshooting" class="card">
+      <summary>Troubleshooting</summary>
+      <h2 id="artwork-heading">Refresh artwork</h2>
+      <p id="artwork-guidance" class="subtle"></p>
       <label for="artwork-tab">Last.fm tab</label><select id="artwork-tab" disabled></select>
-      <p class="subtle">Artwork refresh removes saved covers for tracks on the selected page and reloads it. Your library name cache is kept.</p>
+      <p class="subtle">Removes saved covers for tracks on the selected page and reloads it. Your library name cache is kept.</p>
       <button id="refresh-artwork" type="button" disabled>Refresh artwork</button>
       <p id="artwork-message" class="message" role="status" aria-live="polite"></p>
-    </section>
+    </details>
     <section class="card backup-card" aria-labelledby="backup-heading">
       <div><h2 id="backup-heading">Backup &amp; restore</h2><p class="subtle">Export a JSON backup before importing or changing saved preferences.</p></div>
       <div class="button-group"><button id="export" type="button">Export JSON backup</button><button id="import" type="button">Import backup…</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>

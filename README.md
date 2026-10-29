@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Local candidate: **v0.9.22 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm profile. Local candidate: **v0.9.23 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
@@ -17,7 +17,7 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The v0.9.22 local candidate compares XML casing with an observed Last.fm library
+The v0.9.23 local candidate compares XML casing with an observed Last.fm library
 cache through three collapsible steps and shows only changes in a Before → After table.
 Saving and Complete feedback follow the actual commit. Exact spelling and artist
 identity are required; featuring text, punctuation and titles stay intact.
@@ -28,6 +28,9 @@ for confirmation. Cache JSON export/import preserves complete or partial progres
 malformed rows are skipped and reported for targeted retry. Large-cache reads and
 status broadcasts are reduced to avoid unnecessary memory churn. Preferences are local only;
 the shared transport hard-blocks submissions. See [comparison details](docs/LIBRARY_CASING.md).
+
+Settings uses the Jay's Last.fm tool heading, separate redirect protection controls
+and collapsed Troubleshooting for confirmed artwork refresh.
 
 ## Public beta candidate
 
