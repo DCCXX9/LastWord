@@ -60,7 +60,7 @@
     return {...scan,candidates};
   }
   function validate(payload,user) {
-    if(payload?.format!=='lastfm-personal-library-cache'||payload.version!==1||!payload.cache||R.normalize(payload.cache.username)!==R.normalize(user))throw Error('Choose a Personal Library cache for your connected Last.fm profile.');
+    if(payload?.format!=='lastfm-personal-library-cache'||payload.version!==1||!payload.cache||R.normalize(payload.cache.username)!==R.normalize(user))throw Error('Choose a Remaster for Last.fm cache for your connected Last.fm profile.');
     const input=payload.cache,out=create(user);let count=0;
     if(!Number.isSafeInteger(input.updatedAt)||input.updatedAt<0)throw Error('Invalid cache date.');
     out.updatedAt=input.updatedAt;out.startedAt=Number.isSafeInteger(input.startedAt)?input.startedAt:input.updatedAt;

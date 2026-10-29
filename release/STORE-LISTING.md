@@ -1,10 +1,10 @@
-# Chrome Web Store listing · v0.9.24 beta
+# Chrome Web Store listing · v0.9.25 beta
 
 Prepared for submission; not submitted to Chrome. GitHub remains private.
 
 ## Listing fields
 
-Name (from manifest): Last.fm Personal Library
+Name (from manifest): Remaster for Last.fm
 
 Summary (from manifest): Personalise your Last.fm library with local display names, iTunes XML casing import and continuous scrolling.
 
@@ -19,10 +19,10 @@ Make your own Last.fm library display the letter casing you prefer, with local d
 - Only exact names differing in letter casing qualify for XML matching. Featuring credits, punctuation and edition suffixes are never removed.
 - Cache your library in the background while a connected Last.fm profile tab is open. Pause, resume, export or import the cache. Large libraries can take several hours.
 - Search and manage saved preferences; export and restore a JSON backup. Undo the latest XML import while preserving later manual changes.
-- Load more native library rows as you scroll, with your consent.
+- Load native paginated lists as you scroll across Last.fm profiles, music, tag and chart pages, with your consent.
 - Keep supported artist, song and album links on their original pages using redirect protection.
 
-The interface is labelled Jay's Last.fm tool. Connect your Last.fm username in Settings; the extension never asks for your Last.fm password. Display preferences apply only to the profile you connect. XML files are processed on your device and are not uploaded to the developer.
+The interface is labelled Remaster for Last.fm. Connect your Last.fm username in Settings; the extension never asks for your Last.fm password. Display preferences apply only to the profile you connect. XML files are processed on your device and are not uploaded to the developer.
 
 Local casing changes affect how the website looks. They never edit or delete Last.fm scrobbles or change its catalogue. Last.fm's separate Save edit button retains its normal server-side behaviour; do not use it to save local casing.
 
@@ -57,7 +57,7 @@ Complete the dashboard's current data-category selections and Limited Use certif
 
 ## Supplied assets
 
-Upload lastfm-personal-library-0.9.24-beta.zip as the extension (manifest.json is at the root).
+Upload remaster-for-lastfm-0.9.25-beta.zip as the extension (manifest.json is at the root).
 Use assets/icon128.png (128×128), assets/promo440.png (440×280), and the three 1280×800 screenshots in the submission bundle. Screenshots show actual extension pages in an isolated profile with fictional music metadata; they are not signed-in live acceptance evidence.
 
 ## Publisher fields still required

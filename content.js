@@ -12,6 +12,7 @@
   const pending = new Set();
   const changed = new Map();
   const ownProfile = () => A.ownProfile(location.href, settings.username);
+  const canScroll = () => settings.infiniteScroll && A.scrollView(location.href);
 
   function nameNode(element, name) {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -232,7 +233,7 @@
 
   async function loadMore(state, resume = false) {
     if (scroller !== state || !state.active || state.mode === 'loading' || !state.next ||
-        !ownProfile() || document.hidden) return;
+        !canScroll() || document.hidden) return;
     const controller = new AbortController();
     state.controller = controller;
     renderScroll(state, 'loading', 'Loading the next library page…');
@@ -240,7 +241,7 @@
       if (resume && LastfmPages.status().rateLimited) await LastfmPages.resume();
       if (scroller !== state || !state.active || state.controller !== controller || controller.signal.aborted) return;
       const page = await LastfmPages.get(state.next, { signal: controller.signal, priority: 'navigation' });
-      if (scroller !== state || !state.active || state.controller !== controller || !ownProfile() || controller.signal.aborted) return;
+      if (scroller !== state || !state.active || state.controller !== controller || !canScroll() || controller.signal.aborted) return;
       const url = new URL(page.url);
       if (url.pathname !== new URL(currentUrl).pathname &&
           !globalThis.LastfmRedirects?.samePagePath(currentUrl, page.url) ||
@@ -293,7 +294,7 @@
   }
 
   function startScroll() {
-    if (!ownProfile() || !settings.infiniteScroll || !A.libraryView(location.href)) {
+    if (!canScroll()) {
       suspendScroll(); return;
     }
     if (scroller?.table.isConnected) {
@@ -453,5 +454,5 @@
       refresh();
     } });
   }
-  init().catch(error => console.error('Last.fm Personal Library:', error.message));
+  init().catch(error => console.error('Remaster for Last.fm:', error.message));
 })();

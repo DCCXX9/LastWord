@@ -1,17 +1,17 @@
-# Chrome Web Store handoff · v0.9.24 beta
+# Chrome Web Store handoff · v0.9.25 beta
 
 ## Outputs
 
-- dist/lastfm-personal-library-0.9.24-beta.zip: upload this ZIP to Chrome, not the outer submission bundle.
-- dist/lastfm-personal-library-0.9.24-beta.zip.sha256: package integrity check.
-- dist/chrome-web-store-0.9.24-submission.zip: handoff bundle with the upload ZIP, checksum, per-file audit, listing/reviewer text, assets and a static privacy/download site.
-- dist/chrome-web-store-0.9.24-submission.zip.sha256: handoff integrity check.
+- dist/remaster-for-lastfm-0.9.25-beta.zip: upload this ZIP to Chrome, not the outer submission bundle.
+- dist/remaster-for-lastfm-0.9.25-beta.zip.sha256: package integrity check.
+- dist/chrome-web-store-0.9.25-submission.zip: handoff bundle with the upload ZIP, checksum, per-file audit, listing/reviewer text, assets and a static privacy/download site.
+- dist/chrome-web-store-0.9.25-submission.zip.sha256: handoff integrity check.
 
 The runtime ZIP uses an explicit allowlist and excludes tests, profiles, logs, XML, backups and repository history. Store images contain fictional metadata only. Packaging does not change the installed extension identity, permissions or saved data.
 
 ## Delivery
 
-Deliver the source branch/tag and packaged assets to the existing private DCCXX9/lastfm-personal-library repository as a v0.9.24 prerelease. Preserve previous branches/tags/releases. No force-push, public visibility change, Chrome submission or website hosting is part of this handoff.
+Deliver the source branch/tag and packaged assets to the existing private DCCXX9/lastfm-personal-library repository as a v0.9.25 prerelease. Preserve previous branches/tags/releases. No force-push, public visibility change, Chrome submission or website hosting is part of this handoff.
 
 ## Submission still needed
 

@@ -68,7 +68,7 @@ function zip(entries) {
 }
 function build() {
   const entries=inputs(),manifest=validate(entries),version=manifest.version;
-  const filename=`lastfm-personal-library-${version}-beta.zip`,out=path.join(root,'dist');
+  const filename=`remaster-for-lastfm-${version}-beta.zip`,out=path.join(root,'dist');
   fs.mkdirSync(out,{recursive:true});
   const bytes=zip(entries),digest=hash(bytes);
   fs.writeFileSync(path.join(out,filename),bytes);
@@ -80,7 +80,7 @@ function build() {
   for(const name of ['index.html','site.css']) {
     let source=fs.readFileSync(path.join(root,'release','site',name),'utf8');
     if(name==='index.html')source=source.replace(/Free beta \d+\.\d+\.\d+/g,'Free beta '+version)
-      .replace(/lastfm-personal-library-\d+\.\d+\.\d+-beta\.zip/g,filename)
+      .replace(/(?:lastfm-personal-library|remaster-for-lastfm)-\d+\.\d+\.\d+-beta\.zip/g,filename)
       .replace(/v\d+\.\d+\.\d+ beta/g,'v'+version+' beta');
     fs.writeFileSync(path.join(site,name),source);
   }

@@ -26,7 +26,7 @@ const root=path.resolve(__dirname,'..'),extension=process.env.LFM_TEST_EXTENSION
   assert.equal(await importer.locator('#xml-file').isDisabled(),true);
   const popup=await context.newPage();await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.locator('#profile').filter({hasText:'Not connected'}).waitFor();
-  assert.equal(await popup.locator('#infinite-scroll').isDisabled(),true);
+  assert.equal(await popup.locator('#infinite-scroll').isDisabled(),false);
   const rules={artists:{'["glass gardens"]':{from:'Glass Gardens',to:'GLASS GARDENS'}},albums:{},tracks:{},albumArtists:{}};
   await worker.evaluate(rules=>chrome.storage.local.set({rules}),rules);
   const library=await context.newPage();await library.goto('https://www.last.fm/user/DemoListener/library');

@@ -72,10 +72,14 @@
       ? artworkPage &&
         new URL(value).origin === location.origin && new URL(value).pathname.startsWith('/music/') &&
         LastfmAdapter.musicItem(value)?.type === (album === 'track' ? 'tracks' : 'albums')
-      : LastfmAdapter.ownProfile(value, settings.username) &&
-        /\/library(?:\/?$|\/(?:scrobbles|artists|albums|tracks)\/?$|\/music\/)/.test(new URL(value).pathname);
+      : (settings.infiniteScroll && LastfmAdapter.scrollView(location.href) &&
+          new URL(value).origin === location.origin &&
+          (new URL(value).pathname === location.pathname ||
+            globalThis.LastfmRedirects?.samePagePath(location.href, value))) ||
+        (LastfmAdapter.ownProfile(value, settings.username) &&
+          /\/library(?:\/?$|\/(?:scrobbles|artists|albums|tracks)\/?$|\/music\/)/.test(new URL(value).pathname));
     if (target.origin !== location.origin || !allowed(target.href)) {
-      throw new Error('Page loading is available only on your configured profile.');
+      throw new Error('Page loading is available only in a supported Last.fm view.');
     }
     const state = await chrome.storage.local.get([PAUSE, LAST, WINDOW]);
     if (state[PAUSE] !== pause) track(state[PAUSE]);

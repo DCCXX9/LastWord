@@ -1,3 +1,11 @@
+# v0.9.25 beta — Remaster for Last.fm
+
+- Renamed the extension and its visible pages, downloads and store materials to Remaster for Last.fm. Icons, layout, extension identity, permissions and storage formats are retained.
+- Enabled infinite scrolling on native paginated chart lists across Last.fm profiles and public music, tag and chart pages, including when no personal profile is connected.
+- Local casing, cache ownership, artwork permissions and native editing retain their existing profile boundaries. Requests remain GET-only and honour pacing and pauses.
+- Installed Supermium verified: another profile and public tag list each grow from 50 to 100 rows; refresh retains scrolling availability. Saved data matches the private snapshot except normal request-pacing timestamps. Public music-page acceptance remains unverified after that page became unresponsive.
+- All 71 suites pass across the full run and focused reruns of three updated expectations. New universal-scroll coverage includes foreign profiles, public charts, no connected profile, unchanged foreign names, target guards and opt-out.
+
 # Chrome Web Store package · v0.9.24 beta
 
 29 October 2026. Packaging baseline fa293fe. Runtime version and extension identity are retained. Updated privacy wording for universal redirect scope; no feature, permission or storage-format changes.
@@ -24,7 +32,7 @@ Source and packages are intended for the existing private GitHub repository. Pre
 
 # v0.9.23 local candidate — cleaner Settings
 
-- Rename the Settings heading to Jay's Last.fm tool; remove the top tagline and
+- Rename the Settings heading to Remaster for Last.fm; remove the top tagline and
   username helper line.
 - Clarify the infinite-scroll label and move redirect protection into its own
   tile with independent save feedback. Drafts in the other tile are preserved.

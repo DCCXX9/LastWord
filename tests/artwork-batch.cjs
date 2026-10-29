@@ -106,8 +106,8 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
   await transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/_/First'));
   await transport.evaluate(()=>LastfmPages.getAlbum('/music/Artist/Official'));
   assert.equal(requests.length,2);
-  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/user/Friend/library/music/Artist/_/First')),/configured/);
-  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/Official')),/configured/);
+  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/user/Friend/library/music/Artist/_/First')),/supported Last.fm view/);
+  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/Official')),/supported Last.fm view/);
   await assert.rejects(transport.evaluate(()=>{const f=document.createElement('form');f.method='post';f.action='/user/DCCXX/library/edit-track';return LastfmPages.edit(f)}),/read-only/);
   assert.equal(requests.length,2,'public catalogue reads must not enable friend reads or native writes');
   await transport.close();

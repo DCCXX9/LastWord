@@ -11,7 +11,7 @@
     $('profile').textContent = username || 'Not connected';
     $('profile-link').href = username ? 'https://www.last.fm/user/' + encodeURIComponent(username) : 'options.html';
     $('infinite-scroll').value = String(next.settings.infiniteScroll !== false);
-    $('infinite-scroll').disabled = saving || !username;
+    $('infinite-scroll').disabled = saving;
     const avatar = $('profile-avatar');
     let source = '';
     try {
@@ -45,7 +45,7 @@
       const latest = await S.read();
       await refreshStatus();
       const diagnostics = {
-        extension:'Last.fm Personal Library',version:chrome.runtime.getManifest().version,
+        extension:'Remaster for Last.fm',version:chrome.runtime.getManifest().version,
         configuredProfile:latest.settings.username,
         preferences:Object.fromEntries(Object.entries(latest.rules).map(([type, group]) => [type,Object.keys(group).length])),
         scrollingEnabled:latest.settings.infiniteScroll !== false,

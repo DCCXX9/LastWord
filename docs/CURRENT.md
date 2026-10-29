@@ -1,3 +1,34 @@
+# Current state — 30 October 2026
+
+## v0.9.25: Remaster for Last.fm and universal scrolling
+
+Baseline 796be84106e1fdc3bd9c19e8ee57785d957f3d3e on the clean existing
+codex/itunes-library-styling checkout; one worktree, no competing owner.
+Renamed visible branding, store copy, docs and download files. Existing repository
+URL and persistent storage identifiers remain compatible. Logo icons and design
+are retained; store screenshots and promotional name are refreshed.
+
+Infinite scrolling now uses a separate supported-view check rather than personal
+profile ownership: native paginated chart tables on all profiles and public music,
+tag and chart pages. Same-page pagination validation, GET-only transport, pauses,
+request spacing and opt-out remain. Personal casing/native editing/cache/artwork
+retain their independent ownership boundaries. No new permissions.
+
+Installed Supermium, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID and DCCXX profile:
+verified foreign RJ library 50 -> 100 rows, refresh control persistence, and public
+rock-tag tracks 50 -> 100 rows with only GET requests. Storage snapshot comparison
+preserves every key except lfmLastPageRequest and lfmRequestWindow. Public Yeat
+music-page verification became unresponsive; only the tab created for that check
+was closed. Music-page live acceptance is not claimed. Synthetic coverage passes.
+No scrobble edits, cache rebuilding, preference changes or storage clearing.
+
+71/71 suites pass across the complete run and focused reruns after updating old
+scope/error expectations. New universal-scroll tests cover foreign artists/albums/
+tracks/history, public music/tag/charts, no connected profile, native names,
+unrelated-target rejection and opt-out. Store screenshots use fictional data.
+Release is prepared for the existing private GitHub repository, annotated v0.9.25
+and Chrome upload ZIP. Rollback: v0.9.24 / 796be84, preserving installed storage.
+
 # Current state — 29 October 2026
 
 ## 29 October 2026: Chrome Web Store / private GitHub handoff
@@ -74,7 +105,7 @@ Rollback: v0.9.23 checkpoint dd447bf. Local only, no push/publication or data ed
 
 Baseline: f7f11dc00d98e4b5c03fdea239e0e7ca5a786709 on
 codex/itunes-library-styling. Started clean; one worktree, no competing owner.
-Settings now uses Jay's Last.fm tool without the top tagline or username helper.
+Settings now uses Remaster for Last.fm without the top tagline or username helper.
 Infinite scroll says Load more library pages as you scroll. Redirect protection
 has its own tile, clear label and independent save; unsaved profile/scroll and
 redirect drafts cannot commit or discard each other. Existing artist scope and
@@ -153,7 +184,7 @@ The 41-file local ZIP is 300,424 bytes, SHA-256
 
 Baseline: 2a1c59f on codex/itunes-library-styling; started clean with one
 worktree and no competing checkout owner. Popup matches Jay's reference:
-Jay's Last.fm tool heading, connected profile/avatar, persistent Enabled/Disabled
+Remaster for Last.fm heading, connected profile/avatar, persistent Enabled/Disabled
 infinite-scroll dropdown, green XML matching and Settings buttons, compact footer.
 The existing scrolling consent behavior remains unchanged. Connection/scroll
 status and confirmed artwork refresh move into Settings; preference counts and
