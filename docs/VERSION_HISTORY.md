@@ -2,7 +2,14 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Local candidate: v0.9.20
+## Local candidate: v0.9.21
+
+Built from v0.9.20 checkpoint 2a1c59f. Matches the popup redesign with a profile
+avatar, infinite-scroll dropdown, XML matching and Settings buttons. Artwork
+refresh and connection details move into Settings. Albumless tracks is removed
+from runtime, UI and packages; legacy storage is preserved. Not pushed or published.
+
+## Previous local checkpoint: v0.9.20 (2a1c59f)
 
 Built from v0.9.19 checkpoint 35d74c3. Adds background caching after profile
 connection, retained-cache rebuild confirmation, cache JSON export/import,

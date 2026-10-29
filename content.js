@@ -385,6 +385,14 @@
     startScroll();
   }
 
+  function profileAvatar() {
+    const source = document.querySelector('header .avatar img')?.src;
+    try {
+      const url = new URL(source);
+      return url.protocol === 'https:' && url.hostname === 'lastfm-img.freetls.fastly.net' ? url.href : '';
+    } catch (_) { return ''; }
+  }
+
   function status() {
     return { version: chrome.runtime.getManifest().version, username: settings.username,
       ownProfile: ownProfile(), view: A.libraryView(location.href),
@@ -392,7 +400,7 @@
       ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status(),
       redirects: globalThis.LastfmRedirects?.status(),
       imageRecovery: globalThis.LastfmImageRecovery?.status(),
-      albumless: globalThis.LastfmAlbumless?.status() };
+      avatar: ownProfile() ? profileAvatar() : '' };
   }
   chrome.runtime.onMessage.addListener((message, sender, reply) => {
     if (message?.type === 'lfm:status') reply(status());

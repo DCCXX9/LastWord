@@ -1,3 +1,15 @@
+# v0.9.21 local candidate — popup redesign
+
+- Match the supplied popup layout: connected profile/avatar, persistent infinite
+  scroll dropdown, green iTunes XML matching and Settings buttons, compact footer.
+- Keep detailed connection/scroll status, preference counts and confirmed artwork
+  refresh in Settings. Artwork refresh includes a connected Last.fm tab selector.
+- Remove Albumless screens, capture, discovery, correction modules and store API.
+  Reject old action messages and prevent removed feature modules being packaged.
+- Preserve legacy storage, display preferences, XML undo, cache progress and jobs.
+- No new permissions, extension identity change, Last.fm submissions or publishing.
+- Source rollback point: v0.9.20, commit 2a1c59f.
+
 # v0.9.20 local candidate — safer background cache
 
 - First profile connection starts resumable background caching. Keep a connected

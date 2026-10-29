@@ -1,6 +1,6 @@
 /* The worker is the sole writer of preferences. Every operation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
+importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
 
 (() => {
   'use strict';
@@ -93,7 +93,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html', '/background.js'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/background.js'].includes(url.pathname);
     if (extension) return;
     // Last.fm navigates with pushState. sender.url retains the document's
     // original URL; Chrome's main-frame tab URL describes its current profile.
@@ -110,7 +110,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
     if (['artwork-read', 'artwork-put'].includes(action) && current.settings.username &&
         LastfmAdapter.publicArtistPage(url.href)) return;
-    if (['mutate', 'artwork-read', 'artwork-put', 'artwork-refresh', 'albumless', 'library-cache'].includes(action) && ownProfile) return;
+    if (['mutate', 'artwork-read', 'artwork-put', 'artwork-refresh', 'library-cache'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }
 
@@ -272,11 +272,9 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js', 'libra
     const stored = await chrome.storage.local.get(keys);
     const current = cacheAction?{settings:settings(stored.settings),rules:R.empty()}:snapshot(stored);
     authorize(sender, message.action, current);
-    if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put', 'albumless'].includes(message.action)) {
+    if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put'].includes(message.action)) {
       throw new Error('Connect your Last.fm profile in Settings first.');
     }
-    if (message.action === 'albumless') return LastfmAlbumlessStore.execute(message, current, stored,
-      sender.url === `chrome-extension://${chrome.runtime.id}/albumless.html`);
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
       const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);

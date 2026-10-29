@@ -1,7 +1,7 @@
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
-Last.fm profile. Local candidate: **v0.9.20 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm profile. Local candidate: **v0.9.21 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
@@ -17,7 +17,7 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The v0.9.20 local candidate compares XML casing with an observed Last.fm library
+The v0.9.21 local candidate compares XML casing with an observed Last.fm library
 cache and shows only changes in a Before → After table. Exact spelling and artist
 identity are required; featuring text, punctuation and titles stay intact.
 Caching starts after profile connection and continues with the comparison screen
@@ -31,9 +31,9 @@ the shared transport hard-blocks submissions. See [comparison details](docs/LIBR
 ## Public beta candidate
 
 Fresh installations start disconnected and open profile setup. Existing saved
-profiles and records are retained. Automatic album-less corrections and native
-rule capture are unavailable in this beta, including for previously enabled
-records. Manual Last.fm editing and local display preferences remain available.
+profiles and records are retained. Albumless tracks has been removed completely;
+legacy saved records are left untouched. Manual Last.fm editing and local display
+preferences remain available.
 
 The local ZIP, original store assets, static download site and submission draft
 are prepared by `tools/package-beta.cjs`. See [release/PUBLISHING.md](release/PUBLISHING.md)
@@ -200,31 +200,18 @@ Already-started modules are reused, retaining early cached artwork application.
   legacy storage. Imports replace display preferences/settings only after
   preview, and preserve existing extra storage. Nothing migrates or clears
   storage on startup.
-- **Diagnostics:** the popup reports profile/page connection and provides
+- **Popup:** a connected-profile avatar, infinite-scroll dropdown and direct XML
+  matching/Settings buttons keep the main controls together. Connection details,
+  preference counts and confirmed artwork refresh are available in Settings.
+- **Diagnostics:** the popup footer provides
   Copy diagnostics with version, feature status and counts. It excludes
   scrobble titles, form values and security tokens.
 
-## Album-less rules in this beta
+## Removed features
 
-Automatic correction and capture are unavailable in v0.8.0, even if saved records
-from an earlier version were enabled. They cannot reserve or submit a correction.
-Existing records are preserved without migration. The retained experimental
-algorithm is tested separately with an explicit test-only override; those checks
-do not mean that beta automation is available or signed-in verified.
-
-Open **Settings and backup → Album-less tracks** to review/search/delete saved
-rules or add a track for later use. Export JSON before modifying saved records.
-A saved rule does not change any Last.fm play in this version.
-
-Optional read-only discovery checks at most 20 pages per manually started batch,
-at least 12 seconds apart. It pauses on unexpected responses or rate limits and
-never skips a page or retries itself. Review the distinct candidates before
-remembering them. **Review loaded plays** needs no extra page requests. A large
-library remains expensive; this is not an unattended full-history crawler.
-Requests share the artwork/scrolling lock and persistent rate-limit stop.
-
-Normal scrobble edits still use Last.fm's editor when you explicitly submit it.
-No signed-in edits or whole-library scans were performed during beta preparation.
+Albumless tracks has been removed. There are no rule controls, capture,
+discovery or correction modules in the extension. Existing legacy storage stays
+untouched and remains included in JSON backups; it is never acted on.
 
 ## Verification
 
@@ -276,8 +263,6 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
 `tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
 `tests/scroll-toggle.cjs`, `tests/artwork-authority.cjs`, `tests/native-submit.cjs`,
-`tests/albumless-store.cjs`, `tests/albumless-transport.cjs`, `tests/albumless-flow.cjs`,
-`tests/albumless-capture.cjs`, `tests/albumless-scan.cjs`, `tests/albumless-ui.cjs`,
 `tests/beta-store.cjs`, `tests/beta-onboarding.cjs`, `tests/release.cjs`, `tests/release-site.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation,

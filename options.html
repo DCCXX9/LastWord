@@ -40,10 +40,15 @@
       <p class="subtle">Use your XML's exact artist, album and song casing across your Last.fm library. Scan locally, choose whole groups or individual names, then review and apply.</p>
       <p><a href="itunes.html">Review an iTunes library XML →</a></p>
     </section>
-    <section class="card" aria-labelledby="albumless-heading">
-      <h2 id="albumless-heading">Album-less tracks</h2>
-      <p class="subtle">Review saved album-less rules. Automatic scrobble corrections are unavailable in this beta.</p>
-      <p class="settings-link"><a href="albumless.html">Manage album-less rules →</a></p>
+    <section class="card" aria-labelledby="activity-heading">
+      <h2 id="activity-heading">Connection &amp; artwork</h2>
+      <div class="popup-status"><span id="status-dot" class="status-dot" aria-hidden="true"></span><strong id="active-status">Checking your library…</strong></div>
+      <p id="page-detail" class="subtle"></p>
+      <dl class="popup-details"><div><dt>Configured profile</dt><dd id="profile">…</dd></div><div><dt>Infinite scroll</dt><dd id="scroll">…</dd></div></dl>
+      <label for="artwork-tab">Last.fm tab</label><select id="artwork-tab" disabled></select>
+      <p class="subtle">Artwork refresh removes saved covers for tracks on the selected page and reloads it. Your library name cache is kept.</p>
+      <button id="refresh-artwork" type="button" disabled>Refresh artwork</button>
+      <p id="artwork-message" class="message" role="status" aria-live="polite"></p>
     </section>
     <section class="card backup-card" aria-labelledby="backup-heading">
       <div><h2 id="backup-heading">Backup &amp; restore</h2><p class="subtle">Export a JSON backup before importing or changing saved preferences.</p></div>
@@ -58,6 +63,6 @@
     <p>This replaces your display preferences and profile settings. Export your current preferences first if you want to keep a copy.</p>
     <div class="button-group"><button id="preview-export" type="button">Export current backup</button><button id="cancel-import" type="button">Cancel</button><button id="confirm-import" class="primary" type="button">Replace preferences</button></div>
   </dialog>
-  <script src="version.js"></script><script src="rules.js"></script><script src="store.js"></script><script src="options.js"></script>
+  <script src="version.js"></script><script src="rules.js"></script><script src="store.js"></script><script src="options.js"></script><script src="popup-status.js"></script><script src="settings-status.js"></script>
 </body>
 </html>

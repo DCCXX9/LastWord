@@ -1,5 +1,47 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: popup redesign v0.9.21
+
+Baseline: 2a1c59f on codex/itunes-library-styling; started clean with one
+worktree and no competing checkout owner. Popup matches Jay's reference:
+Jay's Last.fm tool heading, connected profile/avatar, persistent Enabled/Disabled
+infinite-scroll dropdown, green XML matching and Settings buttons, compact footer.
+The existing scrolling consent behavior remains unchanged. Connection/scroll
+status and confirmed artwork refresh move into Settings; preference counts and
+management remain there. Artwork refresh selects an own-profile tab and keeps
+its existing two-click confirmation. No new permissions or extension identity.
+
+Albumless tracks is removed: six source/UI files, content/worker entry points,
+store API, capture hook, styles and dedicated experimental suites. Its old action
+is rejected and packaging rejects removed feature modules. Legacy storage is
+untouched and remains included in generic backups. Artwork handling for scrobbles
+with a genuinely missing album remains unchanged; it does not edit scrobbles.
+
+Live acceptance used the same installed signed-in Supermium extension
+fpfeckjdjmlnnjbodagebgcdflmbkmik / DCCXX. The real toolbar popup showed the actual
+profile image, supplied layout and 380 x 456 size without horizontal overflow.
+The scroll dropdown saved, survived a popup reload and synchronized to Settings;
+the original enabled setting was restored. The real Settings button opened the
+page with 2,651 preferences, connection details and artwork refresh, with no
+Albumless link. Initial checks needed to await saved settings/content-script
+readiness; isolated test windows also took focus and closed the toolbar popup.
+No implementation fallback was added for these verification timing issues.
+
+All protected installed storage matches the pre-reload snapshot, including raw
+settings, preferences, XML undo, legacy scans, artwork and network pause records.
+The existing background cache was already running at this task's baseline and
+remains running; its live progress/jobs/request pacing are allowed to advance.
+Only the settings API's test-induced explicit default redirect flag was restored
+to the original raw record after checking its values. No data was cleared,
+reinstalled, submitted to Last.fm or published. Private live backups/evidence
+remain ignored under test-results/pre-v21-* and test-results/v21-*.
+
+Regression: 67/68 suites passed in the full run; the remaining older options
+suite still expected a deliberately removed popup status field. After updating
+that assertion and loading the shared status helper, options passes. Focused
+popup, artwork refresh, beta onboarding/store, actual extension and release
+checks also pass. The 41-file v0.9.21 ZIP is local only. Rollback: 2a1c59f.
+
 ## 29 October 2026: background cache candidate v0.9.20
 
 Baseline: 35d74c3 on codex/itunes-library-styling; started clean with no competing

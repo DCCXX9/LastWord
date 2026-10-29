@@ -50,7 +50,7 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   // A popup document opened as a test tab needs its target-tab query pinned.
   // Runtime messages, content scripts and the storage worker remain real.
   await popup.addInitScript(tabId=>{chrome.tabs.query=async()=>[{id:tabId}]},target.id);
-  await popup.goto(`chrome-extension://${id}/popup.html`);
+  await popup.goto(`chrome-extension://${id}/options.html`);
   const button=popup.getByRole('button',{name:'Refresh artwork',exact:true});
   await button.waitFor();await popup.waitForFunction(()=>!document.querySelector('#refresh-artwork').disabled);
   const confirm=popup.getByRole('button',{name:'Remove saved covers',exact:true});
@@ -67,7 +67,7 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   assert.equal(requests.filter(r=>r.method!=='GET').length,0,'no scrobble edits');
   assert.equal(requests.filter(r=>r.url.startsWith(origin)&&!r.navigation).length,0,'no scans or background lookups');
   await page.goto(origin+'/user/Friend/library');
-  await popup.reload();await popup.waitForFunction(()=>document.querySelector('#active-status').textContent==='Requests paused');
+  await popup.reload();await popup.waitForFunction(()=>document.querySelector('#active-status').textContent==='Waiting for your library');
   assert.equal(await button.isDisabled(),true,'refresh is disabled on other profiles');
   await page.goto(origin+'/user/DCCXX/library');await popup.reload();
   await popup.waitForFunction(()=>!document.querySelector('#refresh-artwork').disabled);
@@ -75,6 +75,6 @@ const seed=()=>({settings:{username:'DCCXX',infiniteScroll:false},rules:{artists
   await button.click();await confirm.click();await popup.getByText('Could not refresh artwork: No content script',{exact:true}).waitFor();
   assert.deepEqual(await w.evaluate(()=>chrome.storage.local.get(null)),after,'a disconnected tab cannot change stored data');
   assert.deepEqual(errors,[]);
-  console.log('PASS: scoped artwork invalidation, storage/profile safety, confirmed popup-to-content refresh, native cover and link after reload, persistence and zero background requests');
+  console.log('PASS: scoped artwork invalidation, storage/profile safety, confirmed settings-to-content refresh, native cover and link after reload, persistence and zero background requests');
  }finally{await context.close();fs.rmSync(profile,{recursive:true,force:true,maxRetries:5});}
 })().catch(error=>{console.error(error);process.exitCode=1});

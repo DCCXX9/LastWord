@@ -40,9 +40,8 @@ time. Missing artwork and changes to Last.fm's pages can prevent a result.
 Normal scrobble edits use Last.fm's editor and require the appropriate Last.fm
 account access. Local display preferences do not submit scrobble edits.
 
-Automatic album-less scrobble corrections are unavailable in this beta. Existing
-saved rules and discovery records are retained for review. This version does not
-automatically clear album fields while you listen.
+The Albumless tracks feature has been removed. Legacy records are preserved
+without being acted on.
 
 Preferences stay in this browser installation and do not sync to other devices.
 Export JSON before changing installations or uninstalling.
@@ -120,8 +119,7 @@ and support information to the site and policy before submission.
    needs a signed-in Last.fm account with editing access. Do not include Jay's
    account credentials in a reviewer note. Arrange reviewer access separately
    only if the store requests it.
-7. Album-less automation is intentionally unavailable, including for previously
-   enabled stored records. Read-only discovery requires an explicit start.
+7. Albumless tracks is removed. Legacy stored records never trigger actions.
 
 ## Official submission references
 

@@ -49,10 +49,6 @@ function createMockWorker(initialData = {}, options = {}) {
     crypto: require('node:crypto').webcrypto });
   context.importScripts = (...files) => files.forEach(file => {
     vm.runInContext(fs.readFileSync(path.join(project, file), 'utf8'), context, { filename: file });
-    // Explicitly exercise the retained experimental algorithm separately from
-    // the shipped beta, whose real worker never has this test-only override.
-    if (file === 'store.js' && options.experimentalAlbumless) vm.runInContext(
-      'globalThis.LastfmStore=Object.freeze({...LastfmStore,FEATURES:{automaticCorrections:true}})',context);
   });
   context.importScripts('background.js');
   function send(message, sender = { id: 'test', url: 'chrome-extension://test/options.html' }) {
@@ -83,8 +79,7 @@ async function mockExtension(page, data = {}, options = {}) {
       ? url : 'chrome-extension://test/options.html');
     return worker.send(value, { id: 'test', url: senderUrl });
   });
-  await page.evaluate(({ binding, data, experimentalAlbumless }) => {
-    window.testExperimentalAlbumless = !!experimentalAlbumless;
+  await page.evaluate(({ binding, data }) => {
     const listeners = new Set();
     window.testData = data;
     window.saved = data;
@@ -110,7 +105,7 @@ async function mockExtension(page, data = {}, options = {}) {
         }
       }
     };
-  }, { binding, data: clone(worker.data), experimentalAlbumless: options.experimentalAlbumless });
+  }, { binding, data: clone(worker.data) });
   worker.chrome.storage.onChanged.addListener(changes => {
     void page.evaluate(({ changes, data }) => window.__lastfmStorageChanged?.(changes, data),
       { changes, data: clone(worker.data) }).catch(() => {});
@@ -121,9 +116,6 @@ async function mockExtension(page, data = {}, options = {}) {
 async function loadScripts(page, files) {
   for (const file of files) {
     await page.addScriptTag({ path: path.join(project, file) });
-    if (file === 'store.js') await page.evaluate(() => {
-      if (window.testExperimentalAlbumless) globalThis.LastfmStore=Object.freeze({...LastfmStore,FEATURES:{automaticCorrections:true}});
-    });
   }
 }
 

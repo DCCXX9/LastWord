@@ -39,7 +39,10 @@ function validate(entries) {
     }
   }
   for (const name of required) if (!names.has(name)) throw new Error('Missing package reference: ' + name);
-  if (!/automaticCorrections:\s*false/.test(entries.find(x=>x.name==='store.js').data.toString())) throw new Error('Beta automation gate must be off.');
+  if (entries.some(x => /(?:^|\/)albumless(?:[-.]|$)/i.test(x.name) ||
+      (x.name.endsWith('.js') && /LastfmAlbumless|automaticCorrections/.test(x.data.toString())))) {
+    throw new Error('Removed Albumless feature must not be packaged.');
+  }
   if (!/username:\s*''/.test(entries.find(x=>x.name==='store.js').data.toString())) throw new Error('Fresh installs must be disconnected.');
   return manifest;
 }

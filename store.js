@@ -3,7 +3,6 @@
   if (globalThis.LastfmStore) return;
 
   const DEFAULT_SETTINGS = Object.freeze({ username: '', infiniteScroll: true, redirectProtection: true });
-  const FEATURES = Object.freeze({ automaticCorrections: false });
   const channel = 'lastfm-store-v1';
 
   async function request(action, values = {}) {
@@ -31,12 +30,10 @@
 
   globalThis.LastfmStore = Object.freeze({
     DEFAULT_SETTINGS,
-    FEATURES,
     read: () => request('read'),
     readArtwork: () => request('artwork-read'),
     saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
     refreshArtwork: (items, username) => request('artwork-refresh', { items, username }),
-    albumless: (username, op, values = {}) => request('albumless', { username, op, ...values }),
     subscribe,
     mutate: operations => request('mutate', { operations }),
     saveSettings: patch => request('settings', { patch }),
