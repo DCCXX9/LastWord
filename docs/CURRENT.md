@@ -1,5 +1,52 @@
 # Current state — 29 October 2026
 
+## 29 October 2026: guided iTunes workflow v0.9.22
+
+Baseline: 51c81698d92904c79f8d35c5424f6f44d587e460 on
+codex/itunes-library-styling; started clean with one worktree and no competing
+owner. Three collapsible numbered steps explain caching, iTunes XML export,
+then Before/After review and acceptance. Completed cache opens the import step;
+comparison opens review. Partial comparisons remain possible and explained.
+Pause/resume, cache export/import, skipped rows and protected rebuild remain.
+Rebuild warns that 50,000+ scrobbles may take over 30 minutes; large libraries
+can take several hours. No network pacing or cooldown changes.
+
+Apply/Undo paints Saving before calling the worker, disables review controls,
+then shows preview updating and explicit Complete only after the commit. Errors
+retain selections; a failed post-commit preview refresh still reports the saved
+result accurately. Undo remains accessible. Popup scroll changes keep their
+errors but no longer produce the redundant success message.
+
+The worker reuses one committed cache view for read-only info/plan calls;
+storage events update it and cache mutations invalidate it. Mutations continue
+to read persisted storage and use the existing serialized atomic writer. The
+50,000-name, 20-status-call probe first failed with 20 full cache reads / 1692ms;
+it passes with 1 read / approximately 240ms. This is local metadata overhead,
+not proof of faster whole-library download. Page writes, request count and
+persistent Last.fm pauses are unchanged.
+
+Installed Supermium verification used the same fpfeckjdjmlnnjbodagebgcdflmbkmik
+extension and DCCXX profile. v0.9.22 shows all steps and XML instructions; the
+completed cache contains 60,748 names with one skipped item. Real Library.xml
+(55,835 songs) produces 30 review changes, 27 needing a casing choice. Cancelling
+rebuild, runtime reload and real XML comparison preserve every storage key,
+including 4,780 preferences, XML undo, cache/jobs and network pause records.
+Personal Apply/Undo was not executed because it would replace the user's undo
+journal. Delayed saving, failure, Complete and actual worker Apply/Undo are
+verified in isolated browser/extension tests instead. Evidence and private
+snapshots stay ignored under test-results/pre-v22-* and test-results/v22-*.
+
+No Last.fm submissions, storage clearing, reinstall, new permission or publishing.
+Rollback: 51c8169. Full regression: 69/70 passed; library-casing-extension
+failed at extension service-worker startup (30-second timeout). Its focused rerun
+passed unchanged, including partial/resume, exact casing, Apply/Undo and own-
+profile isolation. The real toolbar popup saved/restored the scroll setting with
+no redundant success message; all storage matched exactly afterwards. Opening
+the popup over an extension page did not produce a toolbar target; bringing the
+own Last.fm library tab forward did. No product fallback was added.
+The 41-file local ZIP is 300,424 bytes, SHA-256
+20ef0d4fb3393af3935e036a813832027c268b06b1e9b7f7d4f45dde99e305cc.
+
 ## 29 October 2026: popup redesign v0.9.21
 
 Baseline: 2a1c59f on codex/itunes-library-styling; started clean with one

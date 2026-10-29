@@ -36,7 +36,7 @@
     saving = true; $('infinite-scroll').disabled = true;
     try {
       render(await S.saveSettings({infiniteScroll:$('infinite-scroll').value === 'true'}));
-      message('Infinite scroll ' + (snapshot.settings.infiniteScroll ? 'enabled.' : 'disabled.'));
+      message('');
     } catch (error) { message(error.message, true); }
     finally { saving = false; render(snapshot); }
   });

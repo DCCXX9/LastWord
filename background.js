@@ -1,4 +1,4 @@
-/* The worker is the sole writer of preferences. Every operation reads the latest
+/* The worker is the sole writer of preferences. Every mutation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
 importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
 
@@ -9,6 +9,21 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library
   const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   let queue = Promise.resolve();
+  // Keep one committed view for read-only cache metadata queries. Page writes
+  // still read persisted storage and commit atomically through the sole writer.
+  let cacheView, cacheKnown = false, cacheRevision = 0;
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && owns(changes, LastfmLibraryCache.KEY)) {
+      cacheRevision++; cacheView = changes[LastfmLibraryCache.KEY].newValue; cacheKnown = true;
+    }
+  });
+  async function cacheMetadataView() {
+    if (!cacheKnown) {
+      const revision = cacheRevision, value = await chrome.storage.local.get(LastfmLibraryCache.KEY);
+      if (revision === cacheRevision) { cacheView = value[LastfmLibraryCache.KEY]; cacheKnown = true; }
+    }
+    return cacheView;
+  }
 
   function settings(input) {
     return {
@@ -267,9 +282,11 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library
     // Page reads and per-request job guards must not clone a whole library or
     // XML undo record. Cache growth must not multiply ordinary browsing cost.
     const cacheAction=message.action==='library-cache';
+    const metadata=cacheAction&&['plan','info'].includes(message.op);
     const keys=message.action==='read'?['settings','rules']:cacheAction?
-      ['settings','lfmLibraryJobsV1',...(['active','state'].includes(message.op)?[]:[LastfmLibraryCache.KEY])]:null;
+      ['settings','lfmLibraryJobsV1',...(['active','state'].includes(message.op)||metadata?[]:[LastfmLibraryCache.KEY])]:null;
     const stored = await chrome.storage.local.get(keys);
+    if (metadata) stored[LastfmLibraryCache.KEY] = await cacheMetadataView();
     const current = cacheAction?{settings:settings(stored.settings),rules:R.empty()}:snapshot(stored);
     authorize(sender, message.action, current);
     if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put'].includes(message.action)) {
@@ -278,6 +295,7 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
       const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
+      if (['page','start','resume','rebuild','import'].includes(message.op)) cacheKnown = false;
       if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
       if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
       return result;

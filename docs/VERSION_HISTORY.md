@@ -2,7 +2,13 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Local candidate: v0.9.21
+## Local candidate: v0.9.22
+
+Built from v0.9.21 checkpoint 51c8169. Adds three collapsible iTunes steps,
+Saving/Complete feedback, quieter popup and measured large-cache metadata
+read reduction. Pacing and scrobble protection are unchanged. Local only.
+
+## Previous local checkpoint: v0.9.21 (51c8169)
 
 Built from v0.9.20 checkpoint 2a1c59f. Matches the popup redesign with a profile
 avatar, infinite-scroll dropdown, XML matching and Settings buttons. Artwork

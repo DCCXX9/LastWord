@@ -44,3 +44,21 @@ summary { cursor: pointer; }
 #cache-error:empty, #cache-message:empty { display: none; }
 #cache-skipped-list { padding-left: 20px; line-height: 1.7; }
 #cache-message[data-tone=error] { color: #a04444; }
+.workflow-safety { margin: 0 0 18px; }
+.workflow-step > summary { display: flex; align-items: center; gap: 12px; list-style: none; font-size: 18px; font-weight: 600; }
+.workflow-step > summary::-webkit-details-marker { display: none; }
+.workflow-step > summary::after { content: '+'; font-size: 22px; color: var(--lfm-focus); margin-left: auto; }
+.workflow-step[open] > summary::after { content: '−'; }
+.step-number { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--lfm-accent); color: var(--lfm-ink); flex-shrink: 0; font-size: 15px; }
+.step-status { margin-left: auto; color: #586861; font-weight: 400; font-size: 13px; text-align: right; }
+.step-body { margin-top: 22px; }
+.step-body > p + p { margin-top: 8px; }
+.workflow-step .cache-panel { margin-top: 16px; }
+.xml-instructions { padding-left: 22px; margin: 12px 0 18px; line-height: 1.9; }
+#partial-cache-note { margin-bottom: 16px; }
+.save-status { display: flex; align-items: center; gap: 14px; margin: 18px 0; padding: 16px; border: 1px solid var(--lfm-border); border-radius: 6px; background: var(--lfm-surface); }
+.save-status strong { display: block; font-size: 17px; }
+.save-status p { font-size: 13px; margin-top: 4px; }
+.save-status[data-phase=error] { background: var(--lfm-error); color: var(--lfm-error-ink); border-color: #efc5bf; }
+.cache-warning { border-left: 3px solid var(--lfm-focus); padding-left: 12px; }
+@media(max-width:700px) { .workflow-step > summary { flex-wrap: wrap; font-size: 16px; } .step-status { flex-basis: 100%; text-align: left; padding-left: 42px; } .save-status { flex-direction: column; align-items: start; } }

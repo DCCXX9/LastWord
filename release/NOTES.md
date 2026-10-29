@@ -1,3 +1,19 @@
+# v0.9.22 local candidate — guided iTunes casing
+
+- Three numbered, collapsible steps: cache Last.fm, import XML, review/accept.
+  Explain background caching, XML export and partial-cache comparisons. Keep
+  pause/resume and cache export/import; warn that 50,000+ scrobbles can take
+  over 30 minutes and very large libraries several hours before rebuilding.
+- Show Saving, preview updating and explicit Complete feedback after committing.
+  Prevent duplicate submission; retain selections on failed saves; expose Undo.
+- Remove the redundant infinite-scroll success message from the popup.
+- Reuse a coherent worker cache view for read-only metadata. A 50,000-name,
+  20-status-query test reduced full cache reads from 20 to 1 (~1.7s to ~0.24s).
+  This measures local overhead, not end-to-end download speed. Request pacing,
+  cooldowns and atomic page persistence stay unchanged.
+- Preserve identity, permissions, storage and casing-only / GET-only boundaries.
+- Source rollback point: v0.9.21, commit 51c8169. Not pushed or published.
+
 # v0.9.21 local candidate — popup redesign
 
 - Match the supplied popup layout: connected profile/avatar, persistent infinite

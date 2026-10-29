@@ -1,7 +1,7 @@
 /* Cache controls never modify display preferences or Last.fm data. */
 (() => {
  'use strict';const S=LastfmStore,C=LastfmLibraryCache,$=id=>document.getElementById(id);
- let info,action,skipPage=1,generation=0;
+ let info,action,skipPage=1,generation=0,hadComplete;
  const total=s=>s?Object.values(s.groups).reduce((n,g)=>n+g.count,0):0;
  const note=(text='',error=false)=>{ $('cache-message').textContent=text;$('cache-message').dataset.tone=error?'error':'' };
  function drawSkipped(){
@@ -13,9 +13,15 @@
  async function refresh(){
   const id=++generation,next=await S.cacheLibrary('info');if(id!==generation)return;info=next;
   const work=next.draft||next.cache,running=next.job.running,kind=next.draft?'Rebuilding':next.job.mode==='retry'?'Retrying skipped items':'Caching';
-  $('cache-status').textContent=running?kind:next.cache?.complete?'Complete':'Paused';
+  $('cache-status').textContent=running?kind:next.cache?.complete?'Complete':!next.cache?'Waiting for profile':'Paused';
+  $('cache-step-status').textContent=$('cache-status').textContent;
+  const complete=!!next.cache?.complete; $('partial-cache-note').hidden=complete;
+  if(hadComplete===undefined){$('step-cache').open=!complete;$('step-xml').open=complete}
+  else if(!hadComplete&&complete){$('step-xml').open=true}
+  hadComplete=complete;
   let detail=work?total(work).toLocaleString()+' names cached · '+work.skipped.toLocaleString()+' skipped':'Not cached yet.';
   if(work){const t=C.TYPES.find(t=>!work.groups[t].done);if(t)detail+=' · '+({tracks:'Songs',albums:'Albums',artists:'Artists'}[t])+' page '+work.groups[t].page+(work.groups[t].total?' of '+work.groups[t].total:'')}
+  if(work&&!work.complete)$('cache-step-status').textContent=$('cache-status').textContent+' · '+total(work).toLocaleString()+' names';
   $('cache-detail').textContent=detail+(next.job.waiting?' · '+next.job.waiting:'');$('cache-error').textContent=next.job.error||'';
   $('cache-resume').hidden=running;$('cache-resume').disabled=!next.username||!!next.cache?.complete&&!next.draft&&!next.job.remaining?.length;$('cache-pause').hidden=!running;
   $('cache-export').disabled=!next.cache;$('cache-import').disabled=!!running||!next.username;$('cache-import').title=running?'Pause caching before importing.':'';$('cache-rebuild').disabled=!!running||!next.username;
@@ -26,7 +32,7 @@
  $('cache-pause').addEventListener('click',()=>operation('pause'));
  $('cache-retry').addEventListener('click',()=>operation('retry'));
  function confirm(op,payload,heading,detail,label){action={op,payload};$('cache-confirm-heading').textContent=heading;$('cache-confirm-detail').textContent=detail;$('cache-confirm').textContent=label;$('cache-confirm-dialog').showModal();$('cache-cancel').focus()}
- $('cache-rebuild').addEventListener('click',()=>confirm('rebuild',{confirm:true,expectedId:info.cache?.id||null},'Rebuild your Last.fm cache?','This downloads your library again and may take an hour or more. Your current '+total(info.cache).toLocaleString()+' cached names remain available until the new download completes.','Start rebuild'));
+ $('cache-rebuild').addEventListener('click',()=>confirm('rebuild',{confirm:true,expectedId:info.cache?.id||null},'Rebuild your Last.fm cache?','This downloads your library again. Accounts with over 50,000 scrobbles can take over 30 minutes; large libraries can take several hours. Your current '+total(info.cache).toLocaleString()+' cached names remain available until the new download completes.','Start rebuild'));
  $('cache-cancel').addEventListener('click',()=>$('cache-confirm-dialog').close());
  $('cache-confirm-dialog').addEventListener('close',()=>{action=null});
  $('cache-confirm').addEventListener('click',async()=>{if(!action)return;const a=action;$('cache-confirm-dialog').close();await operation(a.op,a.payload)});

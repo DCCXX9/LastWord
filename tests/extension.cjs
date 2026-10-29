@@ -57,7 +57,7 @@ const root = path.resolve(__dirname,'..');
   await importer.locator('tr[data-type="artists"] input[type="checkbox"]').check();
   await importer.locator('#apply').click();
   await importer.locator('#confirm').click();
-  await importer.getByText('3 casing changes saved locally.',{exact:true}).waitFor();
+  await importer.getByText('Complete — 3 display preferences saved.',{exact:true}).waitFor();
   await library.goto('https://www.last.fm/user/DCCXX/library');
   await library.getByRole('link',{name:'bladee',exact:true}).waitFor();
   await importer.setViewportSize({width:1240,height:1080});
@@ -67,7 +67,7 @@ const root = path.resolve(__dirname,'..');
   await importer.locator('#revert').waitFor({state:'visible'});
   await importer.locator('#revert').click();
   await importer.locator('#confirm').click();
-  await importer.getByText('3 changes undone.',{exact:true}).waitFor();
+  await importer.getByText('Complete — 3 changes undone.',{exact:true}).waitFor();
   await library.getByRole('link',{name:'BLADEE',exact:true}).waitFor();
   // Exercise the actual file picker above the former 50 MB cap. Small comments
   // fill the gap between two tracks without inventing millions of preferences.

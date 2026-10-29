@@ -5,8 +5,10 @@ Last.fm names. This never changes scrobbles, XML or iTunes metadata.
 
 ## Review flow
 
-Choose XML files, then Compare libraries. The screen warns that caching Last.fm
-and comparing XML can take a while. The streaming XML reader supports standard
+Three numbered, collapsible steps guide the process: cache Last.fm, import XML,
+then review/accept changes. Step 2 explains iTunes File → Library → Export
+Library… and Compare libraries. Completed caching opens Step 2; comparison
+opens Step 3. Incomplete caching is visible in the collapsed step summary. The streaming XML reader supports standard
 Apple and older Apple Computer plist headers, rejects custom DTDs/entities, and
 never fetches external XML resources. XML locations, playlists and IDs are discarded.
 
@@ -20,7 +22,8 @@ from XML comparison. Compare uses the current saved cache without restarting it.
 Incomplete review is labeled Partial library and includes observed matches only.
 
 Advanced → Rebuild cache requires confirmation, warns about the download time
-and keeps the current cache available while a separate replacement is built.
+and warns that 50,000+ scrobbles can take over 30 minutes (large libraries can
+take several hours). It keeps the current cache available while a separate replacement is built.
 Only a completed replacement becomes current. Pause/reopen resumes the draft.
 Export cache saves a versioned JSON file, including partial progress and skipped
 items. A draft can also be exported separately. Import validates the format,
@@ -39,7 +42,10 @@ Review shows Type/artist, Before → After, selection, search and 100-row pages.
 Before includes applicable existing local casing. Identical names are omitted.
 Conflicting XML casings require a choice; replacements start unchecked. Save
 casing changes confirms counts and writes local rules plus persistent undo.
-Undo preserves subsequent manual edits. Existing backup/scan/pause state survives.
+Saving feedback appears before the worker call, disables review changes and
+duplicate Apply, then shows preview updating and explicit Complete after commit.
+Failures retain selections. A post-commit preview failure reports that saving
+succeeded and asks for a reload. Undo preserves subsequent manual edits. Existing backup/scan/pause state survives.
 
 ## Identity and cosmetic-only boundaries
 
@@ -72,6 +78,10 @@ and should be kept private. The original XML is never retained or uploaded.
 Ordinary page preference reads exclude the library cache and XML undo. Per-page
 job guards read settings/job metadata only. Pause and job-status updates write
 only job metadata, avoiding whole-cache broadcasts to every open content script.
+Read-only info/plan requests reuse a storage-coherent worker view; cache
+mutations invalidate it and continue reading persisted state before writing.
+A 50,000-name probe reduced 20 metadata reads to one (~1692ms to ~240ms), without
+changing requests, pauses or per-page writes. This is not a full-download timing.
 The old comparison polling loop has been removed. A 50,000-name regression guards
 these allocation boundaries; this does not prove every possible browser hang is
 resolved.
