@@ -90,7 +90,7 @@
       const data = JSON.parse(await file.text());
       if (revision !== importRevision) return;
       if (data.version !== 1 || !data.rules || typeof data.settings?.username !== 'string' ||
-          !/^[^/\s?#]+$/.test(data.settings.username)) throw new Error('This is not a valid Remaster for Last.fm backup.');
+          !/^[^/\s?#]+$/.test(data.settings.username)) throw new Error('This is not a valid LastWord for Last.fm backup.');
       const cleaned = R.clean(data.rules);
       for (const type of R.TYPES) {
         if (data.rules[type] && (Array.isArray(data.rules[type]) || typeof data.rules[type] !== 'object' ||

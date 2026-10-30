@@ -454,5 +454,5 @@
       refresh();
     } });
   }
-  init().catch(error => console.error('Remaster for Last.fm:', error.message));
+  init().catch(error => console.error('LastWord for Last.fm:', error.message));
 })();

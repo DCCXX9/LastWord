@@ -45,7 +45,7 @@
       const latest = await S.read();
       await refreshStatus();
       const diagnostics = {
-        extension:'Remaster for Last.fm',version:chrome.runtime.getManifest().version,
+        extension:'LastWord for Last.fm',version:chrome.runtime.getManifest().version,
         configuredProfile:latest.settings.username,
         preferences:Object.fromEntries(Object.entries(latest.rules).map(([type, group]) => [type,Object.keys(group).length])),
         scrollingEnabled:latest.settings.infiniteScroll !== false,

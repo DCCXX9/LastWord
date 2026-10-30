@@ -1,3 +1,32 @@
+# Current state - 30 October 2026
+
+## v0.9.26: LastWord for Last.fm
+
+Baseline 67e3ea4651266659de8fc62d517bfb2d02c298e0 on the clean existing
+codex/itunes-library-styling checkout; one worktree, no competing owner.
+Renamed all active extension branding, diagnostics, store copy and download names
+to LastWord for Last.fm. Historical release records retain their original names.
+Logo icon bytes, CSS, interface layout, permissions and storage identifiers are
+unchanged. Store screenshots use fictional data; the promotional graphic retains
+its design with the new name. No functional behaviour change.
+
+Installed signed-in Supermium, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID and DCCXX:
+verified v0.9.26 branding in popup, settings, preferences and privacy, including
+refresh persistence. Every installed storage key exactly matches the pre-reload
+snapshot. Private evidence stays ignored under test-results/v26-*.
+The first UI navigation raced extension reload and was blocked; after reload
+completed, the unchanged candidate passed. No Last.fm edits, cache rebuilds,
+scans, data migration, preference edits or reinstall.
+
+Focused release, release-site, popup, options, beta-store and beta-onboarding
+checks pass 6/6. Extracted upload-ZIP onboarding also passes. Independent ZIP CRCs, exact source
+bytes, per-file hashes and inner/outer consistency pass. Runtime ZIP: 300,801
+bytes, SHA-256 34ad1b45f4262267365fd26f9b04696cdd15565318ebfe079e3042f6abebe2ac. Earlier functional/live limitations below remain;
+this branding release does not relabel them as newly verified functionality.
+Source/tag and upload ZIP target the existing private GitHub repository. Public
+privacy policy keeps its existing URL with updated product naming. Chrome Web
+Store submission remains a manual dashboard step. Rollback: v0.9.25 / 67e3ea4.
+
 # Current state — 30 October 2026
 
 ## v0.9.25: Remaster for Last.fm and universal scrolling

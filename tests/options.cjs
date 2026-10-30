@@ -103,7 +103,7 @@ const project = path.resolve(__dirname, '..');
     await page.waitForFunction(() => document.querySelector('#count').textContent.includes('preferences'));
     assert.equal(await page.locator('#rules, #search, #type-filter').count(),0,'main options has no preference list');
     assert.equal(await page.locator('a[href="preferences.html"]').count(),1);
-    assert.equal(await page.locator('h1').innerText(), "Remaster for Last.fm");
+    assert.equal(await page.locator('h1').innerText(), "LastWord for Last.fm");
     assert.equal(await page.locator('.page-header .eyebrow, #username-help, #activity-heading, #active-status').count(), 0);
     assert.equal(await page.locator('#troubleshooting').evaluate(e=>e.open), false);
     assert.match(await page.locator('[aria-labelledby="itunes-heading"]').innerText(), /Mass import your casing preferences from your iTunes\/Apple Music library\./);

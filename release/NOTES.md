@@ -1,3 +1,7 @@
+# v0.9.26 beta - LastWord for Last.fm
+
+Renamed the extension, its pages, diagnostics and store listing to LastWord for Last.fm. The logo, interface design, permissions and saved-data formats are unchanged. Existing backups and caches remain compatible.
+
 # v0.9.25 beta — Remaster for Last.fm
 
 - Renamed the extension and its visible pages, downloads and store materials to Remaster for Last.fm. Icons, layout, extension identity, permissions and storage formats are retained.

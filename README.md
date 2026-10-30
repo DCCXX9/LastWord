@@ -1,7 +1,7 @@
-# Remaster for Last.fm
+# LastWord for Last.fm
 
 Private display preferences for your connected profile and infinite scrolling across
-Last.fm native paginated chart lists. Local candidate: **v0.9.25 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Last.fm native paginated chart lists. Local candidate: **v0.9.26 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
 Redirect protection uses `+noredirect` for all supported artist, song and album
@@ -29,7 +29,7 @@ malformed rows are skipped and reported for targeted retry. Large-cache reads an
 status broadcasts are reduced to avoid unnecessary memory churn. Preferences are local only;
 the shared transport hard-blocks submissions. See [comparison details](docs/LIBRARY_CASING.md).
 
-Settings uses the Remaster for Last.fm heading, separate redirect protection controls
+Settings uses the LastWord for Last.fm heading, separate redirect protection controls
 and collapsed Troubleshooting for confirmed artwork refresh.
 
 ## Public beta candidate

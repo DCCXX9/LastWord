@@ -19,7 +19,7 @@
       const current = ++generation;
       request('read').then(snapshot => {
         if (active && current === generation) callback(snapshot);
-      }).catch(error => console.error('Remaster for Last.fm preferences:', error));
+      }).catch(error => console.error('LastWord for Last.fm preferences:', error));
     };
     chrome.storage.onChanged.addListener(listener);
     return () => {

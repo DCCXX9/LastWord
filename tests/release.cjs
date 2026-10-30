@@ -2,9 +2,12 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {inputs,validate,zip,build}=require('../tools/package-beta.cjs');
 const entries=inputs(),manifest=validate(entries);
-assert.equal(manifest.version,'0.9.25');assert.equal(manifest.version_name,'0.9.25 beta');
+assert.equal(manifest.version,'0.9.26');assert.equal(manifest.version_name,'0.9.26 beta');
 assert.ok(entries.every(entry=>!entry.name.startsWith('albumless')), 'removed feature is not packaged');
-assert.equal(manifest.name,'Remaster for Last.fm');
+assert.equal(manifest.name,'LastWord for Last.fm');
+assert.equal(manifest.action.default_title,'LastWord for Last.fm');
+for (const entry of entries.filter(x=>/\.(?:js|html|json)$/.test(x.name)))
+ assert.doesNotMatch(entry.data.toString('utf8'), /Remaster for Last\.fm|Jay's Last\.?fm tool|Last\.?fm Personal Library/i, entry.name+' has current branding');
 assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing package reference/);
 assert.throws(()=>validate([...entries,{name:'albumless-engine.js',data:Buffer.from('')}]), /Removed Albumless/);
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);

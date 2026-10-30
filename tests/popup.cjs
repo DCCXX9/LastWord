@@ -21,7 +21,7 @@ const root=path.resolve(__dirname,'..');
   const own=await context.newPage();await own.goto('https://www.last.fm/user/DCCXX/library');
   const popup=await context.newPage();popup.on('pageerror',e=>errors.push(e.message));await popup.goto(`chrome-extension://${id}/popup.html`);
   await popup.waitForFunction(()=>!document.querySelector('#profile-avatar').hidden);
-  assert.equal(await popup.locator('h1').innerText(),"Remaster for Last.fm");
+  assert.equal(await popup.locator('h1').innerText(),"LastWord for Last.fm");
   assert.equal(await popup.locator('#profile').innerText(),'DCCXX');
   assert.equal(await popup.locator('#profile-avatar').getAttribute('src'),image);
   assert.equal(await popup.locator('#infinite-scroll').inputValue(),'true');
