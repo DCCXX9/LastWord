@@ -1,5 +1,61 @@
 # Current state - 30 October 2026
 
+## v0.9.27: earlier casing and stable third-party styling
+
+Baseline v0.9.26 / 5df72e8e53de6885ad354574634c8036d0091312 on
+codex/itunes-library-styling, one worktree. Preserves the inherited uncommitted
+compatibility candidate; a private pre-task patch is retained in ignored test-results.
+No permissions, identity, storage formats, logo or interface design changed.
+
+Casing now starts during document parsing, reads only committed settings/rules
+without waiting behind worker cache operations, and updates inserted names in a
+microtask before the next paint. A revision guard prevents a delayed initial
+snapshot replacing newer preferences. Scroll/layout work remains deferred.
+No page-wide hiding is used; this reduces the flash rather than promising that
+asynchronous storage and arbitrary third-party renderers can never expose native text.
+
+A reproduced artwork/redirect observer loop made 1,002 href writes in 300 ms.
+Restoring artwork links now recognises equivalent protected paths: the regression
+settles after one write. This fixes a concrete stall cause; it does not establish
+that every historical browser timeout had that cause. Text restoration only
+undoes LastWord's own writes; cover visibility releases only its own temporary
+hold, preserving theme CSS and important declarations. Partly hidden appended
+rows are accepted, while an entirely hidden page still rolls back.
+
+Installed signed-in Supermium checks, unchanged fpfeckjdjmlnnjbodagebgcdflmbkmik:
+Debloater 1.6.9 retained configured styling through repeated navigation and
+50-to-100-row appends, with an active animation-frame heartbeat. Current bleh
+2026.1029.1, official source commit 5ef066e7839b07556c3219c42524540412880d79,
+ran temporarily in Tampermonkey alongside LastWord. Colours, fonts and cover
+styling matched the bleh-only baseline; a 50-to-100-row append received bleh markup,
+refresh retained casing, and sampled visible frames showed no original casing.
+Non-GET/HEAD requests were blocked on test pages. No server edits were submitted.
+
+The user's existing disabled bleh 2026.0729 has its own startup errors even with
+LastWord disabled; it was neither updated nor removed. The separately named
+current-build test script was removed afterward, bleh local settings restored,
+Debloater restored disabled, and Tampermonkey retained enabled. Whole-browser
+CDP attachment later timed out; individual-target CDP completed cleanup instead.
+A later final-manifest check passed current-bleh initial styling/casing and a
+50-to-100-row append, but refresh intermittently left native rows without bleh.
+The same failure to initialise was reproduced with LastWord disabled. Its cause
+remains unproven; repeatable current-bleh refresh acceptance is therefore limited,
+and seamless compatibility is not claimed. No workaround for bleh startup was
+added. These checks cover tested versions/pages, not every theme option.
+
+Final installed storage comparison preserves every key except the normal request
+timing records lfmLastPageRequest and lfmRequestWindow. Preferences (4,081 tracks,
+529 albums, 169 artists and 1 album artist), library cache, XML undo, artwork
+records and pauses are unchanged. Private snapshots/profiles/logs remain ignored.
+After the final manifest reload, two native Last.fm loads each sampled 177
+visible frames with no original casing and a responsive heartbeat. Automated
+checks passed all 75 suites across the final 74/75 run plus the isolated capacity
+rerun (aggregate timeout; 56,000 preferences and undo, 34,239,827 bytes). No
+single clean full-run claim. Release delivery is recorded in release/NOTES.md.
+Rollback: v0.9.26 / 5df72e8; the private pre-task patch preserves prior dirty work.
+
+# Previous state - 30 October 2026
+
 ## v0.9.26: LastWord for Last.fm
 
 Baseline 67e3ea4651266659de8fc62d517bfb2d02c298e0 on the clean existing

@@ -11,6 +11,17 @@
     return response.value;
   }
 
+  // Initial display must not wait behind the worker's serialized write/cache
+  // queue. Read only these committed keys; all mutations still use the worker.
+  async function readDisplay() {
+    const data = await chrome.storage.local.get(['settings', 'rules']);
+    return { rules: LastfmRules.clean(data.rules), settings: {
+      username: typeof data.settings?.username === 'string' ? data.settings.username.trim() : DEFAULT_SETTINGS.username,
+      infiniteScroll: data.settings?.infiniteScroll !== false,
+      redirectProtection: data.settings?.redirectProtection !== false
+    } };
+  }
+
   function subscribe(callback) {
     let active = true;
     let generation = 0;
@@ -31,6 +42,7 @@
   globalThis.LastfmStore = Object.freeze({
     DEFAULT_SETTINGS,
     read: () => request('read'),
+    readDisplay,
     readArtwork: () => request('artwork-read'),
     saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
     refreshArtwork: (items, username) => request('artwork-refresh', { items, username }),

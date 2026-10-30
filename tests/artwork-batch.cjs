@@ -28,11 +28,11 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
    const body=document.createElement('tbody');body.innerHTML=html;
    await LastfmArtwork.prepareRows([...body.children]);
    const image=body.querySelector('img'),link=body.querySelector('a');
-   const before={src:image.src,href:link.href,visible:image.style.visibility};
+   const before={src:image.src,href:link.href,visible:image.style.visibility !== 'hidden'};
    document.querySelector('tbody').append(...body.children);
    return before;
   },row('First'));
-  assert.deepEqual(prepared,{src:cover.image,href:cover.url,visible:'visible'},'cache must prepare both image and album link while the row is still detached');
+  assert.deepEqual(prepared,{src:cover.image,href:cover.url,visible:true},'cache must prepare both image and album link while the row is still detached');
   await page.waitForFunction(()=>document.querySelectorAll('tr').length===2);
   const work=await page.evaluate(async html=>{
    const adapter=LastfmAdapter;window.rowParses=0;

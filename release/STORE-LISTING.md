@@ -1,4 +1,4 @@
-# Chrome Web Store listing · v0.9.26 beta
+# Chrome Web Store listing · v0.9.27 beta
 
 Prepared for submission; not submitted to Chrome. GitHub remains private.
 
@@ -57,7 +57,7 @@ Complete the dashboard's current data-category selections and Limited Use certif
 
 ## Supplied assets
 
-Upload lastword-for-lastfm-0.9.26-beta.zip as the extension (manifest.json is at the root).
+Upload lastword-for-lastfm-0.9.27-beta.zip as the extension (manifest.json is at the root).
 Use assets/icon128.png (128×128), assets/promo440.png (440×280), and the three 1280×800 screenshots in the submission bundle. Screenshots show actual extension pages in an isolated profile with fictional music metadata; they are not signed-in live acceptance evidence.
 
 ## Publisher fields still required

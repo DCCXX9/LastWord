@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if (globalThis.LastfmContent) { LastfmContent.refresh(); return; }
   const R = LastfmRules;
   const A = LastfmAdapter;
   const S = LastfmStore;
@@ -7,6 +8,7 @@
   let rules = R.empty();
   let scroller = null;
   let observer;
+  let scrollTimer;
   let queued = false;
   let currentUrl = location.href;
   const pending = new Set();
@@ -31,9 +33,15 @@
       if (nameNode(element, literal)) item = { ...item, name: literal };
     }
     let saved = changed.get(element);
-    if (saved && !saved.node.isConnected) {
+    if (saved && (!saved.node.isConnected || !element.contains(saved.node))) {
       changed.delete(element);
       saved = null;
+    }
+    // Another renderer owns its replacement text. Never restore our stale
+    // baseline over it, or keep rewriting a title changed by another tool.
+    if (saved && saved.node.nodeValue !== saved.applied) {
+      changed.delete(element);
+      return;
     }
     if (!saved) {
       const node = nameNode(element, item.name);
@@ -47,6 +55,7 @@
       ? (whitespace ? whitespace[1] + preferred + whitespace[3] : preferred)
       : saved.original;
     if (saved.node.nodeValue !== value) saved.node.nodeValue = value;
+    saved.applied = value;
     if (preferred) changed.set(element, saved);
     else changed.delete(element);
   }
@@ -81,8 +90,8 @@
   }
 
   function restoreNames() {
-    for (const { node, original } of changed.values()) {
-      if (node.isConnected) node.nodeValue = original;
+    for (const { node, original, applied } of changed.values()) {
+      if (node.isConnected && node.nodeValue === applied) node.nodeValue = original;
     }
     changed.clear();
   }
@@ -219,7 +228,8 @@
       if (controller.signal.aborted) throw new DOMException('Loading paused.', 'AbortError');
       return false;
     }
-    if (rows.some(row => row.getBoundingClientRect().height === 0)) {
+    // A styling extension may deliberately hide individual rows.
+    if (rows.every(row => row.getBoundingClientRect().height === 0)) {
       added.forEach(node => node.remove());
       throw new Error('Last.fm hid the added rows. Use its page links below.');
     }
@@ -294,6 +304,8 @@
   }
 
   function startScroll() {
+    // Casing runs during parsing; layout and navigation controls wait for idle.
+    if (!globalThis.LastfmPages || document.readyState === 'loading') return;
     if (!canScroll()) {
       suspendScroll(); return;
     }
@@ -383,7 +395,9 @@
     for (const node of pending) applyNames(node);
     pending.clear();
     for (const [element] of changed) if (!element.isConnected) changed.delete(element);
-    startScroll();
+    if (scrollTimer === undefined) scrollTimer = setTimeout(() => {
+      scrollTimer = undefined; startScroll();
+    }, 60);
   }
 
   function profileAvatar() {
@@ -398,7 +412,7 @@
     return { version: chrome.runtime.getManifest().version, username: settings.username,
       ownProfile: ownProfile(), view: A.libraryView(location.href),
       scrollState: settings.infiniteScroll ? (scroller?.active ? scroller.mode : 'unavailable') : 'off',
-      ...LastfmPages.status(), artwork: globalThis.LastfmArtwork?.status(),
+      ...globalThis.LastfmPages?.status(), artwork: globalThis.LastfmArtwork?.status(),
       redirects: globalThis.LastfmRedirects?.status(),
       imageRecovery: globalThis.LastfmImageRecovery?.status(),
       avatar: ownProfile() ? profileAvatar() : '' };
@@ -423,8 +437,11 @@
       rules = state.rules;
       refresh();
     };
-    S.subscribe(applyState);
-    applyState(await S.read());
+    let revision = 0;
+    S.subscribe(state => { revision++; applyState(state); });
+    const initialRevision = revision;
+    const initial = await S.readDisplay();
+    if (revision === initialRevision) applyState(initial);
     observer = new MutationObserver(records => {
       for (const record of records) {
         if (record.target.parentElement?.closest('[data-lfm-ui]')) continue;
@@ -437,9 +454,10 @@
           }
         }
       }
-      if (pending.size && !queued) { queued = true; setTimeout(flush, 60); }
+      if (pending.size && !queued) { queued = true; queueMicrotask(flush); }
     });
-    observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+    observer.observe(document, { childList: true, characterData: true, subtree: true });
+    addEventListener('DOMContentLoaded', refresh, { once: true });
     addEventListener('popstate', refresh);
     addEventListener('pagehide', event => {
       if (event.persisted) {
@@ -450,9 +468,10 @@
       observer.disconnect();
     });
     addEventListener('pageshow', event => { if (event.persisted) {
-      observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+      observer.observe(document, { childList: true, characterData: true, subtree: true });
       refresh();
     } });
   }
+  globalThis.LastfmContent = Object.freeze({ refresh });
   init().catch(error => console.error('LastWord for Last.fm:', error.message));
 })();

@@ -1,3 +1,13 @@
+# v0.9.27 beta - Casing and compatibility
+
+- Apply saved casing earlier during page parsing and before paints of newly inserted names; initial display reads no longer wait behind cache work.
+- Fix a reproduced artwork/redirect observer loop that could stall pages.
+- Preserve other extensions' text, hidden rows, cover styling and visibility choices.
+- Live Debloater 1.6.9 checks passed, including navigation and appending rows. Current bleh 2026.1029.1 retained styling/casing and transformed appended rows; an earlier refresh passed, but final repeat checks found intermittent failure to initialise, also reproduced with LastWord disabled. Full repeatable bleh refresh compatibility is not claimed. The older installed bleh 2026.0729 also has independent startup errors. Temporary scripts were removed and original disabled states/settings restored.
+- Saved preferences, cache, undo records and pauses are preserved. No new permissions, storage migrations or server-side edits.
+- Automated checks: 75/75 suites passed across the final 74/75 run and an isolated rerun of the capacity test, which exceeded the aggregate runner timeout. The rerun saved 56,000 preferences plus undo (34,239,827 bytes) and preserved a later edit on undo. No single clean full-run claim. Private browser evidence is excluded from packages.
+- Rollback source: v0.9.26 / 5df72e8.
+
 # v0.9.26 beta - LastWord for Last.fm
 
 Renamed the extension, its pages, diagnostics and store listing to LastWord for Last.fm. The logo, interface design, permissions and saved-data formats are unchanged. Existing backups and caches remain compatible.

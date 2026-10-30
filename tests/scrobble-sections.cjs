@@ -57,13 +57,13 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
       await page.close();
     }
     const page = await browser.newPage();
-    let requested = 0, hideOlderDay = false;
+    let requested = 0, hideFetchedPage = false;
     await page.route('https://www.last.fm/**', route => {
       const next = new URL(route.request().url()).searchParams.has('page');
       if (next) requested++;
       let body = next ? html([['Yesterday', [18]], ['2 Oct 2026', [10]]], null)
         : html([['Today', [30]], ['Yesterday', [20, 19]]], 2);
-      if (next && hideOlderDay) body = body.replace('data-test-stamp="10"', 'data-test-stamp="10" style="display:none"');
+      if (next && hideFetchedPage) body = body.replace(/data-test-stamp="(18|10)"/g, '$& style="display:none"');
       return route.fulfill({ contentType: 'text/html', body });
     });
     await page.goto('https://www.last.fm/user/DCCXX/library');
@@ -81,12 +81,12 @@ const html = (groups, next) => `<!doctype html><style>main{width:770px}table{wid
     await page.evaluate(() => { requestAnimationFrame = window.originalFrame; window.finishAppendFrame(); });
     await page.waitForFunction(() => document.querySelector('[data-lfm-ui="scroll"]').dataset.state === 'paused', null, { timeout: 3000 });
     assert.deepEqual(await page.locator('[data-test-stamp]').evaluateAll(rows => rows.map(row => Number(row.dataset.testStamp))), [30, 20, 19], 'pausing during insertion must roll back all added date sections');
-    hideOlderDay = true;
+    hideFetchedPage = true;
     await page.getByRole('button', { name: 'Resume loading', exact: true }).click();
     await page.getByRole('button', { name: 'Try again', exact: true }).waitFor();
-    assert.equal(await page.locator('[data-test-stamp]').count(), 3, 'a hidden fetched day must roll back the entire page');
+    assert.equal(await page.locator('[data-test-stamp]').count(), 3, 'a wholly hidden fetched page must roll back the entire page');
     assert.equal(await page.locator('nav.pagination').evaluate(nav => nav.hidden), false);
-    hideOlderDay = false;
+    hideFetchedPage = false;
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('nav.pagination').hidden && document.querySelectorAll('[data-test-stamp]').length === 5);
     assert.equal(await page.locator('[data-lfm-ui="scroll"]').count(), 0, 'successful retry must also remove finished controls');

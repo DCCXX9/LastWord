@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
   "name": "LastWord for Last.fm",
-  "version": "0.9.26",
-  "version_name": "0.9.26 beta",
+  "version": "0.9.27",
+  "version_name": "0.9.27 beta",
   "description": "Personalise your Last.fm library with local display names, iTunes XML casing import and continuous scrolling.",
   "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
   "permissions": ["storage", "unlimitedStorage", "alarms"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [{
     "matches": ["https://www.last.fm/*"],
-    "js": ["rules.js", "store.js", "adapter.js", "redirects.js", "image-recovery.js", "artwork.js"],
+    "js": ["rules.js", "store.js", "adapter.js", "redirects.js", "image-recovery.js", "artwork.js", "content.js"],
     "run_at": "document_start"
   }, {
     "matches": ["https://www.last.fm/*"],
