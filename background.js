@@ -1,6 +1,6 @@
-/* The worker is the sole writer of preferences. Every operation reads the latest
+/* The worker is the sole writer of preferences. Every mutation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
+importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
 
 (() => {
   'use strict';
@@ -9,6 +9,21 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
   const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   let queue = Promise.resolve();
+  // Keep one committed view for read-only cache metadata queries. Page writes
+  // still read persisted storage and commit atomically through the sole writer.
+  let cacheView, cacheKnown = false, cacheRevision = 0;
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && owns(changes, LastfmLibraryCache.KEY)) {
+      cacheRevision++; cacheView = changes[LastfmLibraryCache.KEY].newValue; cacheKnown = true;
+    }
+  });
+  async function cacheMetadataView() {
+    if (!cacheKnown) {
+      const revision = cacheRevision, value = await chrome.storage.local.get(LastfmLibraryCache.KEY);
+      if (revision === cacheRevision) { cacheView = value[LastfmLibraryCache.KEY]; cacheKnown = true; }
+    }
+    return cacheView;
+  }
 
   function settings(input) {
     return {
@@ -93,7 +108,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     let url;
     try { url = new URL(sender.url || ''); } catch { throw new Error('The requesting page could not be verified.'); }
     const extension = url.protocol === 'chrome-extension:' && url.host === chrome.runtime.id &&
-      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/albumless.html'].includes(url.pathname);
+      ['/options.html', '/popup.html', '/itunes.html', '/preferences.html', '/background.js'].includes(url.pathname);
     if (extension) return;
     // Last.fm navigates with pushState. sender.url retains the document's
     // original URL; Chrome's main-frame tab URL describes its current profile.
@@ -110,7 +125,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     if (action === 'read' && url.origin === 'https://www.last.fm') return;
     if (['artwork-read', 'artwork-put'].includes(action) && current.settings.username &&
         LastfmAdapter.publicArtistPage(url.href)) return;
-    if (['mutate', 'artwork-read', 'artwork-put', 'artwork-refresh', 'albumless'].includes(action) && ownProfile) return;
+    if (['mutate', 'artwork-read', 'artwork-put', 'artwork-refresh', 'library-cache'].includes(action) && ownProfile) return;
     throw new Error('Open your connected Last.fm profile to change its preferences.');
   }
 
@@ -132,6 +147,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
             (owns(operation, 'artist') && typeof operation.artist !== 'string')) {
           throw new Error('Enter the original name, preferred name, and artist where needed.');
         }
+        if (!R.sameSpelling(operation.from, operation.to)) throw new Error('Only letter casing can change. Titles, punctuation and spacing must stay the same.');
         R.put(rules, type, operation.from, operation.to, operation.artist || '', existing?.exact === true);
       } else if (op === 'delete') {
         delete rules[type][id];
@@ -185,6 +201,10 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     if (!Array.isArray(message.entries) || !message.entries.length) {
       throw new Error('Select at least one display preference to apply.');
     }
+    const cache = stored[LastfmLibraryCache.KEY]?.profiles?.[R.normalize(current.settings.username)];
+    if (!cache?.groups || message.cacheId !== cache.id) {
+      throw new Error('Finish comparing your Last.fm library before applying casing changes.');
+    }
     const rules = stored.rules == null ? R.empty() : validateRules(stored.rules);
     const changes = [], seen = new Set();
     let unchanged = 0;
@@ -194,6 +214,10 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
       if (seen.has(key)) throw new Error('The selection contains duplicate display preferences.');
       seen.add(key);
       validRule(type, id, rule);
+      const source = cache.groups[type]?.items[id];
+      if (!source || source.ambiguous || !R.sameSpelling(source.name, rule.to)) {
+        throw new Error('This exact spelling was not found in your Last.fm library. Only casing changes are allowed.');
+      }
       if (rule.exact !== true || rule.from !== R.normalize(rule.to)) {
         throw new Error('An XML preference must preserve its original spelling and change display casing only.');
       }
@@ -201,7 +225,8 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
       if (!owns(entry, 'expected') || !equal(before, entry.expected)) {
         throw new Error('A selected preference changed in another tab. Scan again to review the latest preferences.');
       }
-      if (before?.to === rule.to) { unchanged++; continue; }
+      const displayed = before && R.sameSpelling(source.name, before.to) ? before.to : source.name;
+      if (displayed === rule.to) { unchanged++; continue; }
       rules[type][id] = rule;
       changes.push({ type, id, before, after: rule });
     }
@@ -254,15 +279,27 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
         ...([2, 3].includes(cover.sourceVersion) ? { sourceVersion: cover.sourceVersion } : {}) }, checkedAt: Date.now() };
   }
   async function execute(message, sender) {
-    const stored = await chrome.storage.local.get(null);
-    const current = snapshot(stored);
+    // Page reads and per-request job guards must not clone a whole library or
+    // XML undo record. Cache growth must not multiply ordinary browsing cost.
+    const cacheAction=message.action==='library-cache';
+    const metadata=cacheAction&&['plan','info'].includes(message.op);
+    const keys=message.action==='read'?['settings','rules']:cacheAction?
+      ['settings','lfmLibraryJobsV1',...(['active','state'].includes(message.op)||metadata?[]:[LastfmLibraryCache.KEY])]:null;
+    const stored = await chrome.storage.local.get(keys);
+    if (metadata) stored[LastfmLibraryCache.KEY] = await cacheMetadataView();
+    const current = cacheAction?{settings:settings(stored.settings),rules:R.empty()}:snapshot(stored);
     authorize(sender, message.action, current);
-    if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put', 'albumless'].includes(message.action)) {
+    if (!current.settings.username && ['mutate', 'itunes-apply', 'artwork-put'].includes(message.action)) {
       throw new Error('Connect your Last.fm profile in Settings first.');
     }
-    if (message.action === 'albumless') return LastfmAlbumlessStore.execute(message, current, stored,
-      sender.url === `chrome-extension://${chrome.runtime.id}/albumless.html`);
     if (message.action === 'read') return current;
+    if (message.action === 'library-cache') {
+      const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
+      if (['page','start','resume','rebuild','import'].includes(message.op)) cacheKnown = false;
+      if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
+      if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
+      return result;
+    }
     if (message.action === 'artwork-read') {
       return (Array.isArray(stored[ARTWORK]) ? stored[ARTWORK] : []).filter(record => {
         try { return R.normalize(record.username) === R.normalize(current.settings.username) &&
@@ -321,6 +358,7 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
       }
       const next = validSettings({ ...current.settings, ...message.patch });
       await chrome.storage.local.set({ settings: { ...(stored.settings || {}), ...next } });
+      if(next.username && next.username !== current.settings.username) void LastfmLibraryCacheJobs.connected(next.username);
       return { ...current, settings: next };
     }
     if (message.action === 'replace') {
@@ -340,10 +378,11 @@ importScripts('rules.js', 'store.js', 'albumless-store.js', 'adapter.js');
     throw new Error('Unknown preference request.');
   }
 
+  const enqueue=(message,sender)=>{const pending=queue.then(()=>execute(message,sender));queue=pending.catch(()=>{});return pending};
+  LastfmLibraryCacheJobs.init(message=>enqueue({channel:'lastfm-store-v1',action:'library-cache',...message},{id:chrome.runtime.id,url:'chrome-extension://'+chrome.runtime.id+'/background.js'}));
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (message?.channel !== 'lastfm-store-v1') return false;
-    const pending = queue.then(() => execute(message, sender));
-    queue = pending.catch(() => {});
+    const pending = enqueue(message,sender);
     pending.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
     return true;
   });

@@ -8,7 +8,7 @@
   let snapshot = { rules: R.empty(), settings: S.DEFAULT_SETTINGS };
   let pendingImport = null;
   let importRevision = 0;
-  let settingsDirty = false;
+  let settingsDirty = false, redirectsDirty = false;
   let settingsRevision = 0;
 
   function message(text, error = false) {
@@ -21,12 +21,12 @@
     $('profile-status').textContent = connected ? 'Profile: ' + next.settings.username : 'Not connected';
     $('setup-notice').hidden = connected;
     $('save-settings').textContent = connected ? 'Save settings' : 'Connect profile';
+    if (!redirectsDirty) $('redirects').checked = next.settings.redirectProtection !== false;
     const total = count(next.rules);
     $('count').textContent = total.toLocaleString() + (total === 1 ? ' preference' : ' preferences');
     if (!settingsDirty) {
       $('username').value = next.settings.username;
       $('infinite').checked = next.settings.infiniteScroll !== false;
-      $('redirects').checked = next.settings.redirectProtection !== false;
     }
   }
   $('settings-form').addEventListener('input', () => {
@@ -41,14 +41,27 @@
     const revision = settingsRevision;
     $('save-settings').disabled = true;
     try {
-      const next = await S.saveSettings({ username, infiniteScroll: $('infinite').checked,
-        redirectProtection: $('redirects').checked });
+      const next = await S.saveSettings({ username, infiniteScroll: $('infinite').checked });
       settingsDirty = settingsRevision !== revision;
       accept(next); $('settings-note').textContent = settingsDirty ? 'Unsaved changes' : '';
       message(settingsDirty ? 'Settings saved. Your newer changes are still unsaved.'
         : 'Settings saved. Your open Last.fm pages will update.');
     } catch (error) { message(error.message, true); }
     finally { $('save-settings').disabled = false; }
+  });
+  $('redirect-form').addEventListener('input', () => {
+    redirectsDirty = true; $('redirect-note').textContent = 'Unsaved changes';
+  });
+  $('redirect-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    if ($('save-redirects').disabled) return;
+    $('save-redirects').disabled = true; $('redirects').disabled = true;
+    $('redirect-note').textContent = 'Saving…';
+    try {
+      const next = await S.saveSettings({ redirectProtection: $('redirects').checked });
+      redirectsDirty = false; accept(next); $('redirect-note').textContent = 'Saved';
+    } catch (error) { $('redirect-note').textContent = 'Not saved'; message(error.message, true); }
+    finally { $('save-redirects').disabled = false; $('redirects').disabled = false; }
   });
   async function exportBackup() {
     try {
@@ -77,7 +90,7 @@
       const data = JSON.parse(await file.text());
       if (revision !== importRevision) return;
       if (data.version !== 1 || !data.rules || typeof data.settings?.username !== 'string' ||
-          !/^[^/\s?#]+$/.test(data.settings.username)) throw new Error('This is not a valid Personal Library backup.');
+          !/^[^/\s?#]+$/.test(data.settings.username)) throw new Error('This is not a valid LastWord for Last.fm backup.');
       const cleaned = R.clean(data.rules);
       for (const type of R.TYPES) {
         if (data.rules[type] && (Array.isArray(data.rules[type]) || typeof data.rules[type] !== 'object' ||

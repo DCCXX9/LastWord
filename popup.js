@@ -1,102 +1,63 @@
 (() => {
   'use strict';
-  const S = globalThis.LastfmStore;
-  const $ = id => document.getElementById(id);
-  let snapshot, status = null, refreshingArtwork = false, confirmingRefresh = false;
-  const views = { artists: 'Artists', albums: 'Albums', tracks: 'Tracks', scrobbles: 'Scrobbles',
-    artistAlbums: 'Artist albums', artistScrobbles: 'Artist scrobbles', album: 'Album tracks', track: 'Track history', profile: 'Profile' };
-  const scrollLabels = { prompt: 'Waiting for your choice', declined: 'Paused for this view', ready: 'Ready', loading: 'Loading', paused: 'Paused', complete: 'All pages loaded', error: 'Paused after an error', off: 'Off', unavailable: 'Unavailable' };
+  const S = LastfmStore, $ = id => document.getElementById(id);
+  let snapshot, status = null, generation = 0, saving = false;
   function message(text, error = false) {
     $('message').textContent = text; $('message').dataset.tone = error ? 'error' : 'success';
   }
   function render(next) {
     snapshot = next;
-    const count = Object.values(next.rules).reduce((n, group) => n + Object.keys(group).length, 0);
-    $('profile').textContent = next.settings.username || 'Not connected';
-    $('options').textContent = next.settings.username ? 'Settings & backup' : 'Connect your profile';
-    $('count').textContent = String(count);
-    $('refresh-artwork').disabled = refreshingArtwork || !status?.ownProfile ||
-      status.username?.toLowerCase() !== next.settings.username.toLowerCase() ||
-      !status.artwork?.cacheReady || status.artwork?.refreshing || !status.artwork?.refreshableTracks;
-    $('scroll').textContent = next.settings.infiniteScroll === false ? 'Off' :
-      status?.ownProfile ? (scrollLabels[status.scrollState] || 'On') : 'On for your library';
-    $('status-dot').dataset.state = '';
-    if (!next.settings.username) {
-      $('active-status').textContent = 'Connect your profile';
-      $('page-detail').textContent = 'Enter your Last.fm username in Settings to get started. Your password is not needed.';
-    } else if (!status) {
-      $('active-status').textContent = 'Waiting for your library';
-      $('page-detail').textContent = 'Open your Last.fm profile. If it is already open, refresh that tab after reloading the extension.';
-    } else if (status.rateLimited) {
-      $('status-dot').dataset.state = 'warning';
-      $('active-status').textContent = 'Requests paused';
-      $('page-detail').textContent = 'Last.fm asked for a break. ' + (status.pausedUntil
-        ? 'Requests resume automatically at ' + new Date(status.pausedUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.'
-        : 'Requests resume automatically shortly.') + ' Covers show Last.fm’s own image until then.';
-    } else if (!status.ownProfile || status.username?.toLowerCase() !== next.settings.username.toLowerCase()) {
-      $('active-status').textContent = 'Inactive on this page';
-      $('page-detail').textContent = 'Preferences apply only to the profile ' + next.settings.username + '.';
-    } else {
-      $('status-dot').dataset.state = 'active';
-      $('active-status').textContent = 'Active on ' + next.settings.username;
-      $('page-detail').textContent = (views[status.view] || 'Your profile') + ' · Display preferences are enabled.';
-    }
+    const username = next.settings.username;
+    $('profile').textContent = username || 'Not connected';
+    $('profile-link').href = username ? 'https://www.last.fm/user/' + encodeURIComponent(username) : 'options.html';
+    $('infinite-scroll').value = String(next.settings.infiniteScroll !== false);
+    $('infinite-scroll').disabled = saving;
+    const avatar = $('profile-avatar');
+    let source = '';
+    try {
+      const url = new URL(status?.avatar);
+      if (status.username?.toLowerCase() === username.toLowerCase() && url.protocol === 'https:' &&
+          url.hostname === 'lastfm-img.freetls.fastly.net') source = url.href;
+    } catch (_) { /* A closed or older Last.fm tab has no verified avatar. */ }
+    avatar.hidden = !source;
+    if (source) avatar.src = source; else avatar.removeAttribute('src');
   }
   async function refreshStatus() {
-    status = null;
-    try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tabs[0]?.id !== undefined) status = await chrome.tabs.sendMessage(tabs[0].id, { type: 'lfm:status' });
-    } catch (_) { /* No content script in the current tab; show the refresh guidance. */ }
+    const current = ++generation;
+    const tabs = await LastfmPopupStatus.tabs(snapshot?.settings.username);
+    if (current !== generation) return;
+    status = tabs[0]?.status || null;
     if (snapshot) render(snapshot);
   }
+  $('profile-avatar').addEventListener('error', () => { $('profile-avatar').hidden = true; });
   $('options').addEventListener('click', () => chrome.runtime.openOptionsPage());
-  $('refresh-artwork').addEventListener('click', async () => {
-    if (refreshingArtwork) return;
-    // Removed covers are not looked up again by default, so ask once first.
-    if (!confirmingRefresh) {
-      confirmingRefresh = true; $('refresh-artwork').textContent = 'Remove saved covers';
-      message('Saved covers for tracks on this page will be removed and Last.fm’s own images shown instead. Click again to confirm.');
-      return;
-    }
-    confirmingRefresh = false;
-    refreshingArtwork = true; $('refresh-artwork').disabled = true;
-    $('refresh-artwork').textContent = 'Refreshing artwork…';
+  $('infinite-scroll').addEventListener('change', async () => {
+    if (saving) return;
+    saving = true; $('infinite-scroll').disabled = true;
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id === undefined) throw new Error('Open your Last.fm library first.');
-      const result = await chrome.tabs.sendMessage(tab.id, { type: 'lfm:refresh-artwork' });
-      if (!result?.ok) throw new Error(result?.error || 'Refresh this Last.fm tab and try again.');
-      message('Saved artwork refreshed for this page. Reloading…');
-    } catch (error) { message('Could not refresh artwork: ' + error.message, true); }
-    finally {
-      refreshingArtwork = false; $('refresh-artwork').textContent = 'Refresh artwork';
-      await refreshStatus();
-    }
+      render(await S.saveSettings({infiniteScroll:$('infinite-scroll').value === 'true'}));
+      message('');
+    } catch (error) { message(error.message, true); }
+    finally { saving = false; render(snapshot); }
   });
   $('diagnostics').addEventListener('click', async () => {
     try {
       const latest = await S.read();
       await refreshStatus();
       const diagnostics = {
-        extension: 'Last.fm Personal Library', version: chrome.runtime.getManifest().version,
-        configuredProfile: latest.settings.username,
-        preferences: Object.fromEntries(Object.entries(latest.rules).map(([type, group]) => [type, Object.keys(group).length])),
-        scrollingEnabled: latest.settings.infiniteScroll !== false,
-        page: status ? {
-          connected: true, ownProfile: !!status.ownProfile,
-          view: String(status.view || 'unknown'), scrollState: String(status.scrollState || 'unknown'),
-          rateLimited: !!status.rateLimited, contentVersion: String(status.version || 'unknown'),
-          artwork: status.artwork || null,
-          redirects: status.redirects || null,
-          imageRecovery: status.imageRecovery || null,
-          albumless: status.albumless || null
-        } : { connected: false }
+        extension:'LastWord for Last.fm',version:chrome.runtime.getManifest().version,
+        configuredProfile:latest.settings.username,
+        preferences:Object.fromEntries(Object.entries(latest.rules).map(([type, group]) => [type,Object.keys(group).length])),
+        scrollingEnabled:latest.settings.infiniteScroll !== false,
+        page:status ? {connected:true,ownProfile:!!status.ownProfile,view:String(status.view || 'unknown'),
+          scrollState:String(status.scrollState || 'unknown'),rateLimited:!!status.rateLimited,
+          contentVersion:String(status.version || 'unknown'),artwork:status.artwork || null,
+          redirects:status.redirects || null,imageRecovery:status.imageRecovery || null} : {connected:false}
       };
-      await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(diagnostics,null,2));
       message('Diagnostics copied. They contain status and counts only.');
-    } catch (error) { message('Could not copy diagnostics: ' + error.message, true); }
+    } catch (error) { message('Could not copy diagnostics: ' + error.message,true); }
   });
-  S.subscribe(next => { render(next); void refreshStatus(); });
-  Promise.all([S.read().then(render), refreshStatus()]).catch(error => message(error.message, true));
+  S.subscribe(next => { render(next); void refreshStatus().catch(() => {}); });
+  S.read().then(next => { render(next); return refreshStatus(); }).catch(error => message(error.message,true));
 })();

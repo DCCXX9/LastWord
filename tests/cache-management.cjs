@@ -1,0 +1,40 @@
+const assert=require('node:assert/strict');
+const {createMockWorker,libraryCache}=require('./harness.cjs');
+const ui={id:'test',url:'chrome-extension://test/itunes.html'},bg={id:'test',url:'chrome-extension://test/background.js'},own={id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0};
+(async()=>{
+ const seed={settings:{username:'DCCXX'},rules:{artists:{},tracks:{},albums:{},albumArtists:{}},itunesImportUndo:{id:'keep'},legacyScan:{page:1000},lfmNetworkPause:{until:123}};
+ const w=createMockWorker({...seed,lfmLibraryCacheV1:libraryCache('DCCXX',[])}),call=(op,v={},s=ui)=>w.request('library-cache',{op,...v},s);
+ const original=structuredClone(w.data.lfmLibraryCacheV1.profiles.dccxx),exported=await call('export');
+ await assert.rejects(call('rebuild',{expectedId:original.id}),/Confirm/);
+ await call('rebuild',{confirm:true,expectedId:original.id});
+ assert.deepEqual(w.data.lfmLibraryCacheV1.profiles.dccxx,original,'rebuild keeps usable old cache');
+ const plan=()=>call('plan',{},bg);let p=await plan();
+ await assert.rejects(call('page',{username:'DCCXX',id:p.id,token:'stale',data:{}},own),/active/);
+ await call('pause');assert.equal(await plan(),null);await call('resume');
+ for(const type of ['tracks','albums','artists']){
+  p=await plan();assert.equal(p.group,type);
+  const miss={type,page:1,index:0,name:'Broken',artist:'Artist',href:'https://www.last.fm/music/Broken',reason:'Unverified name'};
+  await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type,page:1,total:1,done:true,items:[],skipped:type==='tracks'?[miss]:[]}},own);
+  if(type!=='artists')assert.deepEqual(w.data.lfmLibraryCacheV1.profiles.dccxx,original);
+ }
+ assert.equal(w.data.lfmLibraryCacheV1.drafts.dccxx,undefined);assert.equal((await call('info')).skipped.length,1);
+ const rebuilt=w.data.lfmLibraryCacheV1.profiles.dccxx.id;assert.notEqual(rebuilt,original.id);
+ await call('retry');p=await plan();assert.equal(p.retry,true);assert.equal(p.page,1);
+ await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type:'tracks',page:1,total:1,done:true,items:[{name:'Fixed',artist:'Artist'}],skipped:[]}},own);
+ assert.equal((await call('info')).skipped.length,0);assert.equal(w.data.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.page,2,'retry keeps cursor');
+ const before=structuredClone(w.data),bad=structuredClone(exported);bad.cache.username='Friend';
+ await assert.rejects(call('inspect',{payload:bad}),/profile/);
+ bad.cache.username='DCCXX';bad.cache.groups.tracks.items.bad={name:'Bad',artist:'Artist'};
+ await assert.rejects(call('inspect',{payload:bad}),/Invalid/);assert.deepEqual(w.data,before);
+ await assert.rejects(call('import',{payload:exported,confirm:true,expectedId:'stale',expectedUpdatedAt:1}),/changed/);
+ const current=await call('read');await call('import',{payload:exported,confirm:true,expectedId:current.id,expectedUpdatedAt:current.updatedAt});
+ for(const key of Object.keys(seed))assert.deepEqual(w.data[key],seed[key],key+' preserved');
+ const partial=structuredClone(exported);partial.cache.groups.tracks={page:2,total:5,done:false,items:{}};
+ await call('inspect',{payload:partial});const now=await call('read');await call('import',{payload:partial,confirm:true,expectedId:now.id,expectedUpdatedAt:now.updatedAt});
+ await call('resume');p=await plan();assert.equal(p.page,2,'imported partial resumes at saved page');
+ await assert.rejects(call('import',{payload:exported,confirm:true,expectedId:p.id,expectedUpdatedAt:(await call('read')).updatedAt}),/Pause/);
+ await call('pause');const stable=structuredClone(w.data);w.chrome.storage.local.set=async()=>{throw Error('quota exceeded')};
+ await assert.rejects(call('rebuild',{confirm:true,expectedId:p.id}),/quota|storage/);assert.deepEqual(w.data,stable);
+ const reopened=createMockWorker(stable);assert.equal((await reopened.request('library-cache',{op:'info'},ui)).cache.groups.tracks.page,2);
+ console.log('PASS: retained rebuild cache, atomic swap, pause/resume, retry cursors, profile/file validation, partial import, stale guards, storage failure and preferences/undo/scan/pause preservation');
+})().catch(e=>{console.error(e);process.exitCode=1});

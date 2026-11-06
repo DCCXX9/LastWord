@@ -28,11 +28,11 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
    const body=document.createElement('tbody');body.innerHTML=html;
    await LastfmArtwork.prepareRows([...body.children]);
    const image=body.querySelector('img'),link=body.querySelector('a');
-   const before={src:image.src,href:link.href,visible:image.style.visibility};
+   const before={src:image.src,href:link.href,visible:image.style.visibility !== 'hidden'};
    document.querySelector('tbody').append(...body.children);
    return before;
   },row('First'));
-  assert.deepEqual(prepared,{src:cover.image,href:cover.url,visible:'visible'},'cache must prepare both image and album link while the row is still detached');
+  assert.deepEqual(prepared,{src:cover.image,href:cover.url,visible:true},'cache must prepare both image and album link while the row is still detached');
   await page.waitForFunction(()=>document.querySelectorAll('tr').length===2);
   const work=await page.evaluate(async html=>{
    const adapter=LastfmAdapter;window.rowParses=0;
@@ -106,9 +106,9 @@ const row = name => `<tr class="chartlist-row"><td class="chartlist-image"><a hr
   await transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/_/First'));
   await transport.evaluate(()=>LastfmPages.getAlbum('/music/Artist/Official'));
   assert.equal(requests.length,2);
-  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/user/Friend/library/music/Artist/_/First')),/configured/);
-  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/Official')),/configured/);
-  await assert.rejects(transport.evaluate(()=>{const f=document.createElement('form');f.method='post';f.action='/user/DCCXX/library/edit-track';return LastfmPages.edit(f)}),/connected/);
+  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/user/Friend/library/music/Artist/_/First')),/supported Last.fm view/);
+  await assert.rejects(transport.evaluate(()=>LastfmPages.getTrack('/music/Artist/Official')),/supported Last.fm view/);
+  await assert.rejects(transport.evaluate(()=>{const f=document.createElement('form');f.method='post';f.action='/user/DCCXX/library/edit-track';return LastfmPages.edit(f)}),/read-only/);
   assert.equal(requests.length,2,'public catalogue reads must not enable friend reads or native writes');
   await transport.close();
   console.log('PASS: no wrong compilation flash/link, detached cache preparation, incremental 300-row append, public personal covers and verified catalogue-only fallback');

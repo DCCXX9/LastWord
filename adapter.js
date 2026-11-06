@@ -62,6 +62,12 @@
     if (music.length === 2 && music[1] === '+tracks') return 'tracks';
     return null;
   }
+  // Only native chart lists with verified same-page pagination are scrollable.
+  // Personal display rules and native editing keep their separate ownership checks.
+  function scrollView(value) {
+    const url = parse(value);
+    return libraryView(value) || (url && /^(?:\/music\/|\/tag\/|\/charts(?:\/|$)|\/user\/[^/]+\/?$)/.test(url.pathname) ? 'chart' : null);
+  }
   function nextPage(root, base = baseUrl()) {
     const current = parse(base, base);
     if (!current) return null;
@@ -136,6 +142,6 @@
         !/\/4128a6eb29f94943c9d206c08e625904\.[^/]+$/i.test(url.pathname) ? url.href : null;
     } catch { return null; }
   }
-  globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, publicArtistPage, libraryView,
+  globalThis.LastfmAdapter = Object.freeze({ decode, musicItem, ownProfile, publicArtistPage, libraryView, scrollView,
     nextPage, editRow, artworkFields, editPairs, coverImage });
 })();

@@ -4,6 +4,8 @@
 
   const TYPES = ['artists', 'albums', 'tracks', 'albumArtists'];
   const normalize = value => String(value ?? '').trim().normalize('NFC').toLowerCase();
+  const sameSpelling = (a, b) => typeof a === 'string' && typeof b === 'string' &&
+    a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase();
   const key = parts => JSON.stringify(parts.map(normalize));
   const empty = () => ({
     artists: {}, albums: {}, tracks: {}, albumArtists: {}
@@ -50,10 +52,11 @@
   }
 
   function get(rules, type, from, artist = '') {
-    return rules[type]?.[idFor(type, from, artist)]?.to || null;
+    const to = rules[type]?.[idFor(type, from, artist)]?.to;
+    return sameSpelling(String(from).trim(), to) ? to : null;
   }
 
   globalThis.LastfmRules = Object.freeze({
-    TYPES, normalize, key, empty, clean, idFor, put, get
+    TYPES, normalize, sameSpelling, key, empty, clean, idFor, put, get
   });
 })();

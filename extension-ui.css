@@ -85,9 +85,6 @@ dialog .button-group { justify-content: flex-end; margin-top: 24px; }
 .help-page li { margin: 9px 0; }
 .help-page ol, .help-page ul { padding-left: 23px; }
 .help-page code { overflow-wrap: anywhere; }
-.albumless-candidates { max-height: 400px; overflow-y: auto; margin-top: 16px; }
-#correction-status, #scan-summary { margin-top: 12px; }
-#attempts p { margin-top: 12px; }
 .preferences-page .filters { margin-bottom: 0; }
 .preferences-page .message:empty { display: none; }
 .preference-group .section-header { margin-bottom: 18px; }
@@ -98,3 +95,36 @@ dialog .button-group { justify-content: flex-end; margin-top: 24px; }
 .preference-group th:last-child { width: 150px; }
 .preference-group .editing td input { min-width: 0; }
 @media (max-width: 720px) { .settings-page { padding: 22px 14px; } .page-header, .settings-fields, .section-header, .backup-card { align-items: start; flex-direction: column; gap: 14px; } .card { padding: 18px; } .settings-fields > div { width: 100%; } .filters { flex-direction: column; } #settings-note { display: block; margin: 10px 0 0; } }
+/* Compact toolbar layout, matching the popup redesign. */
+.popup-page { width: 380px; padding: 26px 22px 18px; color: #26342c; }
+.popup-page header { border-bottom: 1px solid #e4e8e5; padding: 0 0 23px; }
+.popup-page h1 { font-size: 29px; font-weight: 400; letter-spacing: -.7px; text-align: center; }
+.popup-connection, .popup-scrolling { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.popup-connection { margin-top: 22px; min-height: 30px; font-size: 16px; }
+#profile-link { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; max-width: 200px; }
+#profile-link span { overflow-wrap: anywhere; }
+#profile-avatar { object-fit: cover; flex-shrink: 0; }
+.popup-scrolling { margin-top: 22px; }
+.popup-scrolling label { font-size: 16px; font-weight: 400; margin: 0; }
+.popup-scrolling select { width: 134px; min-height: 35px; padding: 6px 9px; font-size: 13px; }
+.popup-actions { margin-top: 72px; }
+.popup-primary, .popup-actions button { border-radius: 5px; padding: 11px 12px; font-weight: 400; font-size: 14px; line-height: 1.4; }
+.popup-primary { display: block; text-align: center; text-decoration: none; background: var(--lfm-accent); color: var(--lfm-ink); border: 1px solid var(--lfm-accent); }
+.popup-primary:hover { background: var(--lfm-accent-hover); }
+.popup-page .popup-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 60px; font-size: 11px; white-space: nowrap; }
+.popup-footer #diagnostics { border: 0; background: none; border-radius: 0; color: #555; font-size: inherit; padding: 0; text-decoration: none; }
+.popup-footer #diagnostics:hover { text-decoration: underline; }
+.settings-page #artwork-tab { max-width: 360px; margin-bottom: 10px; }
+.settings-page #refresh-artwork { margin-top: 14px; }
+
+#redirect-form { margin-top: 16px; }
+#redirect-form .check-label { margin-bottom: 20px; }
+.settings-page a { display: inline-flex; align-items: center; justify-content: center; padding: 8px 13px; border: 1px solid var(--lfm-accent); border-radius: 5px; background: var(--lfm-accent); color: var(--lfm-ink); font-weight: 600; line-height: 1.4; text-decoration: none; }
+.settings-page a:hover { background: var(--lfm-accent-hover); border-color: var(--lfm-accent-hover); }
+.settings-page .app-footer { align-items: center; }
+#redirects-help { margin: 6px 0 14px; }
+#redirect-note { margin-left: 10px; font-size: 13px; }
+#troubleshooting > summary { cursor: pointer; font-size: 19px; font-weight: 600; }
+#troubleshooting > h2 { margin: 18px 0 6px; }
+#artwork-guidance:empty { display: none; }
+#artwork-guidance { margin-bottom: 14px; }

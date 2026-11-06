@@ -9,6 +9,8 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   await page.route('https://www.last.fm/**',r=>{
    const url=new URL(r.request().url());calls.push({url:url.href,method:r.request().method(),body:r.request().postData()});
    if(url.pathname.endsWith('/get-wrong'))return r.fulfill({status:302,headers:{location:'/user/DCCXX/library/music/Lucky+Twice/+tracks'}});
+   if(url.pathname.endsWith('/WrongSong'))return r.fulfill({status:302,headers:{location:'/music/+noredirect/Radiohead/_/Different'}});
+   if(url.pathname.endsWith('/WrongAlbum'))return r.fulfill({status:302,headers:{location:'/music/+noredirect/Radiohead/Different'}});
    return r.fulfill({contentType:'text/html',body:`<!doctype html><table><tr class="chartlist-row"><td class="chartlist-name"><a href="/music/Lucki/_/Song">Song</a></td><td><ul class="chartlist-more-menu"></ul><form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Lucki"><input name="track_name" value="Song"><input name="timestamp" value="1700000000"><input name="csrfmiddlewaretoken" value="fixture-token"><button type="submit">Native edit</button></form></td></tr></table>`});
   });
   await page.goto('https://www.last.fm/user/DCCXX/library/music/Lucki/Album');
@@ -23,6 +25,9 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   });
   assert.equal(result.album,'https://www.last.fm/music/+noredirect/Lucki/Album');
   assert.match(result.error,/different artist/,'a bad response cannot enter the library even if the server ignores the bypass');
+  assert.equal(await page.evaluate(async()=>(await LastfmPages.getAlbum('/music/Radiohead/Album')).url),'https://www.last.fm/music/+noredirect/Radiohead/Album');
+  for (const path of ['/music/Radiohead/_/WrongSong','/music/Radiohead/WrongAlbum'])
+   await assert.rejects(page.evaluate(path=>path.includes("/_/")?LastfmPages.getTrack(path):LastfmPages.getAlbum(path),path),/different song or album/);
   await page.evaluate(()=>document.addEventListener('submit',event=>{
    event.preventDefault();window.delegated=[...new FormData(event.target)];
   }));
@@ -31,13 +36,8 @@ const { mockExtension, loadScripts } = require('./harness.cjs');
   await page.waitForFunction(()=>window.delegated);
   assert.equal(await page.evaluate(()=>Object.fromEntries(window.delegated).artist_name),'Lucki');
   assert.equal(calls.some(c=>c.method==='POST'),false,'opening native editing delegates without a network write');
-  // Only this isolated fixture submits a POST, to verify the read guard leaves
-  // Last.fm's exact native action and fields alone. No real service is contacted.
-  await page.evaluate(()=>LastfmPages.edit(document.querySelector('form[data-edit-scrobble]')));
-  const post=calls.find(c=>c.method==='POST');
-  assert.equal(post.url,'https://www.last.fm/user/DCCXX/library/edit-track');
-  assert.equal(new URLSearchParams(post.body).get('artist_name'),'Lucki');
-  assert.equal(new URLSearchParams(post.body).get('csrfmiddlewaretoken'),'fixture-token');
+  await assert.rejects(page.evaluate(()=>LastfmPages.edit(document.querySelector('form[data-edit-scrobble]'))),/read-only/);
+  assert.equal(calls.some(c=>c.method==='POST'),false,'extension transport cannot submit native forms');
   await worker.request('settings',{patch:{redirectProtection:false}});
   await page.evaluate(()=>LastfmPages.getAlbum('/music/Travis+Scott/Album'));
   assert.equal(calls.at(-1).url,'https://www.last.fm/music/Travis+Scott/Album');

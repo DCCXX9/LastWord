@@ -24,13 +24,6 @@
 [data-lfm-artist-dialog] :focus-visible, [data-lfm-local-toast] :focus-visible { outline: 2px solid var(--lfm-focus); outline-offset: 3px; }
 [data-lfm-track-action] button:disabled { cursor: progress; opacity: .65; }
 [data-lfm-track-action] button, [data-lfm-artist-action] button { color: var(--lfm-focus); }
-.lfm-albumless-panel { position: fixed; bottom: 12px; right: 12px; z-index: 10000; max-width: 480px; max-height: 70vh; overflow-y: auto; background: var(--lfm-surface); color: var(--lfm-ink); border: 1px solid var(--lfm-border); border-radius: 6px; padding: 16px; box-shadow: 0 4px 20px #0003; font: 13px/1.5 Arial, sans-serif; }
-.lfm-albumless-panel p { margin: 8px 0; }
-.lfm-albumless-panel a { color: var(--lfm-focus); }
-.lfm-albumless-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.lfm-albumless-panel button { padding: 6px 9px; border: 1px solid #bbb; border-radius: 3px; background: var(--lfm-accent); color: var(--lfm-ink); cursor: pointer; }
-.lfm-albumless-panel button:focus-visible, .lfm-albumless-panel a:focus-visible { outline: 2px solid var(--lfm-focus); outline-offset: 2px; }
-.lfm-albumless-panel [hidden] { display: none; }
 
 [data-lfm-casing-actions] { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 [data-lfm-casing-actions] > button { margin: 0; }

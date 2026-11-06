@@ -46,7 +46,12 @@ const root = path.resolve(__dirname, '..');
     assert.deepEqual(exceptions, [], 'extension Reload during navigation must not leave idle scripts without dependencies');
     // Reload invalidates existing worlds and can omit document_idle entirely.
     // The supported update flow includes refreshing the Last.fm page afterward.
-    assert.deepEqual(await worker.evaluate(() => chrome.storage.local.get(null)), before, 'startup must preserve every saved storage key');
+    // A reloaded worker handle can refer to its invalidated execution world.
+    // Read the durable snapshot through a fresh extension page instead.
+    const snapshot = await browser.newPage();
+    await snapshot.goto(new URL('popup.html', worker.url()).href);
+    assert.deepEqual(await snapshot.evaluate(() => chrome.storage.local.get(null)), before, 'startup must preserve every saved storage key');
+    await snapshot.close();
     await page.reload();
     await page.getByRole('link', { name: 'BLADEE', exact: true }).waitFor({ timeout: 3000 });
     assert.deepEqual(exceptions, [], 'ordinary navigation must not initialize feature scripts twice');

@@ -50,6 +50,22 @@
       visibilityPriority: image.style.getPropertyPriority('visibility')
     });
   }
+  function reveal(image) {
+    const original = originals.get(image);
+    // Release only our temporary hold. Stylesheet visibility belongs to the
+    // page/theme; an inline `visible` would override its choice.
+    if (original?.heldVisibility && image.style.visibility === 'hidden' &&
+        image.style.getPropertyPriority('visibility') === '') {
+      if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
+      else image.style.removeProperty('visibility');
+    }
+    if (original) original.heldVisibility = false;
+    // Native lazy placeholders have an inline hold before we see them.
+    if (image.style.visibility === 'hidden' && !image.style.getPropertyPriority('visibility')) {
+      image.style.setProperty('visibility', 'visible');
+      if (original) original.revealedVisibility = true;
+    }
+  }
   function apply(image, cover) {
     if ((!image.isConnected && !prepared.has(image)) || !own()) return;
     if (!A.coverImage(cover.image)) return;
@@ -64,9 +80,7 @@
     image.removeAttribute('srcset'); image.removeAttribute('data-srcset');
     const attr = (name, value) => { if (image.getAttribute(name) !== value) image.setAttribute(name, value); };
     attr('src', source); attr('data-src', source);
-    // A previous extension context or native lazy loader may have hidden it.
-    // A verified resolved cover must be visible; restore() still keeps native styles.
-    if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
+    reveal(image);
     attr('alt', 'Cover for ' + cover.album + ' by ' + cover.artist);
     attr('title', cover.scrobble ? 'Scrobbled album: ' + cover.album + ' (checking your most-used album)'
       : cover.public ? 'Album associated with this exact track on Last.fm: ' + cover.album
@@ -87,8 +101,12 @@
   }
   function hold(image) {
     remember(image);
-    if (image.style.visibility !== 'hidden') image.style.setProperty('visibility', 'hidden');
-    const original = originals.get(image), link = original.link || original.replacement;
+    const original = originals.get(image);
+    if (image.style.visibility !== 'hidden' && !image.style.getPropertyPriority('visibility')) {
+      image.style.setProperty('visibility', 'hidden');
+      original.heldVisibility = true;
+    }
+    const link = original.link || original.replacement;
     if (link?.hasAttribute('href')) link.removeAttribute('href');
   }
   // Native Last.fm cover and its own album link, shown while the personal proof
@@ -97,8 +115,9 @@
     remember(image);
     const original = originals.get(image);
     heldAt.delete(image); released.add(image);
-    if (image.style.visibility !== 'visible') image.style.setProperty('visibility', 'visible');
-    if (original.link && original.href !== null && original.link.getAttribute('href') !== original.href) {
+    reveal(image);
+    if (original.link && original.href !== null && original.link.getAttribute('href') !== original.href &&
+        !globalThis.LastfmRedirects?.samePagePath(original.link.href, new URL(original.href, location.href).href)) {
       original.link.setAttribute('href', original.href);
     }
     if (!lookups) {
@@ -158,8 +177,12 @@
       original.wrapper.append(...original.replacement.childNodes);
       original.replacement.replaceWith(original.wrapper);
     }
-    if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
-    else image.style.removeProperty('visibility');
+    if (!image.style.getPropertyPriority('visibility') &&
+        (original.heldVisibility && image.style.visibility === 'hidden' ||
+         original.revealedVisibility && image.style.visibility === 'visible')) {
+      if (original.visibility) image.style.setProperty('visibility', original.visibility, original.visibilityPriority);
+      else image.style.removeProperty('visibility');
+    }
     originals.delete(image);
   }
   function reset() {

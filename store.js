@@ -3,13 +3,23 @@
   if (globalThis.LastfmStore) return;
 
   const DEFAULT_SETTINGS = Object.freeze({ username: '', infiniteScroll: true, redirectProtection: true });
-  const FEATURES = Object.freeze({ automaticCorrections: false });
   const channel = 'lastfm-store-v1';
 
   async function request(action, values = {}) {
     const response = await chrome.runtime.sendMessage({ channel, action, ...values });
     if (!response?.ok) throw new Error(response?.error || 'Preferences are unavailable. Reload the extension and refresh this page.');
     return response.value;
+  }
+
+  // Initial display must not wait behind the worker's serialized write/cache
+  // queue. Read only these committed keys; all mutations still use the worker.
+  async function readDisplay() {
+    const data = await chrome.storage.local.get(['settings', 'rules']);
+    return { rules: LastfmRules.clean(data.rules), settings: {
+      username: typeof data.settings?.username === 'string' ? data.settings.username.trim() : DEFAULT_SETTINGS.username,
+      infiniteScroll: data.settings?.infiniteScroll !== false,
+      redirectProtection: data.settings?.redirectProtection !== false
+    } };
   }
 
   function subscribe(callback) {
@@ -20,7 +30,7 @@
       const current = ++generation;
       request('read').then(snapshot => {
         if (active && current === generation) callback(snapshot);
-      }).catch(error => console.error('Last.fm Personal Library preferences:', error));
+      }).catch(error => console.error('LastWord for Last.fm preferences:', error));
     };
     chrome.storage.onChanged.addListener(listener);
     return () => {
@@ -31,18 +41,18 @@
 
   globalThis.LastfmStore = Object.freeze({
     DEFAULT_SETTINGS,
-    FEATURES,
     read: () => request('read'),
+    readDisplay,
     readArtwork: () => request('artwork-read'),
     saveArtwork: (item, cover) => request('artwork-put', { item, cover }),
     refreshArtwork: (items, username) => request('artwork-refresh', { items, username }),
-    albumless: (username, op, values = {}) => request('albumless', { username, op, ...values }),
     subscribe,
     mutate: operations => request('mutate', { operations }),
     saveSettings: patch => request('settings', { patch }),
     replace: (backup, expectedSnapshot) => request('replace', { backup, expectedSnapshot }),
     backup: () => request('backup'),
     itunesStatus: () => request('itunes-status'),
+    cacheLibrary: (op, values = {}) => request('library-cache', { op, ...values }),
     applyItunes: values => request('itunes-apply', values),
     revertItunes: values => request('itunes-revert', values)
   });

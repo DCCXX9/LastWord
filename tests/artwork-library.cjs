@@ -63,14 +63,14 @@ const scrobbleList = second => `<main class="col-main"><table class="chartlist">
     await worker.evaluate(data => chrome.storage.local.set(data), {settings,rules,lfmPersonalArtworkCacheV1:cache,lfmArtworkLookups:true});
     const page = await browser.newPage(); page.on('pageerror', e => errors.push(e.message));
     const painted = async i => {
-      const target = page.locator(`.chartlist-name a[href="${trackPath(i)}"]`).locator('..').locator('..');
+      const target = page.locator(`.chartlist-name a[href="${origin+trackPath(i).replace("/music/","/music/+noredirect/")}"]`).locator('..').locator('..');
       await target.scrollIntoViewIfNeeded();
       await page.waitForFunction(({href,src}) => {
         const a = [...document.querySelectorAll('.chartlist-name a')].find(a => a.getAttribute('href') === href);
         const img = a?.closest('tr').querySelector('img');
         return img?.src === src && img.naturalWidth > 0 && getComputedStyle(img).visibility === 'visible';
-      }, {href:trackPath(i),src:image(i)}, {timeout:10000});
-      assert.equal(await target.locator('.chartlist-image a').getAttribute('href'), origin+albumPath(i));
+      }, {href:origin+trackPath(i).replace("/music/","/music/+noredirect/"),src:image(i)}, {timeout:10000});
+      assert.equal(await target.locator('.chartlist-image a').getAttribute('href'), origin+albumPath(i).replace('/music/','/music/+noredirect/'));
     };
     await page.goto(origin+library);
     for (const i of items.slice(0,2)) await painted(i);

@@ -2,9 +2,8 @@
   "manifest.json", "background.js", "rules.js", "store.js", "adapter.js", "redirects.js",
   "content.js", "content.css", "pages.js", "native-edit.js", "lfm-ui.css", "image-recovery.js",
   "artwork.js", "artwork-source.js", "artwork-albums.js",
-  "albumless-store.js", "albumless-reader.js", "albumless-engine.js", "albumless-scan.js",
-  "albumless.html", "albumless-ui.js", "options.html", "options.js",
-  "popup.html", "popup.js", "preferences.html", "preferences.js", "extension-ui.css",
-  "itunes.html", "itunes.js", "library-casing.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
+  "options.html", "options.js",
+  "popup.html", "popup.js", "popup-status.js", "settings-status.js", "preferences.html", "preferences.js", "extension-ui.css",
+  "itunes.html", "itunes.js", "library-casing.js", "library-cache.js", "library-cache-store.js", "library-cache-job.js", "cache-ui.js", "library-cache-bridge.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
   "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png"
 ]

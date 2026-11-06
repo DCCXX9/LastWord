@@ -54,8 +54,8 @@ async function scripts(page,files){
    assert.equal(await p.locator('img').first().getAttribute('src'),image('Preferred'),'wrong native compilation cannot win');
    assert.equal(await p.locator('.chartlist-image a').first().getAttribute('href'),origin+'/music/Artist/Preferred');
    const before=calls.length;
-   const detached=await p.evaluate(async html=>{const b=document.createElement('tbody');b.innerHTML=html;await LastfmArtwork.prepareRows([...b.children]);const i=b.querySelector('img'),v={src:i.src,href:i.closest('a')?.href,visible:i.style.visibility};document.querySelector('tbody').append(...b.children);return v},row('Appended','Preferred'));
-   assert.deepEqual(detached,{src:image('Preferred'),href:origin+'/music/Artist/Preferred',visible:'visible'},'proved shared counts prepare both cover and link before scroll insertion');
+   const detached=await p.evaluate(async html=>{const b=document.createElement('tbody');b.innerHTML=html;await LastfmArtwork.prepareRows([...b.children]);const i=b.querySelector('img'),v={src:i.src,href:i.closest('a')?.href,visible:i.style.visibility !== 'hidden'};document.querySelector('tbody').append(...b.children);return v},row('Appended','Preferred'));
+   assert.deepEqual(detached,{src:image('Preferred'),href:origin+'/music/Artist/Preferred',visible:true},'proved shared counts prepare both cover and link before scroll insertion');
    assert.equal(calls.length,before);
    for(const key of ['settings','rules','xmlUndo','scanRecords'])assert.deepEqual(worker.data[key],saved[key]);
    await p.close();
