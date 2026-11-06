@@ -2,7 +2,57 @@
 
 Private repository: [DCCXX9/lastfm-personal-library](https://github.com/DCCXX9/lastfm-personal-library).
 
-## Current snapshot: v0.9.17
+## Local candidate: v0.9.24
+
+Built from v0.9.23 checkpoint dd447bf. Settings uses green navigation buttons,
+removes redundant cache navigation and aligns the redirect tile. Music redirect
+protection covers all supported artists/songs/albums with verified original-row
+identity repair and strict response checks. Saved data and permissions retained.
+Not pushed or published.
+
+## Previous local checkpoint: v0.9.23 (dd447bf)
+
+Built from v0.9.22 checkpoint f7f11dc. Cleans up Settings copy and heading,
+separates redirect protection, clarifies scroll controls and moves artwork
+refresh into collapsed Troubleshooting. Identity and saved data are preserved.
+Not pushed or published.
+
+## Previous local checkpoint: v0.9.22 (f7f11dc)
+
+Built from v0.9.21 checkpoint 51c8169. Adds three collapsible iTunes steps,
+Saving/Complete feedback, quieter popup and measured large-cache metadata
+read reduction. Pacing and scrobble protection are unchanged. Local only.
+
+## Previous local checkpoint: v0.9.21 (51c8169)
+
+Built from v0.9.20 checkpoint 2a1c59f. Matches the popup redesign with a profile
+avatar, infinite-scroll dropdown, XML matching and Settings buttons. Artwork
+refresh and connection details move into Settings. Albumless tracks is removed
+from runtime, UI and packages; legacy storage is preserved. Not pushed or published.
+
+## Previous local checkpoint: v0.9.20 (2a1c59f)
+
+Built from v0.9.19 checkpoint 35d74c3. Adds background caching after profile
+connection, retained-cache rebuild confirmation, cache JSON export/import,
+skipped-row reporting/retry and smaller storage reads/broadcasts. Existing
+progress and preferences remain intact. Not pushed or published.
+
+## Previous local checkpoint: v0.9.19 (35d74c3)
+
+Built from v0.9.18 checkpoint 3176b45. The latest candidate
+adds exact observed-library casing comparison, concise Before → After review,
+unchanged exclusion, a persistent read-only cache and a permanent transport
+submission block. It has not been pushed or published.
+
+## Previous local checkpoint: v0.9.18 (3176b45)
+
+Whole-library XML import accepts older Apple Computer headers, exposes a
+Select whole library action and review filters, and reports unresolved casing
+choices and replacements before Apply. With approval, `unlimitedStorage`
+allows large local preference/undo records. The raw XML is never stored or
+uploaded. v0.9.17 remains unchanged in history; v0.9.18 is not yet pushed.
+
+## Previous snapshot: v0.9.17
 
 v0.9.17 adds no new features. The popup, Settings, Help and Privacy pages show
 the manifest version instead of hard-coded labels, and Refresh artwork asks for a

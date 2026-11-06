@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { createMockWorker } = require('./harness.cjs');
+const { createMockWorker, libraryCache } = require('./harness.cjs');
 const empty = () => ({artists:{},albums:{},tracks:{},albumArtists:{}});
 const entry = (name, expected = null, type = 'artists', artist) => ({
   type, id: JSON.stringify(type === 'tracks' || type === 'albums'
@@ -8,9 +8,23 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
 });
 (async()=>{
  const rules=empty(); rules.artists['["bladee"]']={from:'Bladee',to:'BLADEE'};
+ const guarded=createMockWorker({settings:{username:'DCCXX'}});
+ const origin='chrome-extension://test/itunes.html';
+ const started=await guarded.request('library-cache',{op:'start',username:'DCCXX'},{id:'test',url:origin});
+ const pageData={type:'tracks',page:1,total:1,done:true,items:[{name:'Song',artist:'Artist'}]};
+ for(const sender of [{id:'test',url:origin},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:1},{id:'test',url:'https://www.last.fm/user/Friend/library',frameId:0}]){
+  await assert.rejects(guarded.request('library-cache',{op:'page',username:'DCCXX',id:started.id,data:pageData},sender),/connected|Library pages/);
+ }
+ await guarded.request('library-cache',{op:'page',username:'DCCXX',id:started.id,data:pageData},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0});
+ assert.equal((await guarded.request('library-cache',{op:'read'})).groups.tracks.page,2);
  const settings={username:'DCCXX',infiniteScroll:true};
  const worker=createMockWorker({settings,rules,legacyScan:{page:93}});
- const apply=entries=>worker.request('itunes-apply',{entries,username:'DCCXX'});
+ const apply=async entries=>{
+   const fixture=libraryCache('DCCXX',entries), old=worker.data.lfmLibraryCacheV1?.profiles.dccxx;
+   if(old) for(const type of ['artists','albums','tracks']) fixture.profiles.dccxx.groups[type].items={...old.groups[type].items,...fixture.profiles.dccxx.groups[type].items};
+   await worker.externalSet({lfmLibraryCacheV1:fixture});
+   return worker.request('itunes-apply',{entries,username:'DCCXX',cacheId:'test-library'});
+ };
  const result=await apply([entry('bladee',rules.artists['["bladee"]']),entry('ecco2k'),entry('Hold Me',null,'tracks','Ecco2k')]);
  assert.equal(result.applied,3);
  assert.equal((await worker.request('read')).rules.artists['["bladee"]'].to,'bladee');
@@ -27,11 +41,14 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
  await assert.rejects(worker.request('itunes-revert',{id:result.batch.id}),/latest/);
  const before=structuredClone(worker.data);
  await assert.rejects(apply([entry('New'),entry('bladee')]),/another tab/);
- assert.deepEqual(worker.data,before,'conflict means no partial apply');
+ assert.deepEqual({...worker.data,lfmLibraryCacheV1:undefined},{...before,lfmLibraryCacheV1:undefined},'conflict means no partial preference apply');
  await assert.rejects(apply([entry('New'),entry('New')]),/duplicate/);
  const invalid=entry('Wrong'); invalid.rule.from='other';
  await assert.rejects(apply([invalid]),/invalid|casing/);
  await assert.rejects(worker.request('itunes-apply',{entries:[entry('New')],username:'Friend'}),/profile changed/);
+ await assert.rejects(worker.request('itunes-apply',{entries:[entry('Not Scrobbled')],username:'DCCXX',cacheId:'test-library'}),/exact spelling/);
+ await assert.rejects(worker.request('itunes-apply',{entries:[entry('New')],username:'DCCXX',cacheId:'stale'}),/comparing/);
+ await assert.rejects(worker.request('mutate',{operations:[{op:'put',type:'tracks',artist:'Artist',from:'Song (feat. Guest)',to:'Song'}]}),/Only letter casing/);
  const denied={id:'test',url:'https://www.last.fm/user/DCCXX/library'};
  await assert.rejects(worker.request('itunes-apply',{entries:[entry('New')],username:'DCCXX'},denied),/connected/);
  const first=await apply([entry('First')]);
@@ -53,9 +70,10 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
  assert.equal(Object.keys(fresh.data.rules.tracks).length,2500);
  await worker.request('replace',{backup,expectedSnapshot:await worker.request('read')});
  assert.equal((await worker.request('itunes-status')).batch,null,'full restore also invalidates an existing active undo action');
- const failure=createMockWorker({settings});
+ const failure=createMockWorker({settings,lfmLibraryCacheV1:libraryCache('DCCXX',[entry('Test')])});
  failure.chrome.storage.local.set=async()=>{throw new Error('QUOTA_BYTES quota exceeded');};
- await assert.rejects(failure.request('itunes-apply',{entries:[entry('Test')],username:'DCCXX'}),/storage/);
- assert.deepEqual(failure.data,{settings},'failed storage write leaves rules and undo untouched');
+ const failedBefore=structuredClone(failure.data);
+ await assert.rejects(failure.request('itunes-apply',{entries:[entry('Test')],username:'DCCXX',cacheId:'test-library'}),/storage/);
+ assert.deepEqual(failure.data,failedBefore,'failed storage write leaves rules and undo untouched');
  console.log('PASS: exact casing, atomic import, persistent selective revert, later edits, conflicts, 2500 tracks, backup and quota failure');
 })().catch(error=>{console.error(error);process.exitCode=1});

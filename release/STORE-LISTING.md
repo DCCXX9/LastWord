@@ -1,135 +1,72 @@
-# Store listing draft · v0.9.13 beta
+# Chrome Web Store listing · v0.9.27 beta
 
-Prepared for review, not submitted. Publisher account, public URLs and support
-details must be supplied before publication. Do not enter invented details.
+Prepared for submission; not submitted to Chrome. GitHub remains private.
 
-## Listing text
+## Listing fields
 
-**Name:** Last.fm Personal Library
+Name (from manifest): LastWord for Last.fm
 
-**Summary:** Personalise your Last.fm library with local display names, iTunes XML
-casing import and continuous scrolling.
+Summary (from manifest): Personalise your Last.fm library with local display names, iTunes XML casing import and continuous scrolling.
 
-**Description:**
+Suggested category: Tools. Language: English.
 
-Make your own Last.fm library display the artist, album and song names you prefer.
-Keep your choices locally in your browser, without changing Last.fm's catalogue.
+## Description
 
-- Choose case-sensitive display names for artists, albums and songs.
-- Import an iTunes library XML locally, watch the scan progress, review the names
-  and select which preferences to apply. Revert the latest import if needed.
-- Search, edit and delete preferences on a separate Display names page.
-- Keep scrolling through native Last.fm library rows, including dated Scrobbles.
-- Export and restore a JSON backup.
+Make your own Last.fm library display the letter casing you prefer, with local display preferences and library browsing tools.
 
-Connect your Last.fm username in Settings. Display names apply only to that
-profile. Personal covers also run on public artist pages and their Tracks lists.
-No extension password, developer account or analytics is required. XML
-files are processed on your device and are not uploaded to the developer.
+- Save casing changes from Last.fm's native edit dialog using Save casing changes.
+- Match an iTunes/Apple Music XML export against your cached Last.fm library. Review Before and After, select changes and save them locally.
+- Only exact names differing in letter casing qualify for XML matching. Featuring credits, punctuation and edition suffixes are never removed.
+- Cache your library in the background while a connected Last.fm profile tab is open. Pause, resume, export or import the cache. Large libraries can take several hours.
+- Search and manage saved preferences; export and restore a JSON backup. Undo the latest XML import while preserving later manual changes.
+- Load native paginated lists as you scroll across Last.fm profiles, music, tag and chart pages, with your consent.
+- Keep supported artist, song and album links on their original pages using redirect protection.
 
-This is a beta. Personal track covers and native editing are included for testing.
-Covers use your most-scrobbled album for the track and update the album link too.
-On a specific album's library page, all tracks use that album's existing header
-cover and link without history lookups.
-Unverified covers and links stay hidden during lookup. Cached and shared verified
-covers are prepared before scroll-added rows appear, with a bounded head start
-for new lookups. Public tracks you have never heard use only an explicit exact
-track-to-album association from Last.fm; unrelated releases are not substituted.
-Cached covers are reused; new selections require Last.fm requests and can take
-time. Missing artwork and changes to Last.fm's pages can prevent a result.
-Normal scrobble edits use Last.fm's editor and require the appropriate Last.fm
-account access. Local display preferences do not submit scrobble edits.
+The interface is labelled LastWord for Last.fm. Connect your Last.fm username in Settings; the extension never asks for your Last.fm password. Display preferences apply only to the profile you connect. XML files are processed on your device and are not uploaded to the developer.
 
-Automatic album-less scrobble corrections are unavailable in this beta. Existing
-saved rules and discovery records are retained for review. This version does not
-automatically clear album fields while you listen.
+Local casing changes affect how the website looks. They never edit or delete Last.fm scrobbles or change its catalogue. Last.fm's separate Save edit button retains its normal server-side behaviour; do not use it to save local casing.
 
-Preferences stay in this browser installation and do not sync to other devices.
-Export JSON before changing installations or uninstalling.
+Artwork support uses available Last.fm page data and cached covers. Missing data, page changes and request pauses may prevent a result. Redirect protection cannot repair Last.fm's catalogue, merged statistics or ambiguous artist identities; typed/external links can redirect before the extension runs.
+
+Preferences stay in this browser installation. Export a backup before uninstalling or moving to a store installation. No advertising, analytics, developer-operated collection server or Chrome Sync.
 
 Independent project. Not affiliated with or endorsed by Last.fm or Apple.
 
-## Assets
+## Privacy practices and permission justifications
 
-- Extension ZIP: `dist/lastfm-personal-library-0.9.13-beta.zip`
-- Icon: `release/assets/icon128.png` (128 × 128 PNG)
-- Small promotional tile: `release/assets/promo440.png` (440 × 280 PNG)
-- Screenshots: `release/assets/setup.png`, `preferences.png`, `xml-review.png`
-  (1280 × 800 PNG each).
-- Screenshots show the actual extension UI with fictional music metadata. Do not
-  label these as signed-in Last.fm screenshots or real-user acceptance evidence.
+Single purpose: Personalise the connected user's Last.fm library presentation using local display preferences and library browsing controls.
 
-The icons and promotional graphic are original project artwork. No Last.fm logo,
-Apple logo or third-party album artwork is included in these release assets.
+- storage: Store profile settings, display preferences, XML undo, library cache/progress, skipped items, artwork records and request pauses locally. Retain legacy records without acting on removed features.
+- unlimitedStorage: Whole-library preferences, library cache and the undo record can exceed Chrome's usual local storage quota. This enables local storage, not additional website access.
+- alarms: Resume persisted background library caching after the extension worker is suspended, respecting saved pauses and request pacing.
+- https://www.last.fm/* content-script access: Read the connected profile's library, native form metadata and public music pages; apply local display names, append library rows and protect original music links. The shared page transport permits GET only. No unrelated-site access.
+- Remote code: No. All executable JavaScript is included in the ZIP.
 
-## Privacy tab and permissions
+Data processed: username, settings, selected XML music metadata, display preferences, Last.fm library names/counts/timestamps and native form metadata, local cache/progress/undo and voluntary diagnostics. Original XML files and filenames are not retained. Native security fields are not saved in preferences or diagnostics. Normal page/image requests go to Last.fm and its image hosts using the browser session. No automatic data reporting to the developer. User-requested JSON downloads can contain listening metadata and should be kept private.
 
-**Single purpose:** Personalise the connected user's Last.fm library presentation
-with locally saved display preferences and native library browsing controls.
-
-**storage justification:** Save profile settings, display-name preferences, XML
-undo, bounded artwork cache and request state in this browser installation, and
-preserve existing album-less/discovery records. The extension does not use Sync.
-
-**Last.fm site access justification:** Read the connected profile's library rows,
-native edit forms, album tags and images to apply preferences, append the next
-library page, select personal covers and open Last.fm's normal editor. Public
-artist lists also read your connected history and exact track/album pages for
-covers. Redirect protection adjusts supported artist links on public music pages.
-The content
-scripts match only `https://www.last.fm/*`. There is no unrelated-site access.
-
-**Remote code:** None. Runtime JavaScript is packaged locally. Requests retrieve
-Last.fm data and images; they do not download executable code.
-
-**Data inventory for the publisher to disclose accurately:**
-
-| Information | Processing / destination |
-| --- | --- |
-| Last.fm username, settings, display preferences | Local extension storage |
-| Selected XML music metadata | Local parsing/review; applied rules and latest undo stored locally |
-| Last.fm names, counts, timestamps, album tags, native form fields | Read from Last.fm; relevant artwork and request state cached locally |
-| Native security fields | Used in memory with Last.fm's normal editor; not saved in preferences or diagnostics |
-| Page / image requests | Last.fm and its image hosts receive normal browser requests and session credentials |
-| JSON exports | Local download initiated by the user; may contain listening metadata and legacy records |
-| Voluntary diagnostics | Clipboard only on request; username, counts and feature/error state; no automatic reporting |
-
-There is no developer-operated collection endpoint, sale, advertising or analytics.
-Review the current dashboard's data-category definitions against this inventory
-and the privacy policy; do not claim the extension processes no user data merely
-because processing is local. Complete the applicable limited-use certifications
-only after verifying that the final listing, privacy policy and source agree.
-
-Use the publicly hosted `privacy.html` as the policy URL. A local extension path
-or a file on this PC is not a public privacy-policy URL. Add the real publisher
-and support information to the site and policy before submission.
+Complete the dashboard's current data-category selections and Limited Use certifications against this inventory and privacy.html. Local processing does not justify claiming that no user data is processed.
 
 ## Reviewer instructions
 
-1. Install the package. Settings opens for a fresh installation; it starts with
-   no connected profile and writes no initial preferences.
-2. Enter a Last.fm username and select Connect profile. No password is requested
-   by the extension. Opening that profile's library enables personalisation;
-   other profiles are left unchanged.
-3. Open Import iTunes XML and select an exported XML library. The scan is local;
-   review/select names before Apply. No Last.fm write is needed to test this.
-4. Open Display names to inspect groups/search/edit/delete. Export JSON from
-   Settings. Revert the latest XML import on the import page.
-5. Open the connected profile's library and scroll to load more native rows.
-6. Artwork and normal editing need Last.fm page data; normal editing additionally
-   needs a signed-in Last.fm account with editing access. Do not include Jay's
-   account credentials in a reviewer note. Arrange reviewer access separately
-   only if the store requests it.
-7. Album-less automation is intentionally unavailable, including for previously
-   enabled stored records. Read-only discovery requires an explicit start.
+1. Install the extension ZIP. A new installation starts disconnected. Open Settings and connect your own Last.fm username; no password is entered into the extension.
+2. Keep that profile's Last.fm tab open to cache the library. Step 1 of iTunes casing shows progress, Pause/Resume and cache export/import. Advanced rebuild requires confirmation and retains the current cache until its replacement finishes.
+3. Export your iTunes library using File → Library → Export Library…; choose the XML in Step 2 and Compare libraries. Step 3 shows only different casing for names observed in the cache. Review selected changes and confirm. Saving and Complete reflect the actual local storage operation. An incomplete cache only matches names cached so far.
+4. Refresh the connected Last.fm library to see saved casing. Other users' libraries remain unchanged. Use Display names to manage preferences and Settings to export a backup. Undo the latest XML import from Backup & undo on the import screen.
+5. If native edit access is available on your own Last.fm account, change only letter casing and use Save casing changes. Do not click Last.fm's Save edit during local-only testing. No reviewer credentials are bundled.
+6. Open artist/song/album links from the connected profile or public music pages and check +noredirect remains in the URL. For example Kesha should remain Kesha, not Ke$ha. Direct external URL entry is outside this link-protection boundary.
 
-## Official submission references
+## Supplied assets
 
-- [Prepare the ZIP](https://developer.chrome.com/docs/webstore/prepare)
-- [Image dimensions](https://developer.chrome.com/docs/webstore/images)
-- [Privacy requirements](https://developer.chrome.com/docs/webstore/program-policies/privacy)
-- [Privacy dashboard](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)
-- [Review process](https://developer.chrome.com/docs/webstore/review-process)
+Upload lastword-for-lastfm-0.9.27-beta.zip as the extension (manifest.json is at the root).
+Use assets/icon128.png (128×128), assets/promo440.png (440×280), and the three 1280×800 screenshots in the submission bundle. Screenshots show actual extension pages in an isolated profile with fictional music metadata; they are not signed-in live acceptance evidence.
 
-Store availability depends on review; preparing or submitting this ZIP does not
-guarantee same-day approval.
+## Publisher fields still required
+
+- Registered Chrome Web Store publisher and verified contact details.
+- Publicly reachable privacy-policy URL serving the supplied privacy.html; a private GitHub URL is insufficient.
+- Real support URL/contact and any required publisher identity disclosures.
+- Final dashboard disclosures, distribution choices and submission/review.
+
+No publisher identity, contact email or public URL has been invented. Preparing this bundle and pushing it to private GitHub does not submit it to Chrome or publish a website.
+
+References: [ZIP preparation](https://developer.chrome.com/docs/webstore/prepare), [images](https://developer.chrome.com/docs/webstore/images), [privacy fields](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy).

@@ -54,7 +54,7 @@ const album = `<main class="col-main"><header class="library-header"><h2 class="
         throw error;
       });
       const target = page.locator('.chartlist-name a').filter({ hasText: name }).locator('..').locator('..');
-      assert.equal(await target.locator('.chartlist-image a').getAttribute('href'), cover.url);
+      assert.equal(await target.locator('.chartlist-image a').getAttribute('href'), cover.url.replace('/music/', '/music/+noredirect/'));
     };
     await painted('lucre 5');
     assert.equal(calls.filter(p => p.endsWith('/_/lucre+5')).length, 0, 'a proved aggregate avoids the unavailable individual history');

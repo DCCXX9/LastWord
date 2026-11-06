@@ -7,7 +7,7 @@ const image = 'https://lastfm-img.freetls.fastly.net/i/u/64s/9741753a613314214ac
 const row = `<tr class="chartlist-row"><td class="chartlist-image"><a href="/music/Wrong/Compilation"><img width="34" height="34" src="https://lastfm-img.freetls.fastly.net/i/u/64s/wrong.jpg"></a></td><td class="chartlist-name"><a href="/music/Test+Artist/_/Track">Track</a></td></tr>`;
 const blankRow = row.replace('/music/Test+Artist/_/Track', '/music/Silent%C3%B3/_/Watch+Me+(Whip+%2F+Nae+Nae)').replace('>Track</a>', '>Watch Me (Whip / Nae Nae)</a>').replace('</td></tr>', '<form data-edit-scrobble method="post" action="/user/DCCXX/library/edit-track"><input name="artist_name" value="Silentó"><input name="track_name" value="Watch Me (Whip / Nae Nae)"><input name="timestamp" value="3"></form></td></tr>');
 const blankHistory = '/user/DCCXX/library/music/+noredirect/Silent%C3%B3/_/Watch+Me+(Whip+%2F+Nae+Nae)';
-const singleAlbum = '/music/Silent%C3%B3/Watch+Me+(Whip+%2F+Nae+Nae)';
+const singleAlbum = '/music/+noredirect/Silent%C3%B3/Watch+Me+(Whip+%2F+Nae+Nae)';
 const artistLibrary = '/user/DCCXX/library/music/Playboi+Carti';
 const ownedMusic = '/user/DCCXX/library/music/+noredirect/Playboi+Carti/Music';
 const musicImage = 'https://lastfm-img.freetls.fastly.net/i/u/64s/2fcb1df976faa7f06b07553484d4cd6d.jpg';
@@ -57,7 +57,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
   const page=await browser.newPage();
   await page.goto('https://www.last.fm/user/DCCXX/library/tracks');
   await page.waitForFunction(image=>document.querySelector('.chartlist-image img').src===image,image);
-  assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Test+Artist/Album');
+  assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/+noredirect/Test+Artist/Album');
   assert.deepEqual(requests,['/user/DCCXX/library/music/+noredirect/Test+Artist/_/Track','/user/DCCXX/library/music/+noredirect/Test+Artist/Album']);
   for(let n=0;n<20;n++) {
    if((await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1'))).lfmPersonalArtworkCacheV1?.length) break;
@@ -101,7 +101,7 @@ const musicRow = row.replace('/music/Test+Artist/_/Track','/music/Playboi+Carti/
   const cachedWinners=await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1'));
   await page.goto('https://www.last.fm'+albumView);
   await page.waitForFunction(image=>document.querySelector('.chartlist-image img').src===image,albumViewImage,{timeout:2000});
-  assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/Playboi+Carti/Another+Album');
+  assert.equal(await page.locator('.chartlist-image a').getAttribute('href'),'https://www.last.fm/music/+noredirect/Playboi+Carti/Another+Album');
   assert.equal(requests.length,4,'a selected album uses its own header without lookup requests');
   assert.deepEqual(await worker.evaluate(()=>chrome.storage.local.get('lfmPersonalArtworkCacheV1')),cachedWinners,'view-specific covers must not overwrite global track winners');
   await page.goto('https://www.last.fm'+artistLibrary);

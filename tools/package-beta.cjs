@@ -17,7 +17,7 @@ function inputs() {
 function validate(entries) {
   const names = new Set(entries.map(x => x.name));
   const manifest = JSON.parse(entries.find(x => x.name === 'manifest.json').data);
-  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage"]' ||
+  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage","unlimitedStorage","alarms"]' ||
       manifest.host_permissions || manifest.optional_permissions || manifest.key || manifest.update_url ||
       manifest.externally_connectable || manifest.web_accessible_resources) throw new Error('Unexpected manifest authority or identity change.');
   const required = [manifest.background.service_worker,manifest.options_page,manifest.action.default_popup,
@@ -39,7 +39,10 @@ function validate(entries) {
     }
   }
   for (const name of required) if (!names.has(name)) throw new Error('Missing package reference: ' + name);
-  if (!/automaticCorrections:\s*false/.test(entries.find(x=>x.name==='store.js').data.toString())) throw new Error('Beta automation gate must be off.');
+  if (entries.some(x => /(?:^|\/)albumless(?:[-.]|$)/i.test(x.name) ||
+      (x.name.endsWith('.js') && /LastfmAlbumless|automaticCorrections/.test(x.data.toString())))) {
+    throw new Error('Removed Albumless feature must not be packaged.');
+  }
   if (!/username:\s*''/.test(entries.find(x=>x.name==='store.js').data.toString())) throw new Error('Fresh installs must be disconnected.');
   return manifest;
 }
@@ -65,7 +68,7 @@ function zip(entries) {
 }
 function build() {
   const entries=inputs(),manifest=validate(entries),version=manifest.version;
-  const filename=`lastfm-personal-library-${version}-beta.zip`,out=path.join(root,'dist');
+  const filename=`lastword-for-lastfm-${version}-beta.zip`,out=path.join(root,'dist');
   fs.mkdirSync(out,{recursive:true});
   const bytes=zip(entries),digest=hash(bytes);
   fs.writeFileSync(path.join(out,filename),bytes);
@@ -74,7 +77,13 @@ function build() {
     files:entries.map(({name,data})=>({name,bytes:data.length,sha256:hash(data)}))},null,2)+'\n');
   const site=path.join(out,'site');fs.mkdirSync(path.join(site,'downloads'),{recursive:true});
   fs.mkdirSync(path.join(site,'assets'),{recursive:true});
-  for(const name of ['index.html','site.css']) fs.copyFileSync(path.join(root,'release','site',name),path.join(site,name));
+  for(const name of ['index.html','site.css']) {
+    let source=fs.readFileSync(path.join(root,'release','site',name),'utf8');
+    if(name==='index.html')source=source.replace(/Free beta \d+\.\d+\.\d+/g,'Free beta '+version)
+      .replace(/(?:lastfm-personal-library|lastword-for-lastfm)-\d+\.\d+\.\d+-beta\.zip/g,filename)
+      .replace(/v\d+\.\d+\.\d+ beta/g,'v'+version+' beta');
+    fs.writeFileSync(path.join(site,name),source);
+  }
   for(const name of ['icon128.png','promo440.png','preferences.png','xml-review.png','setup.png']) {
     fs.copyFileSync(path.join(root,'release','assets',name),path.join(site,'assets',name));
   }

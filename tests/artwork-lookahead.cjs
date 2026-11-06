@@ -43,7 +43,7 @@ const row = (name, top, src = placeholder) => `<tr class="chartlist-row" style="
     const painted = async name => {
       await page.waitForFunction(({ name, image }) => {
         const r = [...document.querySelectorAll('tr')].find(r => r.textContent === name), i = r?.querySelector('img');
-        return i?.src === image && i.naturalWidth > 0 && i.style.visibility === 'visible';
+        return i?.src === image && i.naturalWidth > 0 && getComputedStyle(i).visibility === 'visible';
       }, { name, image });
     };
     await painted('Ahead');

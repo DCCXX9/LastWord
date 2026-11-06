@@ -116,7 +116,7 @@ const starred = 'https://lastfm-img.freetls.fastly.net/i/u/500x500/preferred-art
   assert.equal(await page.locator('[data-case="a"] img').getAttribute('srcset'),'https://lastfm-img.freetls.fastly.net/i/u/128s/wrong.jpg 2x');
   const beforeFriend=calls.length;
   const denied=await page.evaluate(async()=>{try{await LastfmPages.getAlbum('/music/Artist/Album');return '';}catch(e){return e.message;}});
-  assert.match(denied,/configured profile/);
+  assert.match(denied,/supported Last.fm view/);
   assert.equal(calls.length,beforeFriend,'public album lookups must not run on an unconnected profile');
   assert.deepEqual(worker.data.rules,savedBefore,'artwork lookup must never mutate display preferences');
   await page.close();

@@ -9,7 +9,7 @@ R.put(rules, 'tracks', '11', 'ELEVEN', 'Dean Blunt');
 assert.equal(R.get(rules, 'artists', 'dean blunt'), 'DEAN BLUNT');
 assert.equal(R.get(rules, 'albums', 'zushi', 'DEAN BLUNT'), 'ZUSHI');
 assert.equal(R.get(rules, 'albums', 'zushi', 'Other artist'), null);
-assert.equal(R.get(rules, 'tracks', '11', 'Dean Blunt'), 'ELEVEN');
+assert.equal(R.get(rules, 'tracks', '11', 'Dean Blunt'), null, 'legacy renaming preferences never change displayed titles');
 
 const copy = R.clean(JSON.parse(JSON.stringify(rules)));
 assert.equal(R.get(copy, 'artists', 'DEAN BLUNT'), 'DEAN BLUNT');
