@@ -37,7 +37,7 @@
       }
       items.push({name,...(type!=='artists'?{artist}:{})});
     }
-    if(!items.length&&!missed.length&&!root.querySelector('.library-empty,.chartlist-empty,.empty-library'))throw Error('Last.fm returned no verifiable library list. Check your sign-in.');
+    if(!items.length&&!missed.length&&!root.querySelector('.library-empty,.chartlist-empty,.empty-library'))throw Object.assign(Error('Last.fm returned no verifiable library list. Check your sign-in if this persists.'),{retryable:true});
     const next=root.querySelector('nav.pagination .pagination-next a[href],nav.pagination a[rel=next],nav.pagination a.pagination-next[href]');
     let total=page;
     for(const a of root.querySelectorAll('nav.pagination a[href]')){const u=new URL(a.getAttribute('href'),address),n=Number(u.searchParams.get('page'));if(u.origin===target.origin&&u.pathname===target.pathname&&Number.isSafeInteger(n))total=Math.max(total,n)}
