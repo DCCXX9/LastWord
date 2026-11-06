@@ -1,3 +1,18 @@
+# LastWord for Last.fm — start here
+
+This is the **private LastWord repository**. The latest saved code and release are **v0.9.27**.
+
+- **[Repository guide](REPOSITORY-GUIDE.md)** — current source, development, tests, packaging, older versions and saved-data boundaries.
+- **[Open the latest saved source](https://github.com/DCCXX9/lastfm-personal-library/tree/codex/itunes-library-styling)** — the default branch below still contains older v0.9.17 code.
+- **[Download v0.9.27](https://github.com/DCCXX9/lastfm-personal-library/releases/tag/v0.9.27)** · **[Previous releases](https://github.com/DCCXX9/lastfm-personal-library/releases)**
+
+The guide explains the main/development branch gap. No application code or browser data was changed for this documentation update.
+
+---
+
+<details>
+<summary>Historical default-branch documentation (v0.9.17; superseded by the guide above)</summary>
+
 # Last.fm Personal Library
 
 Private display preferences and continuous library scrolling for your own
@@ -318,3 +333,5 @@ rules are not migrated. Export a backup before reverting to older source that
 does not understand imported exact preferences.
 Restoring source files does not restore or delete browser storage. The old
 failed scan candidates remain in the ignored `.codex-backups` folder.
+
+</details>
