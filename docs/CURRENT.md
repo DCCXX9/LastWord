@@ -1,3 +1,30 @@
+# Current state — 6 November 2026
+
+## Repository integration: v0.9.27 on main
+
+The private repository is now DCCXX9/LastWord. Main includes the existing released
+v0.9.27 development history and the repository guide. The original release tag,
+older versions and development branches remain intact. No new release was cut.
+Application files match released v0.9.27; there are no new runtime changes.
+
+Fresh isolated checks: 13 unit suites passed, eight focused browser/release suites
+passed, and the corrected casing-paint suite passed separately. This covers
+21 distinct suites (release appears in both groups), not a fresh full-suite run.
+The initial casing-paint test failed before assertions because Supermium exposed
+the worker before chrome.storage existed. An attempted wait inside that early
+worker also lacked setTimeout. The final test-only correction polls storage
+readiness from Node with a five-second deadline and retains all paint assertions.
+The integration and final test-only diff received independent review.
+
+This task did not access the installed extension or browser storage, submit
+Last.fm edits, rebuild caches, install software or publish to the Chrome store.
+The prior live acceptance and artwork/bleh limitations below remain historical
+evidence; they were not rerun or upgraded to fresh live acceptance. Jay's cancelled
+bleh work remains cancelled. Repository integration is not a browser-data backup.
+
+Rollback: revert the repository integration and guide merges, preserving history.
+The prior main was 17b1fc84; released v0.9.27 remains available at its original tag.
+
 # Current state - 30 October 2026
 
 ## v0.9.27: earlier casing and stable third-party styling

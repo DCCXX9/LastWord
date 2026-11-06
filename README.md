@@ -1,5 +1,11 @@
 # LastWord for Last.fm
 
+Private repository for LastWord's source, development notes and version history. **Main is up to date with v0.9.27.**
+
+- **[Repository guide](REPOSITORY-GUIDE.md)** — development, tests, packaging, previous versions and saved-data backups.
+- **[Current state](docs/CURRENT.md)** — verified behavior and remaining limitations.
+- **[Download v0.9.27](https://github.com/DCCXX9/LastWord/releases/tag/v0.9.27)** · **[Previous releases](https://github.com/DCCXX9/LastWord/releases)**
+
 Private display preferences for your connected profile and infinite scrolling across
 Last.fm native paginated chart lists. Local candidate: **v0.9.27 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
@@ -17,7 +23,7 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The v0.9.24 local candidate compares XML casing with an observed Last.fm library
+The XML comparison compares casing with an observed Last.fm library
 cache through three collapsible steps and shows only changes in a Before → After table.
 Saving and Complete feedback follow the actual commit. Exact spelling and artist
 identity are required; featuring text, punctuation and titles stay intact.
@@ -41,7 +47,7 @@ preferences remain available.
 
 The local ZIP, original store assets, static download site and submission draft
 are prepared by `tools/package-beta.cjs`. See [release/PUBLISHING.md](release/PUBLISHING.md)
-for the v0.9.24 Chrome Web Store submission bundle and remaining publisher fields.
+for the Chrome Web Store submission bundle and remaining publisher fields.
 The package is prepared for private GitHub delivery; it has not been submitted to
 Chrome or publicly hosted. Existing signed-in checks and their limits are recorded
 in `docs/CURRENT.md`. Run `node tools/package-store.cjs` to rebuild the handoff.
