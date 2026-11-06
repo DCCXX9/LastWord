@@ -53,10 +53,10 @@ const album = (name, tracks) => `<main class="col-main"><header class="library-h
    const body=document.createElement('tbody');body.innerHTML=html;
    await LastfmArtwork.prepareRows([...body.children]);
    const image=body.querySelector('img');
-   const before={src:image.src,visible:image.style.visibility};
+   const before={src:image.src,visible:image.style.visibility !== 'hidden'};
    document.querySelector('tbody').append(...body.children);return before;
   },row('Appended'));
-  assert.deepEqual(detached,{src:image('Preferred'),visible:'visible'},'shared exact album counts must prepare a new track before it joins the document');
+  assert.deepEqual(detached,{src:image('Preferred'),visible:true},'shared exact album counts must prepare a new track before it joins the document');
   await page.waitForFunction(() => LastfmArtwork.status().jobs.complete === 3);
   assert.equal(calls.length, before, 'scroll-added rows reuse the same verified counts without another request');
   assert.equal(await page.locator('tr').last().locator('img').getAttribute('src'), image('Preferred'));

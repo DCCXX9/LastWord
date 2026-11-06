@@ -1,3 +1,125 @@
+# v0.9.27 beta - Casing and compatibility
+
+- Apply saved casing earlier during page parsing and before paints of newly inserted names; initial display reads no longer wait behind cache work.
+- Fix a reproduced artwork/redirect observer loop that could stall pages.
+- Preserve other extensions' text, hidden rows, cover styling and visibility choices.
+- Live Debloater 1.6.9 checks passed, including navigation and appending rows. Current bleh 2026.1029.1 retained styling/casing and transformed appended rows; an earlier refresh passed, but final repeat checks found intermittent failure to initialise, also reproduced with LastWord disabled. Full repeatable bleh refresh compatibility is not claimed. The older installed bleh 2026.0729 also has independent startup errors. Temporary scripts were removed and original disabled states/settings restored.
+- Saved preferences, cache, undo records and pauses are preserved. No new permissions, storage migrations or server-side edits.
+- Automated checks: 75/75 suites passed across the final 74/75 run and an isolated rerun of the capacity test, which exceeded the aggregate runner timeout. The rerun saved 56,000 preferences plus undo (34,239,827 bytes) and preserved a later edit on undo. No single clean full-run claim. Private browser evidence is excluded from packages.
+- Rollback source: v0.9.26 / 5df72e8.
+
+# v0.9.26 beta - LastWord for Last.fm
+
+Renamed the extension, its pages, diagnostics and store listing to LastWord for Last.fm. The logo, interface design, permissions and saved-data formats are unchanged. Existing backups and caches remain compatible.
+
+# v0.9.25 beta — Remaster for Last.fm
+
+- Renamed the extension and its visible pages, downloads and store materials to Remaster for Last.fm. Icons, layout, extension identity, permissions and storage formats are retained.
+- Enabled infinite scrolling on native paginated chart lists across Last.fm profiles and public music, tag and chart pages, including when no personal profile is connected.
+- Local casing, cache ownership, artwork permissions and native editing retain their existing profile boundaries. Requests remain GET-only and honour pacing and pauses.
+- Installed Supermium verified: another profile and public tag list each grow from 50 to 100 rows; refresh retains scrolling availability. Saved data matches the private snapshot except normal request-pacing timestamps. Public music-page acceptance remains unverified after that page became unresponsive.
+- All 71 suites pass across the full run and focused reruns of three updated expectations. New universal-scroll coverage includes foreign profiles, public charts, no connected profile, unchanged foreign names, target guards and opt-out.
+
+# Chrome Web Store package · v0.9.24 beta
+
+29 October 2026. Packaging baseline fa293fe. Runtime version and extension identity are retained. Updated privacy wording for universal redirect scope; no feature, permission or storage-format changes.
+
+Includes current synthetic store screenshots, listing/reviewer text, storage/unlimitedStorage/alarms justifications, runtime file hashes and a separate store handoff ZIP. No personal XML, browser storage, profiles or logs are packaged. Public publisher/support details and a hosted privacy URL remain required; no Chrome submission is performed.
+
+Source and packages are intended for the existing private GitHub repository. Previous versions are preserved. The installed browser and its saved records are left untouched. Kesha-specific source checks passed; new live Kesha verification remains pending. Existing signed-in v0.9.24 acceptance and limits are in docs/CURRENT.md.
+
+---
+
+# v0.9.24 local candidate — Settings buttons and music redirect protection
+
+- Replace Settings navigation links with light-green buttons; simplify the
+  Manage preferences label and remove the redundant cache navigation link.
+- Put redirect description above its checkbox and independent save controls.
+- Protect supported artist, song and album links for every artist, including
+  appended rows and public music pages. Repair a changed artist only from
+  matching original native row fields; never infer from display preferences.
+- Reject protected read responses that change artist, song or album identity.
+  Preserve native edit forms, GET-only transport, pacing and saved user data.
+- Installed signed-in Supermium checks cover library refresh and real Yeat
+  artist/album/song navigation. No Last.fm data edits or new permissions.
+- Rollback: v0.9.23 checkpoint dd447bf. Not pushed or published.
+
+# v0.9.23 local candidate — cleaner Settings
+
+- Rename the Settings heading to Remaster for Last.fm; remove the top tagline and
+  username helper line.
+- Clarify the infinite-scroll label and move redirect protection into its own
+  tile with independent save feedback. Drafts in the other tile are preserved.
+  Existing Travis Scott/Lucki behavior is unchanged; no new artists are added.
+- Use the supplied iTunes import description exactly.
+- Remove Connection & artwork; keep confirmed artwork refresh and tab selection
+  in collapsed Troubleshooting. Keep profile/preference status where relevant.
+- Preserve extension identity, permissions, preferences, undo, cache and pauses.
+- Rollback: v0.9.22 checkpoint f7f11dc. Local only; no GitHub publication.
+
+# v0.9.22 local candidate — guided iTunes casing
+
+- Three numbered, collapsible steps: cache Last.fm, import XML, review/accept.
+  Explain background caching, XML export and partial-cache comparisons. Keep
+  pause/resume and cache export/import; warn that 50,000+ scrobbles can take
+  over 30 minutes and very large libraries several hours before rebuilding.
+- Show Saving, preview updating and explicit Complete feedback after committing.
+  Prevent duplicate submission; retain selections on failed saves; expose Undo.
+- Remove the redundant infinite-scroll success message from the popup.
+- Reuse a coherent worker cache view for read-only metadata. A 50,000-name,
+  20-status-query test reduced full cache reads from 20 to 1 (~1.7s to ~0.24s).
+  This measures local overhead, not end-to-end download speed. Request pacing,
+  cooldowns and atomic page persistence stay unchanged.
+- Preserve identity, permissions, storage and casing-only / GET-only boundaries.
+- Source rollback point: v0.9.21, commit 51c8169. Not pushed or published.
+
+# v0.9.21 local candidate — popup redesign
+
+- Match the supplied popup layout: connected profile/avatar, persistent infinite
+  scroll dropdown, green iTunes XML matching and Settings buttons, compact footer.
+- Keep detailed connection/scroll status, preference counts and confirmed artwork
+  refresh in Settings. Artwork refresh includes a connected Last.fm tab selector.
+- Remove Albumless screens, capture, discovery, correction modules and store API.
+  Reject old action messages and prevent removed feature modules being packaged.
+- Preserve legacy storage, display preferences, XML undo, cache progress and jobs.
+- No new permissions, extension identity change, Last.fm submissions or publishing.
+- Source rollback point: v0.9.20, commit 2a1c59f.
+
+# v0.9.20 local candidate — safer background cache
+
+- First profile connection starts resumable background caching. Keep a connected
+  Last.fm profile tab open; the comparison screen can close.
+- Pause/Resume replaces Refresh cache. Advanced rebuild requires confirmation
+  and retains the current cache until its replacement finishes.
+- Export/import complete or partial cache JSON, with profile checks, preview,
+  confirmation and failed-import preservation.
+- Skip malformed rows, report their names/links/reasons, and retry missed pages.
+- Reduce memory churn by excluding large cache/undo records from ordinary reads
+  and avoiding cache rewrites for job metadata updates.
+- Exact casing-only matching, GET-only transport and existing data are preserved.
+  The alarms permission adds job wakeups without new website/account access.
+
+# v0.9.19 local candidate — exact casing comparison
+
+- Clean Before → After review hides unchanged and unscrobbled XML names.
+- Exact spelling/artist matching preserves featuring text, punctuation and titles.
+- Read-only Last.fm caching supports persistent pause/resume and labeled partial
+  previews. Multiple XML files are read locally without uploads.
+- Transport submissions are permanently blocked; retained substantive rename
+  preferences cannot change displayed titles. Native site edits stay separate.
+- Installed identity, preferences, undo, scan records and pauses are preserved.
+
+# v0.9.18 local candidate — whole-library XML stylisations
+
+- Older iTunes XML exports with the Apple Computer public identifier now scan.
+- Select whole library reaches every review page and type. Review filters find
+  casing conflicts, replacements, matching preferences and new names.
+- Review and Apply confirmation report unresolved names and saved preferences
+  that would be replaced. Conflicts still require an explicit casing choice.
+- Approved `unlimitedStorage` supports the preferences and undo for large
+  libraries. File reading and preference storage remain local; no new site access.
+- v0.9.17's labels, artwork-refresh confirmation and test cleanup are retained.
+
 # v0.9.17 local candidate — labels and safer artwork refresh
 
 - The popup, Settings, Help and Privacy pages read their version label from the

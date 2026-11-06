@@ -1,48 +1,56 @@
-# LastWord for Last.fm — start here
+# LastWord for Last.fm
 
-This is the **private LastWord repository**. The latest saved code and release are **v0.9.27**.
+Private repository for LastWord's source, development notes and version history. **Main is up to date with v0.9.27.**
 
-- **[Repository guide](REPOSITORY-GUIDE.md)** — current source, development, tests, packaging, older versions and saved-data boundaries.
-- **[Open the latest saved source](https://github.com/DCCXX9/lastfm-personal-library/tree/codex/itunes-library-styling)** — the default branch below still contains older v0.9.17 code.
-- **[Download v0.9.27](https://github.com/DCCXX9/lastfm-personal-library/releases/tag/v0.9.27)** · **[Previous releases](https://github.com/DCCXX9/lastfm-personal-library/releases)**
+- **[Repository guide](REPOSITORY-GUIDE.md)** — development, tests, packaging, previous versions and saved-data backups.
+- **[Current state](docs/CURRENT.md)** — verified behavior and remaining limitations.
+- **[Download v0.9.27](https://github.com/DCCXX9/LastWord/releases/tag/v0.9.27)** · **[Previous releases](https://github.com/DCCXX9/LastWord/releases)**
 
-The guide explains the main/development branch gap. No application code or browser data was changed for this documentation update.
-
----
-
-<details>
-<summary>Historical default-branch documentation (v0.9.17; superseded by the guide above)</summary>
-
-# Last.fm Personal Library
-
-Private display preferences and continuous library scrolling for your own
-Last.fm profile. Installed candidate: **v0.9.17 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
+Private display preferences for your connected profile and infinite scrolling across
+Last.fm native paginated chart lists. Local candidate: **v0.9.27 beta** (artwork makes no page requests; see docs/ARTWORK_ROOT_CAUSE.md). Cold ranked artwork timing
 remains unverified; see `docs/CURRENT.md` for the retained Last.fm rate pause.
 
-Redirect protection keeps Travis Scott and Lucki navigation on `+noredirect`
-routes in the connected profile and their public music pages. Album/track links,
-scroll-added rows and artwork reads share the policy. Genuine Lucky Twice links
-require original native scrobble evidence before any repair. Toggle in Settings;
-see [scope and testing](docs/REDIRECT_PROTECTION.md).
+Redirect protection uses `+noredirect` for all supported artist, song and album
+links in the connected profile and public music pages. Scroll-added rows and
+artwork reads share the policy. Repairing an already changed artist requires
+matching original native scrobble fields; no alias guesses or display text are
+used. Toggle in Settings; see [scope and testing](docs/REDIRECT_PROTECTION.md).
 
 ## Versions and source history
 
-The private GitHub repository preserves the current v0.9.17 source and earlier
+The private GitHub repository preserves the extension source and earlier
 Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
+The XML comparison compares casing with an observed Last.fm library
+cache through three collapsible steps and shows only changes in a Before → After table.
+Saving and Complete feedback follow the actual commit. Exact spelling and artist
+identity are required; featuring text, punctuation and titles stay intact.
+Caching starts after profile connection and continues with the comparison screen
+closed while an own-profile Last.fm tab is open. Existing progress stays paused
+until resumed. Advanced rebuild keeps the old cache until completion and asks
+for confirmation. Cache JSON export/import preserves complete or partial progress;
+malformed rows are skipped and reported for targeted retry. Large-cache reads and
+status broadcasts are reduced to avoid unnecessary memory churn. Preferences are local only;
+the shared transport hard-blocks submissions. See [comparison details](docs/LIBRARY_CASING.md).
+
+Settings uses the LastWord for Last.fm heading, separate redirect protection controls
+and collapsed Troubleshooting for confirmed artwork refresh.
+
 ## Public beta candidate
 
 Fresh installations start disconnected and open profile setup. Existing saved
-profiles and records are retained. Automatic album-less corrections and native
-rule capture are unavailable in this beta, including for previously enabled
-records. Manual Last.fm editing and local display preferences remain available.
+profiles and records are retained. Albumless tracks has been removed completely;
+legacy saved records are left untouched. Manual Last.fm editing and local display
+preferences remain available.
 
 The local ZIP, original store assets, static download site and submission draft
 are prepared by `tools/package-beta.cjs`. See [release/PUBLISHING.md](release/PUBLISHING.md)
-for delivery, publication gates and the one Reload test. Nothing has been publicly
-uploaded or submitted; signed-in acceptance is still pending.
+for the Chrome Web Store submission bundle and remaining publisher fields.
+The package is prepared for private GitHub delivery; it has not been submitted to
+Chrome or publicly hosted. Existing signed-in checks and their limits are recorded
+in `docs/CURRENT.md`. Run `node tools/package-store.cjs` to rebuild the handoff.
 
 ## Updating this installed copy
 
@@ -137,15 +145,13 @@ Already-started modules are reused, retaining early cached artwork application.
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
   a library XML export. Files are read incrementally, with no 50 MB file cap.
   A cancellable progress bar shows the file percentage and songs checked while
-  the XML is scanned locally. The review shows all distinct artist, album, track
-  and album-artist casing preferences, with search/filter and 100-row pages.
-  Tick the names you want, choose between conflicting XML casings, and click
-  Apply. Existing preferences that differ are initially unchecked. Duplicate
-  names are combined; missing/invalid metadata is reported. Compilation albums
-  can appear under both the track artist and album artist as separate scopes.
-  Use the artist/album/song/album-artist group checkboxes to select across all
-  results, including pages outside the active search. The XML's exact casing is
-  used without title-case conversion. A fresh XML export after Library Doctor
+  the XML is scanned locally. Compare uses observed cache names and shows only
+  casing differences in a Before → After table, with search/filter and 100-row
+  pages. Choose names or Select all changes, resolve conflicting XML casings,
+  then Save casing changes. Replacements start unchecked. Exact title and artist
+  identity is required; unobserved names, substantive differences and unchanged
+  display names are excluded. Separate album-artist values are not inferred.
+  The XML's exact casing is used without title-case conversion. A fresh XML export after Library Doctor
   cleanup can be imported through this same flow. The source-independent casing
   builder is documented in [docs/LIBRARY_CASING.md](docs/LIBRARY_CASING.md);
   direct Library Doctor connection/sync is not enabled.
@@ -206,31 +212,18 @@ Already-started modules are reused, retaining early cached artwork application.
   legacy storage. Imports replace display preferences/settings only after
   preview, and preserve existing extra storage. Nothing migrates or clears
   storage on startup.
-- **Diagnostics:** the popup reports profile/page connection and provides
+- **Popup:** a connected-profile avatar, infinite-scroll dropdown and direct XML
+  matching/Settings buttons keep the main controls together. Connection details,
+  preference counts and confirmed artwork refresh are available in Settings.
+- **Diagnostics:** the popup footer provides
   Copy diagnostics with version, feature status and counts. It excludes
   scrobble titles, form values and security tokens.
 
-## Album-less rules in this beta
+## Removed features
 
-Automatic correction and capture are unavailable in v0.8.0, even if saved records
-from an earlier version were enabled. They cannot reserve or submit a correction.
-Existing records are preserved without migration. The retained experimental
-algorithm is tested separately with an explicit test-only override; those checks
-do not mean that beta automation is available or signed-in verified.
-
-Open **Settings and backup → Album-less tracks** to review/search/delete saved
-rules or add a track for later use. Export JSON before modifying saved records.
-A saved rule does not change any Last.fm play in this version.
-
-Optional read-only discovery checks at most 20 pages per manually started batch,
-at least 12 seconds apart. It pauses on unexpected responses or rate limits and
-never skips a page or retries itself. Review the distinct candidates before
-remembering them. **Review loaded plays** needs no extra page requests. A large
-library remains expensive; this is not an unattended full-history crawler.
-Requests share the artwork/scrolling lock and persistent rate-limit stop.
-
-Normal scrobble edits still use Last.fm's editor when you explicitly submit it.
-No signed-in edits or whole-library scans were performed during beta preparation.
+Albumless tracks has been removed. There are no rule controls, capture,
+discovery or correction modules in the extension. Existing legacy storage stays
+untouched and remains included in JSON backups; it is never acted on.
 
 ## Verification
 
@@ -282,8 +275,6 @@ Tests: `tests/rules.cjs`, `tests/adapter.cjs`, `tests/storage.cjs`,
 `tests/artwork-scan.cjs`, `tests/settings-drafts.cjs`, `tests/runner.cjs`,
 `tests/preferences-actions.cjs`, `tests/backup-preview.cjs`, `tests/scroll-history.cjs`,
 `tests/scroll-toggle.cjs`, `tests/artwork-authority.cjs`, `tests/native-submit.cjs`,
-`tests/albumless-store.cjs`, `tests/albumless-transport.cjs`, `tests/albumless-flow.cjs`,
-`tests/albumless-capture.cjs`, `tests/albumless-scan.cjs`, `tests/albumless-ui.cjs`,
 `tests/beta-store.cjs`, `tests/beta-onboarding.cjs`, `tests/release.cjs`, `tests/release-site.cjs`.
 The startup check reloads the actual extension between
 document_start and document_idle and checks for uncaught errors and storage preservation,
@@ -333,5 +324,3 @@ rules are not migrated. Export a backup before reverting to older source that
 does not understand imported exact preferences.
 Restoring source files does not restore or delete browser storage. The old
 failed scan candidates remain in the ignored `.codex-backups` folder.
-
-</details>

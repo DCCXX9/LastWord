@@ -1,4 +1,469 @@
-# Current state — 20 October 2026
+# Current state — 6 November 2026
+
+## Repository integration: v0.9.27 on main
+
+The private repository is now DCCXX9/LastWord. Main includes the existing released
+v0.9.27 development history and the repository guide. The original release tag,
+older versions and development branches remain intact. No new release was cut.
+Application files match released v0.9.27; there are no new runtime changes.
+
+Fresh isolated checks: 13 unit suites passed, eight focused browser/release suites
+passed, and the corrected casing-paint suite passed separately. This covers
+21 distinct suites (release appears in both groups), not a fresh full-suite run.
+The initial casing-paint test failed before assertions because Supermium exposed
+the worker before chrome.storage existed. An attempted wait inside that early
+worker also lacked setTimeout. The final test-only correction polls storage
+readiness from Node with a five-second deadline and retains all paint assertions.
+The integration and final test-only diff received independent review.
+
+This task did not access the installed extension or browser storage, submit
+Last.fm edits, rebuild caches, install software or publish to the Chrome store.
+The prior live acceptance and artwork/bleh limitations below remain historical
+evidence; they were not rerun or upgraded to fresh live acceptance. Jay's cancelled
+bleh work remains cancelled. Repository integration is not a browser-data backup.
+
+Rollback: revert the repository integration and guide merges, preserving history.
+The prior main was 17b1fc84; released v0.9.27 remains available at its original tag.
+
+# Current state - 30 October 2026
+
+## v0.9.27: earlier casing and stable third-party styling
+
+Baseline v0.9.26 / 5df72e8e53de6885ad354574634c8036d0091312 on
+codex/itunes-library-styling, one worktree. Preserves the inherited uncommitted
+compatibility candidate; a private pre-task patch is retained in ignored test-results.
+No permissions, identity, storage formats, logo or interface design changed.
+
+Casing now starts during document parsing, reads only committed settings/rules
+without waiting behind worker cache operations, and updates inserted names in a
+microtask before the next paint. A revision guard prevents a delayed initial
+snapshot replacing newer preferences. Scroll/layout work remains deferred.
+No page-wide hiding is used; this reduces the flash rather than promising that
+asynchronous storage and arbitrary third-party renderers can never expose native text.
+
+A reproduced artwork/redirect observer loop made 1,002 href writes in 300 ms.
+Restoring artwork links now recognises equivalent protected paths: the regression
+settles after one write. This fixes a concrete stall cause; it does not establish
+that every historical browser timeout had that cause. Text restoration only
+undoes LastWord's own writes; cover visibility releases only its own temporary
+hold, preserving theme CSS and important declarations. Partly hidden appended
+rows are accepted, while an entirely hidden page still rolls back.
+
+Installed signed-in Supermium checks, unchanged fpfeckjdjmlnnjbodagebgcdflmbkmik:
+Debloater 1.6.9 retained configured styling through repeated navigation and
+50-to-100-row appends, with an active animation-frame heartbeat. Current bleh
+2026.1029.1, official source commit 5ef066e7839b07556c3219c42524540412880d79,
+ran temporarily in Tampermonkey alongside LastWord. Colours, fonts and cover
+styling matched the bleh-only baseline; a 50-to-100-row append received bleh markup,
+refresh retained casing, and sampled visible frames showed no original casing.
+Non-GET/HEAD requests were blocked on test pages. No server edits were submitted.
+
+The user's existing disabled bleh 2026.0729 has its own startup errors even with
+LastWord disabled; it was neither updated nor removed. The separately named
+current-build test script was removed afterward, bleh local settings restored,
+Debloater restored disabled, and Tampermonkey retained enabled. Whole-browser
+CDP attachment later timed out; individual-target CDP completed cleanup instead.
+A later final-manifest check passed current-bleh initial styling/casing and a
+50-to-100-row append, but refresh intermittently left native rows without bleh.
+The same failure to initialise was reproduced with LastWord disabled. Its cause
+remains unproven; repeatable current-bleh refresh acceptance is therefore limited,
+and seamless compatibility is not claimed. No workaround for bleh startup was
+added. These checks cover tested versions/pages, not every theme option.
+
+Final installed storage comparison preserves every key except the normal request
+timing records lfmLastPageRequest and lfmRequestWindow. Preferences (4,081 tracks,
+529 albums, 169 artists and 1 album artist), library cache, XML undo, artwork
+records and pauses are unchanged. Private snapshots/profiles/logs remain ignored.
+After the final manifest reload, two native Last.fm loads each sampled 177
+visible frames with no original casing and a responsive heartbeat. Automated
+checks passed all 75 suites across the final 74/75 run plus the isolated capacity
+rerun (aggregate timeout; 56,000 preferences and undo, 34,239,827 bytes). No
+single clean full-run claim. Release delivery is recorded in release/NOTES.md.
+Rollback: v0.9.26 / 5df72e8; the private pre-task patch preserves prior dirty work.
+
+# Previous state - 30 October 2026
+
+## v0.9.26: LastWord for Last.fm
+
+Baseline 67e3ea4651266659de8fc62d517bfb2d02c298e0 on the clean existing
+codex/itunes-library-styling checkout; one worktree, no competing owner.
+Renamed all active extension branding, diagnostics, store copy and download names
+to LastWord for Last.fm. Historical release records retain their original names.
+Logo icon bytes, CSS, interface layout, permissions and storage identifiers are
+unchanged. Store screenshots use fictional data; the promotional graphic retains
+its design with the new name. No functional behaviour change.
+
+Installed signed-in Supermium, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID and DCCXX:
+verified v0.9.26 branding in popup, settings, preferences and privacy, including
+refresh persistence. Every installed storage key exactly matches the pre-reload
+snapshot. Private evidence stays ignored under test-results/v26-*.
+The first UI navigation raced extension reload and was blocked; after reload
+completed, the unchanged candidate passed. No Last.fm edits, cache rebuilds,
+scans, data migration, preference edits or reinstall.
+
+Focused release, release-site, popup, options, beta-store and beta-onboarding
+checks pass 6/6. Extracted upload-ZIP onboarding also passes. Independent ZIP CRCs, exact source
+bytes, per-file hashes and inner/outer consistency pass. Runtime ZIP: 300,801
+bytes, SHA-256 34ad1b45f4262267365fd26f9b04696cdd15565318ebfe079e3042f6abebe2ac. Earlier functional/live limitations below remain;
+this branding release does not relabel them as newly verified functionality.
+Source/tag and upload ZIP target the existing private GitHub repository. Public
+privacy policy keeps its existing URL with updated product naming. Chrome Web
+Store submission remains a manual dashboard step. Rollback: v0.9.25 / 67e3ea4.
+
+# Current state — 30 October 2026
+
+## v0.9.25: Remaster for Last.fm and universal scrolling
+
+Baseline 796be84106e1fdc3bd9c19e8ee57785d957f3d3e on the clean existing
+codex/itunes-library-styling checkout; one worktree, no competing owner.
+Renamed visible branding, store copy, docs and download files. Existing repository
+URL and persistent storage identifiers remain compatible. Logo icons and design
+are retained; store screenshots and promotional name are refreshed.
+
+Infinite scrolling now uses a separate supported-view check rather than personal
+profile ownership: native paginated chart tables on all profiles and public music,
+tag and chart pages. Same-page pagination validation, GET-only transport, pauses,
+request spacing and opt-out remain. Personal casing/native editing/cache/artwork
+retain their independent ownership boundaries. No new permissions.
+
+Installed Supermium, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID and DCCXX profile:
+verified foreign RJ library 50 -> 100 rows, refresh control persistence, and public
+rock-tag tracks 50 -> 100 rows with only GET requests. Storage snapshot comparison
+preserves every key except lfmLastPageRequest and lfmRequestWindow. Public Yeat
+music-page verification became unresponsive; only the tab created for that check
+was closed. Music-page live acceptance is not claimed. Synthetic coverage passes.
+No scrobble edits, cache rebuilding, preference changes or storage clearing.
+
+71/71 suites pass across the complete run and focused reruns after updating old
+scope/error expectations. New universal-scroll tests cover foreign artists/albums/
+tracks/history, public music/tag/charts, no connected profile, native names,
+unrelated-target rejection and opt-out. Store screenshots use fictional data.
+Release is prepared for the existing private GitHub repository, annotated v0.9.25
+and Chrome upload ZIP. Rollback: v0.9.24 / 796be84, preserving installed storage.
+
+# Current state — 29 October 2026
+
+## 29 October 2026: Chrome Web Store / private GitHub handoff
+
+Packaging baseline fa293fea314aeea16081c6806b7fa438865ba759; clean existing
+codex/itunes-library-styling worktree, no competing owner. Prepared v0.9.24
+without changing its version, permissions, extension identity or saved data.
+Updated store copy, reviewer instructions and permission justifications; refreshed
+three 1280×800 screenshots from the actual extension in a network-blocked,
+isolated synthetic profile. Original icons and promotional graphic retained.
+Privacy wording now reflects universal artist/song/album redirect protection.
+Added tools/package-store.cjs and corrected generated site's version footer.
+
+Runtime ZIP: 41 files, 300,553 bytes; SHA-256
+1b3bb098cbc49350204f56934d3f8159235eec1679c9f9d1dbeba1f6abb44efa.
+Submission ZIP: 23 files, 956,005 bytes; SHA-256
+137bcde1531b56861a34f1c381822ea64a7f20c32d6b90eca783bb1bbea64112.
+Independent ZIP CRCs, exact source bytes, per-file hashes, inner/outer consistency,
+checksum files and manifest summary limit verified. release, release-site,
+beta-store, beta-onboarding, redirects and redirect-requests all pass (6/6).
+The extracted upload ZIP separately passes actual-extension onboarding in an
+isolated browser. Screenshots were visually inspected. Earlier full feature gate
+and signed-in evidence are below; they were not rerun or relabelled as new live
+acceptance. Kesha-specific source checks passed in the preceding task; a new
+installed-browser Kesha check remains pending because access is unavailable.
+
+Delivery: requested source branch, annotated v0.9.24 tag and ZIP/checksum assets
+are prepared for the existing private DCCXX9/lastfm-personal-library prerelease.
+No old branches/tags/releases are replaced. Publisher identity/support fields,
+a publicly hosted privacy-policy URL and Chrome dashboard submission remain
+pending; no store upload, website hosting or visibility change is performed.
+Installed signed-in browser data, XML undo, caches and pauses are untouched.
+Rollback for this packaging-only change: fa293fe. Release files: release/PUBLISHING.md.
+
+## 29 October 2026: Settings buttons and universal music protection v0.9.24
+
+Baseline: dd447bf95554c95c9e192f6b6e91ce9a2379eec7 on
+codex/itunes-library-styling. Started clean, one worktree, no competing owner.
+Settings navigation is presented as green buttons, including Manage preferences.
+The duplicate Cache progress & backup link is removed. Redirect protection uses
+matching tile spacing with its description above the checkbox and save control.
+
+Protection no longer has an artist allowlist. All supported artist/song/album
+links receive +noredirect in the configured profile and public music pages.
+Artist repair uses only unique validated original native row fields in matching
+named cells; song/album names must match, and album cells use album artist.
+Unrelated links retain identity; ambiguous/changed titles are never guessed.
+Protected GET responses changing artist, song or album identity are rejected.
+Native form actions/fields, request pacing, pauses and permissions are unchanged.
+See REDIRECT_PROTECTION.md for explicit limits.
+
+Installed signed-in Supermium v0.9.24, same fpfeckjdjmlnnjbodagebgcdflmbkmik ID:
+DCCXX, 4,780 preferences. Verified Settings desktop/mobile, green navigation,
+removed redundant link and tile order. Verified 350 real protected library
+links, refresh persistence and actual Yeat / Alivë / Always Alivë navigation
+retaining requested identities and protected downstream links. Navigation sent
+no write requests. All installed extension storage matched the original snapshot
+exactly: preferences, XML undo, completed cache/jobs, legacy/scan records, artwork
+and network pauses retained. Generic canonical artist repair and friend isolation
+are fixture verified; no real misdirected scrobble was manufactured for testing.
+Private evidence is ignored under test-results/pre-v24-* and v24-*.
+
+All 70 suites pass across the full gate and focused reruns after updating six
+artwork fixtures for the intentional protected URL policy. The image-recovery
+fixture twice timed out waiting for the extension worker before assertions; a
+diagnostic startup run and then the unchanged fixture passed. This remains a test
+startup flake, not a diagnosed runtime failure. Added regressions cover arbitrary
+artists, album artist separation, related links and wrong song/album responses.
+The 41-file ZIP is 300,497 bytes, SHA-256
+2f69f4f77381abf72e27bde0cc7854bb5d5968806ee95d251fc4ed9ec1569f6f.
+Rollback: v0.9.23 checkpoint dd447bf. Local only, no push/publication or data edit.
+
+## 29 October 2026: cleaner Settings v0.9.23
+
+Baseline: f7f11dc00d98e4b5c03fdea239e0e7ca5a786709 on
+codex/itunes-library-styling. Started clean; one worktree, no competing owner.
+Settings now uses Remaster for Last.fm without the top tagline or username helper.
+Infinite scroll says Load more library pages as you scroll. Redirect protection
+has its own tile, clear label and independent save; unsaved profile/scroll and
+redirect drafts cannot commit or discard each other. Existing artist scope and
+redirect implementation are unchanged. The iTunes import tile uses Jay's exact
+supplied copy. Connection & artwork is removed; tab selection and the original
+two-click artwork refresh live in collapsed Troubleshooting with relevant
+missing-tab/pause guidance. Backups and preference management remain available.
+
+Installed Supermium verification: same fpfeckjdjmlnnjbodagebgcdflmbkmik extension,
+DCCXX / 4,780 preferences, v0.9.23. Checked heading, removed text/status fields,
+separate form ownership, independent redirect save preserving an unsaved username,
+reload, collapsed Troubleshooting and 390px mobile width. All installed storage
+matched the pre-check snapshot exactly. XML undo, completed cache/jobs, scan/legacy records,
+artwork and network pauses are preserved. Artwork refresh remains disabled when
+no connected own-profile Last.fm tab is available; no personal covers were removed.
+Its actual refresh/confirmation behavior is exercised in isolated extension tests.
+No clearing, reinstall, Last.fm edits, scans, new permissions or publishing.
+Private evidence: ignored test-results/pre-v23-* and test-results/v23-*.
+Rollback: f7f11dc. All 14 relevant regression suites pass: options, popup,
+artwork-refresh, redirect-browser, backup-preview, beta-onboarding, release,
+release-site, extension, itunes-ui, itunes-feedback, startup, store-navigation
+and beta-store. Initial artwork test still looked up a role inside the newly
+collapsed section after reload; its hidden-control assertion now uses the ID.
+An onboarding same-URL navigation race passed on rerun without product changes.
+The 41-file ZIP is 299,506 bytes, SHA-256
+6b17c82c6a6ba26d20e7e666281c5358b933af06b7ebb37ef9959545b669d20e.
+
+## 29 October 2026: guided iTunes workflow v0.9.22
+
+Baseline: 51c81698d92904c79f8d35c5424f6f44d587e460 on
+codex/itunes-library-styling; started clean with one worktree and no competing
+owner. Three collapsible numbered steps explain caching, iTunes XML export,
+then Before/After review and acceptance. Completed cache opens the import step;
+comparison opens review. Partial comparisons remain possible and explained.
+Pause/resume, cache export/import, skipped rows and protected rebuild remain.
+Rebuild warns that 50,000+ scrobbles may take over 30 minutes; large libraries
+can take several hours. No network pacing or cooldown changes.
+
+Apply/Undo paints Saving before calling the worker, disables review controls,
+then shows preview updating and explicit Complete only after the commit. Errors
+retain selections; a failed post-commit preview refresh still reports the saved
+result accurately. Undo remains accessible. Popup scroll changes keep their
+errors but no longer produce the redundant success message.
+
+The worker reuses one committed cache view for read-only info/plan calls;
+storage events update it and cache mutations invalidate it. Mutations continue
+to read persisted storage and use the existing serialized atomic writer. The
+50,000-name, 20-status-call probe first failed with 20 full cache reads / 1692ms;
+it passes with 1 read / approximately 240ms. This is local metadata overhead,
+not proof of faster whole-library download. Page writes, request count and
+persistent Last.fm pauses are unchanged.
+
+Installed Supermium verification used the same fpfeckjdjmlnnjbodagebgcdflmbkmik
+extension and DCCXX profile. v0.9.22 shows all steps and XML instructions; the
+completed cache contains 60,748 names with one skipped item. Real Library.xml
+(55,835 songs) produces 30 review changes, 27 needing a casing choice. Cancelling
+rebuild, runtime reload and real XML comparison preserve every storage key,
+including 4,780 preferences, XML undo, cache/jobs and network pause records.
+Personal Apply/Undo was not executed because it would replace the user's undo
+journal. Delayed saving, failure, Complete and actual worker Apply/Undo are
+verified in isolated browser/extension tests instead. Evidence and private
+snapshots stay ignored under test-results/pre-v22-* and test-results/v22-*.
+
+No Last.fm submissions, storage clearing, reinstall, new permission or publishing.
+Rollback: 51c8169. Full regression: 69/70 passed; library-casing-extension
+failed at extension service-worker startup (30-second timeout). Its focused rerun
+passed unchanged, including partial/resume, exact casing, Apply/Undo and own-
+profile isolation. The real toolbar popup saved/restored the scroll setting with
+no redundant success message; all storage matched exactly afterwards. Opening
+the popup over an extension page did not produce a toolbar target; bringing the
+own Last.fm library tab forward did. No product fallback was added.
+The 41-file local ZIP is 300,424 bytes, SHA-256
+20ef0d4fb3393af3935e036a813832027c268b06b1e9b7f7d4f45dde99e305cc.
+
+## 29 October 2026: popup redesign v0.9.21
+
+Baseline: 2a1c59f on codex/itunes-library-styling; started clean with one
+worktree and no competing checkout owner. Popup matches Jay's reference:
+Remaster for Last.fm heading, connected profile/avatar, persistent Enabled/Disabled
+infinite-scroll dropdown, green XML matching and Settings buttons, compact footer.
+The existing scrolling consent behavior remains unchanged. Connection/scroll
+status and confirmed artwork refresh move into Settings; preference counts and
+management remain there. Artwork refresh selects an own-profile tab and keeps
+its existing two-click confirmation. No new permissions or extension identity.
+
+Albumless tracks is removed: six source/UI files, content/worker entry points,
+store API, capture hook, styles and dedicated experimental suites. Its old action
+is rejected and packaging rejects removed feature modules. Legacy storage is
+untouched and remains included in generic backups. Artwork handling for scrobbles
+with a genuinely missing album remains unchanged; it does not edit scrobbles.
+
+Live acceptance used the same installed signed-in Supermium extension
+fpfeckjdjmlnnjbodagebgcdflmbkmik / DCCXX. The real toolbar popup showed the actual
+profile image, supplied layout and 380 x 456 size without horizontal overflow.
+The scroll dropdown saved, survived a popup reload and synchronized to Settings;
+the original enabled setting was restored. The real Settings button opened the
+page with 2,651 preferences, connection details and artwork refresh, with no
+Albumless link. Initial checks needed to await saved settings/content-script
+readiness; isolated test windows also took focus and closed the toolbar popup.
+No implementation fallback was added for these verification timing issues.
+
+All protected installed storage matches the pre-reload snapshot, including raw
+settings, preferences, XML undo, legacy scans, artwork and network pause records.
+The existing background cache was already running at this task's baseline and
+remains running; its live progress/jobs/request pacing are allowed to advance.
+Only the settings API's test-induced explicit default redirect flag was restored
+to the original raw record after checking its values. No data was cleared,
+reinstalled, submitted to Last.fm or published. Private live backups/evidence
+remain ignored under test-results/pre-v21-* and test-results/v21-*.
+
+Regression: 67/68 suites passed in the full run; the remaining older options
+suite still expected a deliberately removed popup status field. After updating
+that assertion and loading the shared status helper, options passes. Focused
+popup, artwork refresh, beta onboarding/store, actual extension and release
+checks also pass. The 41-file v0.9.21 ZIP is local only. Rollback: 2a1c59f.
+
+## 29 October 2026: background cache candidate v0.9.20
+
+Baseline: 35d74c3 on codex/itunes-library-styling; started clean with no competing
+checkout owner. Includes the discussed background cache, safer rebuild, cache
+export/import, malformed-row continuation/report/retry and memory-overhead work.
+First profile connection starts a persisted job. The comparison screen can close;
+a connected own-profile Last.fm tab is required. Alarms recover running jobs after
+suspension; existing installations keep their current cache and paused state.
+Pause/Resume is separate from Compare. Rebuild is under Advanced, confirms its
+cost and keeps the usable cache until an atomic completed replacement. Cache JSON
+supports complete/partial progress, profile/format validation, preview and explicit
+confirmation. Invalid, canceled, stale or failed operations preserve existing data.
+
+Malformed rows now record name/artist/link/page/reason and do not halt subsequent
+rows/pages. Retry downloads affected pages only. Whole-page, sign-in and pagination
+failures still pause safely; the paced GET queue and rate pauses remain intact.
+Ordinary preference reads exclude cache/undo data; job guards read metadata only,
+and pause/status changes no longer rewrite/broadcast the full cache. The obsolete
+comparison polling client is removed. The alarms permission adds wakeups, with no
+new website/account access. Exact casing-only matching and submission rejection
+remain in force. No artwork work, reinstall, storage clearing or scrobble edits.
+
+Installed signed-in Supermium (same extension fpfeckjdjmlnnjbodagebgcdflmbkmik,
+DCCXX) preserved all storage across reload. The real cache advanced from page 548
+to 556 after skipping `.` by `[The User]` on page 548; it now holds 27,712 names
+and one skipped item. It continued after the extra comparison screen was closed.
+The real Export cache button downloaded a valid 2,390,226-byte JSON file. Live
+rebuild/import cancellation and wrong-profile rejection preserved all storage.
+Reimporting the identical partial cache preserved names/cursors/skips, refreshed
+its generation, and persisted after refresh; legacy missing empty skipped arrays
+normalize to empty arrays. All 2,651 preferences, XML undo, scan records, artwork
+records and network pause settings remained unchanged. Caching is left paused.
+
+The actual 95,332,644-byte XML compared in about 20 seconds: 23 casing differences,
+seven choices and a Partial library label, with no saved-storage changes. A 50 ms
+UI heartbeat measured a maximum 104 ms gap; retained JS heap after collection was
+about 15 MB. The intermittent page-unresponsive warning was not reproduced, so
+the measured allocation fixes are not a claim that every browser hang is solved.
+The full 1,024-page cache was not downloaded and no new preferences were applied.
+Private evidence/backups stay ignored under test-results/v20-* and
+test-results/pre-v20-installed-storage.json; never package or publish them.
+
+Final full gate: 73/73 suites passed, including background work with UI closed,
+retained rebuild/atomic swap, cache import/export guards, skip/retry, profile
+isolation, native dialogs, GET-only transport and 56,000-name real extension
+storage. Focused release/background/UI checks also pass after final packaging
+and label changes. A 50,000-name test guards bounded ordinary reads and broadcasts.
+The local package contains 45 allowlisted files; its generated download page now
+points to its own version. Nothing was pushed or published. Rollback: 35d74c3.
+
+## 29 October 2026: exact casing comparison candidate v0.9.19
+
+Baseline: 3176b45 on codex/itunes-library-styling. Claude's v0.9.17 and the
+v0.9.18 checkpoint remain intact. The importer now shows concise Before → After
+rows, only for observed Last.fm names that differ from XML in letter casing.
+Unchanged names, unscrobbled XML titles, punctuation/spacing differences and
+featuring/edition suffix differences are excluded. Artist scope stays exact.
+
+Compare libraries starts/resumes a persisted, own-profile, all-time cache of
+tracks, albums and artists through the existing paced GET queue and pauses.
+An incomplete cache previews only positively observed matches and is labeled
+Partial library. Separate album-artist names are not inferred from these lists.
+Opening the screen or choosing files alone starts no requests. XML stays local.
+
+The shared transport hard-rejects submissions and uses literal GET fetches,
+including for retained experimental callers. The renderer ignores substantive
+rename rules retained in backups; new preference writes reject non-casing
+changes. Existing records are preserved. Native Last.fm controls remain the
+site's separate user action. No XML changes were saved in Jay's profile.
+
+Installed Supermium read the real 55,835-song XML and cached 250 actual track
+names over five pages, yielding nine before/after casing differences. The cache
+cursor survived an extension reload; all preferences, undo, scan records and
+pause state stayed unchanged. This is partial live acceptance, not a completed
+1,024-page track cache or a real-profile import. Evidence stays ignored/local:
+test-results/comparison-installed-result.json and comparison-installed-preview.png.
+Last.fm double-escapes literal plus signs; parsing now verifies those links
+without changing the raw name or relaxing XML identity matching.
+
+All 69 suites passed across the full regression run and focused reruns. The
+initial run found stale expectations for title replacement, POST transport and
+the old XML-only interface, plus a service-worker startup timeout. Expectations
+now cover the stricter behavior; the supported scrobbles-list GET route is
+retained. Final isolated extension coverage verifies pause/reopen/resume, literal
+plus signs, apply/undo, later manual edits, friend isolation and GET-only reads.
+A separate 56,000-name capacity check persisted over 34 MB including cache/undo.
+Rollback: 3176b45. No artwork work, publishing, reinstall or storage clearing.
+
+## 28 October 2026: whole iTunes library styling candidate v0.9.18
+
+Claude's clean v0.9.17 baseline is 17b1fc84ecf968ac698bd227d5bc52681e6403c1,
+preserved on preferences-page. Work continues on codex/itunes-library-styling.
+The existing whole-library importer rejected the supplied export's standard
+legacy Apple Computer plist header. A narrow parser fix accepts that header,
+retaining custom-DTD/entity rejection and zero external XML fetches.
+
+The review now offers Select whole library and filters for unresolved choices,
+saved-preference replacements, already matching names and new preferences.
+Confirmation reports skipped conflicts and selected replacements. Jay explicitly
+approved unlimitedStorage for local rules plus undo beyond the usual quota.
+There is no storage migration or identity change; Claude's version labels,
+artwork-refresh confirmation and disposable test-profile cleanup remain intact.
+
+The actual 95 MB Library.xml scanned in installed signed-in Supermium v0.9.18:
+55,835 songs, zero skipped, 69,085 distinct candidates and 42 casing conflicts.
+Installed review verified all 42 conflicts, five possible replacements and
+whole-library selection of 68,944 changes (99 preferences already match).
+Apply confirmation was canceled. All stored keys hash-identical before/after;
+zero network requests from the import. User preferences have NOT been imported.
+
+In a disposable extension profile with networking blocked, the actual XML
+completed scan, UI apply of 69,043 names, reload/persistent undo and full revert.
+The 42 unresolved conflicts were skipped. A separate synthetic 56,000-song
+capacity check saved 26,197,649 bytes including undo, then reverted 55,999 rules
+while preserving a later manual edit, profile, scan records and pause settings.
+These isolated apply checks do not claim a full import in the user's profile.
+
+Regression: 66/68 suites passed on the full run. The onboarding suite encountered
+an install-time options-page navigation collision; startup missed the initial
+service-worker event. Both passed on focused reruns, with no source changes.
+All 68 suites therefore passed across the full run and those two reruns.
+The parser, review UI, 26 MB capacity, storage/undo, own-profile isolation,
+native-dialog and release/package checks all passed.
+
+Local evidence, excluded from Git: test-results/itunes-real-review-result.json,
+itunes-installed-ui-result.json, itunes-installed-review.png and
+itunes-real-roundtrip-result.json. The supplied XML and derived personal names
+remain local. No server edits, Last.fm scans, artwork work or publishing.
+Rollback baseline: 17b1fc8; recovery bundle:
+.codex-backups/pre-itunes-library-20261028/history.bundle.
 
 ## 28 October 2026: close dialog after explicit casing save
 

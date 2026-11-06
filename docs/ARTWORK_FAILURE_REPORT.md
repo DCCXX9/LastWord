@@ -40,7 +40,7 @@ scrobbled under several albums: an original album, a deluxe version, a compilati
 a single, or a differently tagged release. Last.fm's ordinary track image or
 catalogue association need not reflect this particular user's listening history.
 
-Last.fm Personal Library is a local Manifest V3 browser extension. It modifies
+Remaster for Last.fm is a local Manifest V3 browser extension. It modifies
 Last.fm's displayed pages, provides personal display-name/casing preferences and
 continuous scrolling, and supports separate native editing and XML-related tools.
 The artwork feature reads personal library pages to choose a track's album. It

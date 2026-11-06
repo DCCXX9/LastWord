@@ -3,8 +3,6 @@
   if (globalThis.LastfmRedirects) return;
   const A = globalThis.LastfmAdapter;
   const normalize = value => String(value || '').trim().normalize('NFC').toLowerCase();
-  // Observed bad mappings, not a general artist-alias or spelling rule.
-  const mappings = new Map([['travis scott', 'travi$ scott'], ['lucki', 'lucky twice']]);
   const encode = value => encodeURIComponent(value).replace(/%20/g, '+');
 
   function route(value, base) {
@@ -30,14 +28,13 @@
     const parsed = route(value, base);
     if (!parsed || parsed.parts[1] === 'user' && !A.ownProfile(parsed.url.href, settings.username)) return value;
     let artist = parsed.artist;
-    if (!mappings.has(normalize(artist))) {
-      // A canonical Lucky Twice / Travi$ Scott link is ambiguous without a
-      // verified native scrobble identity. Never infer identity from display text.
-      if (!original || mappings.get(normalize(original.artist)) !== normalize(artist)) return value;
+    if (original?.artist) {
+      // The caller supplies original fields only for a verified native row's
+      // matching music link. Display text and guessed aliases are never evidence.
       const item = A.musicItem(parsed.url.href);
-      if (!item || item.type === 'tracks' && normalize(item.name) !== normalize(original.track) ||
-          item.type === 'albums' && normalize(item.name) !== normalize(original.album)) return value;
-      artist = original.artist;
+      if (item && (item.type === 'artists' ||
+          item.type === 'tracks' && normalize(item.name) === normalize(original.track) ||
+          item.type === 'albums' && normalize(item.name) === normalize(original.album))) artist = original.artist;
     }
     if (artist !== parsed.artist) parsed.parts[parsed.index] = encode(artist);
     if (parsed.index === parsed.start) parsed.parts.splice(parsed.start, 0, '+noredirect');
@@ -47,7 +44,7 @@
 
   function samePagePath(first, second) {
     const left = route(first), right = route(second);
-    if (!left || !right || !mappings.has(normalize(left.artist)) || !mappings.has(normalize(right.artist))) return false;
+    if (!left || !right) return false;
     const path = parsed => {
       const parts = [...parsed.parts];
       if (parsed.index !== parsed.start) parts.splice(parsed.start, 1);
@@ -66,7 +63,7 @@
     if (!current.username || current.redirectProtection === false) return false;
     if (A.ownProfile(location.href, current.username)) return true;
     const publicPage = route(location.href);
-    return publicPage?.parts[1] === 'music' && mappings.has(normalize(publicPage.artist));
+    return publicPage?.parts[1] === 'music';
   }
   function restore(link, previous) {
     if (link.getAttribute('href') === previous.applied) link.setAttribute('href', previous.original);
@@ -75,7 +72,15 @@
   function originalIdentity(link) {
     if (!A.ownProfile(location.href, current.username)) return null;
     const forms = link.closest('tr.chartlist-row')?.querySelectorAll('form[data-edit-scrobble]');
-    return forms?.length === 1 ? A.editRow(forms[0], location.href, current.username, true) : null;
+    const original = forms?.length === 1 ? A.editRow(forms[0], location.href, current.username, true) : null;
+    const item = A.musicItem(link.href);
+    if (!original || !item) return null;
+    // Restrict evidence to the row's named cells, not related/image links.
+    if (item.type === 'tracks' && link.closest('.chartlist-name')) return original;
+    if (item.type === 'artists' && link.closest('.chartlist-artist')) return original;
+    if (item.type === 'albums' && link.closest('.chartlist-album'))
+      return {...original, artist:original.albumArtist || original.artist};
+    return null;
   }
   function apply(link) {
     if (!link.isConnected || link.closest('[data-lfm-ui]')) return;

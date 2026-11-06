@@ -61,45 +61,31 @@
   async function request(url, signal, album, { minInterval = 1500, form, beforeSend } = {}) {
     check(signal);
     const { settings } = await LastfmStore.read();
-    const edit = Boolean(form);
-    const target = new URL(!edit && globalThis.LastfmRedirects
+    // This transport is permanently read-only, including callers retained from
+    // older experimental builds. Native Last.fm controls belong to the site.
+    if (form) throw new Error('This extension is read-only. Scrobble submissions are forbidden.');
+    const target = new URL(globalThis.LastfmRedirects
       ? LastfmRedirects.protect(url, settings, location.href) : url, location.href);
-    const editPath = value => new URL(value).origin === location.origin &&
-      /^\/user\/[^/]+\/library\/edit-track$/.test(new URL(value).pathname) &&
-      LastfmAdapter.ownProfile(value, settings.username);
     const artworkPage = settings.username && (LastfmAdapter.ownProfile(location.href, settings.username) ||
       LastfmAdapter.publicArtistPage(location.href));
-    const allowed = value => edit ? editPath(value) : album
+    const allowed = value => album
       ? artworkPage &&
         new URL(value).origin === location.origin && new URL(value).pathname.startsWith('/music/') &&
         LastfmAdapter.musicItem(value)?.type === (album === 'track' ? 'tracks' : 'albums')
-      : LastfmAdapter.ownProfile(value, settings.username);
+      : (settings.infiniteScroll && LastfmAdapter.scrollView(location.href) &&
+          new URL(value).origin === location.origin &&
+          (new URL(value).pathname === location.pathname ||
+            globalThis.LastfmRedirects?.samePagePath(location.href, value))) ||
+        (LastfmAdapter.ownProfile(value, settings.username) &&
+          /\/library(?:\/?$|\/(?:scrobbles|artists|albums|tracks)\/?$|\/music\/)/.test(new URL(value).pathname));
     if (target.origin !== location.origin || !allowed(target.href)) {
-      throw new Error('Page loading is available only on your configured profile.');
-    }
-    let body;
-    if (edit) {
-      if (!LastfmAdapter.ownProfile(location.href, settings.username) || form.method !== 'post') {
-        throw new Error('Open your connected profile before editing a scrobble.');
-      }
-      body = new URLSearchParams(new FormData(form));
-      if (body.getAll('csrfmiddlewaretoken').length !== 1 || !body.get('csrfmiddlewaretoken')) {
-        throw new Error('Last.fm’s edit security field is unavailable. Open its normal edit dialog.');
-      }
-      const submit = form.querySelector('[name="submit"]');
-      if (submit && !body.has('submit')) body.set('submit', submit.value || submit.textContent.trim());
+      throw new Error('Page loading is available only in a supported Last.fm view.');
     }
     const state = await chrome.storage.local.get([PAUSE, LAST, WINDOW]);
     if (state[PAUSE] !== pause) track(state[PAUSE]);
     if (active(state[PAUSE])) throw pausedError(state[PAUSE]);
     const interval = Math.min(60000, Math.max(1500, Number(minInterval) || 1500));
     await wait(Math.min(interval, Math.max(0, interval - (Date.now() - (state[LAST] || 0)))), signal);
-    if (edit) {
-      const latest = await LastfmStore.read();
-      if (latest.settings.username !== settings.username || !LastfmAdapter.ownProfile(location.href, settings.username)) {
-        throw new Error('Your connected profile changed. The edit was cancelled.');
-      }
-    }
     await beforeSend?.();
     check(signal);
     const controller = new AbortController();
@@ -111,7 +97,7 @@
     try {
       const response = await fetch(target.href, {
         credentials: 'same-origin', signal: controller.signal,
-        ...(edit ? {method:'POST',body,headers:{'X-Requested-With':'XMLHttpRequest'}} : {})
+        method: 'GET'
       });
       const html = await response.text();
       received = true;
@@ -132,18 +118,21 @@
         const error = new Error(`Last.fm returned HTTP ${response.status}. Loading stopped.`);
         // Consumers may recover a temporary read failure. Never retry writes,
         // rate warnings, redirects or unverified metadata as a transport error.
-        error.retryable = !edit && response.status >= 500 && response.status <= 600;
+        error.retryable = response.status >= 500 && response.status <= 600;
         throw error;
       }
       if (!allowed(response.url)) {
         throw new Error('Last.fm redirected away from your library. Check your sign-in.');
       }
       const directUrl = target.href.replace('/music/+noredirect/', '/music/');
-      if (!edit && globalThis.LastfmRedirects &&
-          LastfmRedirects.protect(directUrl, settings, location.href) !== directUrl &&
-          LastfmAdapter.musicItem(target.href)?.artist.toLowerCase() !==
-            LastfmAdapter.musicItem(response.url)?.artist.toLowerCase()) {
-        throw new Error('Last.fm returned a different artist. Redirect protection stopped loading.');
+      if (globalThis.LastfmRedirects &&
+          LastfmRedirects.protect(directUrl, settings, location.href) !== directUrl) {
+        const requested = LastfmAdapter.musicItem(target.href), received = LastfmAdapter.musicItem(response.url);
+        const same = (a, b) => String(a || '').normalize('NFC').toLowerCase() === String(b || '').normalize('NFC').toLowerCase();
+        if (!received || !same(requested?.artist, received.artist))
+          throw new Error('Last.fm returned a different artist. Redirect protection stopped loading.');
+        if (requested.type !== received.type || !same(requested.name, received.name))
+          throw new Error('Last.fm returned a different song or album. Redirect protection stopped loading.');
       }
       check(signal);
       lastError = '';
@@ -152,8 +141,8 @@
       if (signal?.aborted) error = abortError();
       else if (timedOut) {
         error = new Error('Last.fm took too long to respond. Loading stopped.');
-        error.retryable = !edit;
-      } else if (!received && error.name === 'TypeError') error.retryable = !edit;
+        error.retryable = true;
+      } else if (!received && error.name === 'TypeError') error.retryable = true;
       if (error.name !== 'AbortError') lastError = error.message;
       throw error;
     } finally {
@@ -201,6 +190,7 @@
     } finally { draining = false; }
   }
   function get(url, options = {}, album = false) {
+    if (options.form) return Promise.reject(new Error('This extension is read-only. Scrobble submissions are forbidden.'));
     return new Promise((resolve, reject) => {
       const {signal} = options;
       if (signal?.aborted) { reject(abortError()); return; }
@@ -232,7 +222,7 @@
   if (warning.test(document.body?.textContent || '')) void stop();
   globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
     getTrack: (url, options) => get(url, options, 'track'),
-    edit: (form, options = {}) => get(form.action, { ...options, form }),
+    edit: () => Promise.reject(new Error('This extension is read-only. Scrobble submissions are forbidden.')),
     // Fires when the pause starts or ends (including automatic expiry).
     onChange: listener => { listeners.add(listener); return () => listeners.delete(listener); },
     status: () => ({ rateLimited: active(pause), pausedUntil: active(pause) ? pauseUntil(pause) : null, lastError }) });

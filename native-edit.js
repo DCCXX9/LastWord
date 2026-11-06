@@ -305,7 +305,7 @@
       return;
     }
     const operations = casingOperations(pairs);
-    if (!operations.length) { globalThis.LastfmAlbumless?.capture(form); return; }
+    if (!operations.length) return;
     event.preventDefault(); event.stopImmediatePropagation(); saveCasing(form, operations);
   }
   function errors(root) {

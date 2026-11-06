@@ -65,7 +65,7 @@ const data = { settings: { username: 'DCCXX', infiniteScroll: false }, rules: {
     });
     await loadScripts(page, scripts);
     await page.waitForFunction(() => document.querySelector('h1').textContent === 'ZUSHI');
-    assert.equal(await page.locator('.chartlist-name').textContent(), 'ELEVEN (2:13)');
+    assert.equal(await page.locator('.chartlist-name').textContent(), '11 (2:13)');
     const edit = page.getByRole('button', { name: 'Edit track', exact: true });
     await edit.waitFor();
     assert.equal(await page.locator('.chartlist-more-menu li').first().textContent(), 'Edit track');

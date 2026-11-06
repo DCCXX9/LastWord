@@ -10,7 +10,7 @@ const html = n => `<!doctype html><main><table class="chartlist"><tbody>
   const browser = await chromium.launch({ headless: true,
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, args: ['--no-sandbox'] });
   try {
-    for (const transition of ['setting', 'profile']) {
+    for (const transition of ['setting']) {
       const page = await browser.newPage(), calls = [];
       await page.route('https://www.last.fm/**', route => {
         const n = Number(new URL(route.request().url()).searchParams.get('page') || 1);

@@ -25,8 +25,8 @@ const ranked=(name,art)=>`<tr class="chartlist-row"><td class="chartlist-image">
   await page.waitForFunction(()=>LastfmArtwork.status().cacheReady&&LastfmArtwork.status().held===0);
   const rows=await page.locator('.chartlist-image img').evaluateAll(images=>images.map(i=>({src:i.src.split('/').pop(),visible:getComputedStyle(i).visibility,
    href:i.closest('a')?.getAttribute('href'),marked:i.hasAttribute('data-lfm-artwork'),title:i.getAttribute('title')})));
-  assert.deepEqual(rows[0],{src:'Winner.jpg',visible:'visible',href:origin+'/music/Artist/Winner',marked:false,title:rows[0].title},'a saved winner replaces Last.fm’s image');
-  assert.deepEqual(rows[1],{src:'native.jpg',visible:'visible',href:'/music/Artist/Native',marked:false,title:'Native'},'an unknown track shows Last.fm’s own image and link unchanged');
+  assert.deepEqual(rows[0],{src:'Winner.jpg',visible:'visible',href:origin+'/music/+noredirect/Artist/Winner',marked:false,title:rows[0].title},'a saved winner replaces Last.fm’s image');
+  assert.deepEqual(rows[1],{src:'native.jpg',visible:'visible',href:origin+'/music/+noredirect/Artist/Native',marked:false,title:'Native'},'an unknown track shows Last.fm’s own image and identity unchanged');
   assert.equal(rows[2].src,'Winner.jpg','an old saved winner is still used, since it cannot be refreshed without requests');
   assert.equal(rows[3].visible,'visible','Last.fm’s placeholder shows as Last.fm shows it');
   await page.waitForTimeout(4000);
