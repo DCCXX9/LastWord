@@ -1,18 +1,18 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {createMockWorker}=require('./harness.cjs');
 const ui={id:'test',url:'chrome-extension://test/itunes.html'},bg={id:'test',url:'chrome-extension://test/background.js'},own={id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0};
-async function scenario(responses){
+async function scenario(responses,{tabs=[{id:1}],status=()=>({ownProfile:true,username:'DCCXX'})}={}){
  const seed={settings:{username:'DCCXX'},rules:{artists:{a:{from:'A',to:'a'}},tracks:{},albums:{},albumArtists:{}},itunesImportUndo:{id:'keep'},legacyScan:{page:1000},lfmNetworkPause:{until:123}};
  const w=createMockWorker(seed);await w.request('library-cache',{op:'resume'},ui);
  let now=Date.now(),calls=0,onAlarm;const alarms=new Map();
- const chrome={alarms:{create:async(name,value)=>alarms.set(name,value),clear:async name=>alarms.delete(name),onAlarm:{addListener(fn){onAlarm=fn}}},runtime:{},tabs:{query:async()=>[{id:1}],sendMessage:async(_id,m)=>{
-  if(m.type==='lfm:status')return {ownProfile:true,username:'DCCXX'};
+ const chrome={alarms:{create:async(name,value)=>alarms.set(name,value),clear:async name=>alarms.delete(name),onAlarm:{addListener(fn){onAlarm=fn}}},runtime:{},tabs:{query:async()=>tabs,sendMessage:async(id,m)=>{
+  if(m.type==='lfm:status')return status(id);
   if(m.type==='lfm:library-cancel')return {ok:true};
   calls++;const result=responses.shift()||{ok:false,error:'Stop test'};
   if(result.ok)await w.request('library-cache',{op:'page',username:m.username,id:m.id,token:m.token,data:{type:m.group,page:m.page,total:m.page,done:true,items:[m.group==='artists'?{name:'Artist'}:{name:'Song',artist:'Artist'}],skipped:[]}},own);
   return result;
  }}};
- const context=vm.createContext({chrome,console,Date:{now:()=>now}});
+ const context=vm.createContext({chrome,console,Date:{now:()=>now},setTimeout,clearTimeout});
  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../library-cache-job.js'),'utf8'),context);
  context.LastfmLibraryCacheJobs.init(m=>w.request('library-cache',m,bg));
  const settle=async()=>{for(let n=0;n<20;n++)await new Promise(setImmediate)};await settle();
@@ -32,5 +32,18 @@ async function scenario(responses){
  const paused=await scenario([transient,{ok:true}]);await paused.w.request('library-cache',{op:'pause'},ui);await paused.tick(60000);assert.equal(paused.calls,1,'manual pause wins');
  const denied=await scenario([{ok:false,error:'Last.fm redirected away from your library. Check your sign-in.'}]);assert.equal(denied.job.running,false);await denied.tick(60000);assert.equal(denied.calls,1);
  const limited=await scenario([{ok:false,error:'Rate pause',rateLimited:true}]);assert.equal(limited.job.running,true);assert.ok(!limited.job.retryCount,'rate-limit cooldown remains separate');
- console.log('PASS: automatic recovery, persistent backoff, four-retry limit, manual pause, permanent errors, rate-limit separation and saved-data preservation');
+ // Browsing away from the profile in the caching tab must wait, not stop the job.
+ const away=await scenario([{ok:false,error:'Keep your connected Last.fm profile open while caching.',away:true},{ok:true},{ok:true},{ok:true}]);
+ assert.equal(away.job.running,true,'leaving the profile page must not stop caching');assert.equal(away.job.error,'');assert.match(away.job.waiting,/profile/i);assert.ok(!away.job.retryCount,'leaving the profile is not a failed retry');
+ await away.tick(30000);assert.equal(away.calls,4,'caching continues on the next wake once the profile is open');assert.equal(away.job.running,false);assert.equal(away.job.error,'');
+ // A page still loading from an earlier wake (for example after a worker restart) is not a failure.
+ const busy=await scenario([...Array(6).fill({ok:false,error:'A library page is already loading.',retryable:true,busy:true}),{ok:true},{ok:true},{ok:true}]);
+ for(let n=0;n<5;n++)await busy.tick(30000);
+ assert.equal(busy.job.running,true,'an in-flight page must never exhaust the retry budget');assert.ok(!busy.job.retryCount);assert.equal(busy.job.error,'');
+ await busy.tick(30000);await busy.tick(30000);assert.equal(busy.job.running,false,'caching completes after the earlier page finishes');
+ // A sleeping or frozen tab that never answers must not hold the worker.
+ const frozen=await scenario([{ok:true},{ok:true},{ok:true}],{tabs:[{id:2},{id:1}],status:id=>id===2?new Promise(()=>{}):{ownProfile:true,username:'DCCXX'}});
+ await new Promise(r=>setTimeout(r,3500));await frozen.wake();
+ assert.equal(frozen.calls,3,'an unresponsive tab is skipped and the responsive profile tab is used');assert.equal(frozen.job.running,false);
+ console.log('PASS: automatic recovery, persistent backoff, four-retry limit, manual pause, permanent errors, rate-limit separation, browsing away, in-flight pages, unresponsive tabs and saved-data preservation');
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,3 +1,25 @@
+# Cache stall candidate — 7 November 2026
+
+Issue #9 / claude/9-cache-stalls, stacked on codex/6-cache-recovery (PR #7).
+Read-only copy of installed v0.9.27 storage at 15:20: cache started 6 Nov 21:54,
+Songs page 856 of 1,025 (42,731 songs), albums and artists not started. While running
+it reads ~12 pages a minute, so about 70 minutes of work in 17.5 hours; the rest was
+idle or stopped. No Last.fm rate-limit pause was recorded.
+
+Reproduced cause: when the caching tab leaves the profile (Last.fm navigates in-page,
+e.g. clicking an artist), the worker refuses the tab's cache request and the job
+stopped with "Open your connected Last.fm profile to change its preferences" until
+Resume. Now it waits and continues on the next wake once the profile is open again,
+keeping the unfinished page. "A library page is already loading" no longer uses one
+of PR #7's four retries. Tab status checks time out after 3 s, and the last working
+tab is checked first, so a sleeping tab cannot hold the job.
+
+Checks: 14/14 unit suites; Supermium browser suites cache-background, cache-skip,
+page-priority, new cache-browse-away (fails on the old code), smoke, extension.
+store-navigation, startup and popup fail identically on the unchanged base (early
+worker without chrome.storage). The frozen-tab timeout is unit-tested only. Not
+tested on live Last.fm or the installed extension. Rollback: revert this PR.
+
 # Cache retry candidate — 7 November 2026
 
 Issue #6 / codex/6-cache-recovery, based on main 7a4091a9. The existing cache
