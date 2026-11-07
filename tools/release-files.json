@@ -4,6 +4,6 @@
   "artwork.js", "artwork-source.js", "artwork-albums.js",
   "options.html", "options.js",
   "popup.html", "popup.js", "popup-status.js", "settings-status.js", "preferences.html", "preferences.js", "extension-ui.css",
-  "itunes.html", "itunes.js", "library-casing.js", "library-cache.js", "library-cache-store.js", "library-cache-job.js", "cache-ui.js", "library-cache-bridge.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
+  "itunes.html", "itunes.js", "library-casing.js", "library-cache.js", "library-cache-store.js", "library-cache-job.js", "library-cache-fetch.js", "library-cache-parse.js", "offscreen.html", "cache-ui.js", "itunes-parser.js", "itunes.css", "help.html", "privacy.html", "version.js",
   "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png"
 ]

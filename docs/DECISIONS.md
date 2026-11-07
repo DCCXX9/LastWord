@@ -1,5 +1,17 @@
 # Architecture decisions
 
+## 7 November 2026: tab-free library caching that never gives up
+
+Supersedes the tab requirement below. Jay asked for caching to start the moment a
+username is added and not stop until complete. Depending on an open own-profile tab
+stopped or stalled the job whenever that tab moved, slept or closed. The worker now
+reads library pages itself (GET only, host access limited to www.last.fm) and a hidden
+offscreen page parses them, because service workers cannot parse HTML and offscreen
+pages cannot use extension storage. Requests keep the shared pause, spacing and
+budget from pages.js. Every failure waits and retries (5 s rising to every 5 min)
+without stopping; only Pause, a profile change or completion ends the job. Packaging
+allows exactly `offscreen` and `https://www.last.fm/*` beyond the earlier permissions.
+
 ## 29 October 2026: resumable background caching and recoverable snapshots
 
 Reuse the existing signed-in, paced GET bridge in a connected own-profile tab.

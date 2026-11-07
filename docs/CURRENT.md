@@ -6,19 +6,20 @@ Songs page 856 of 1,025 (42,731 songs), albums and artists not started. While ru
 it reads ~12 pages a minute, so about 70 minutes of work in 17.5 hours; the rest was
 idle or stopped. No Last.fm rate-limit pause was recorded.
 
-Reproduced cause: when the caching tab leaves the profile (Last.fm navigates in-page,
-e.g. clicking an artist), the worker refuses the tab's cache request and the job
+Reproduced cause: when the caching tab left the profile (Last.fm navigates in-page,
+e.g. clicking an artist), the worker refused the tab's cache request and the job
 stopped with "Open your connected Last.fm profile to change its preferences" until
-Resume. Now it waits and continues on the next wake once the profile is open again,
-keeping the unfinished page. "A library page is already loading" no longer uses one
-of PR #7's four retries. Tab status checks time out after 3 s, and the last working
-tab is checked first, so a sleeping tab cannot hold the job.
+Resume. Missing, sleeping or closed tabs also left it waiting indefinitely.
 
-Checks: 14/14 unit suites; Supermium browser suites cache-background, cache-skip,
-page-priority, new cache-browse-away (fails on the old code), smoke, extension.
-store-navigation, startup and popup fail identically on the unchanged base (early
-worker without chrome.storage). The frozen-tab timeout is unit-tested only. Not
-tested on live Last.fm or the installed extension. Rollback: revert this PR.
+Jay then asked that caching start the moment a username is added and never stop
+until complete. The worker now downloads pages itself with no Last.fm tab, a hidden
+offscreen page parses them, and every failure retries (5 s rising to every 5 min)
+instead of stopping. Only Pause, a profile change or completion ends a job. The tab
+bridge is removed. New permissions: `offscreen` and host access to www.last.fm only
+(the content scripts already ran there). See DECISIONS.md, 7 November 2026.
+
+A job that an older version already stopped stays paused until Resume is pressed once.
+Not tested on live Last.fm or the installed extension. Rollback: revert this PR.
 
 # Cache retry candidate — 7 November 2026
 

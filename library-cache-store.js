@@ -25,8 +25,9 @@
   if(m.op==='export'){const selected=m.draft?draft:cache;if(!ui||!selected)throw Error('No cache is available to export.');return C.exportFile(selected)}
   if(m.op==='inspect'){if(!ui)throw Error('Open the cache screen.');return C.status(C.validate(m.payload,current.settings.username))}
   if(m.op==='page'){
-   const origin=new URL(sender.url).origin,c=(draft?.id===m.id?draft:cache);
-   if(origin!=='https://www.last.fm'||sender.frameId!==0||!c||c.id!==m.id||job.token&&(m.token!==job.token||!job.running))throw Error('Library pages must come from your active connected Last.fm job.');
+   // Only the background worker reads library pages; it needs no Last.fm tab.
+   const c=(draft?.id===m.id?draft:cache);
+   if(!trusted||!c||c.id!==m.id||job.token&&(m.token!==job.token||!job.running))throw Error('Library pages must come from your active caching job.');
    const retry=job.mode==='retry';if(retry&&(job.remaining?.[0]?.type!==m.data.type||job.remaining[0].page!==m.data.page))throw Error('The skipped-item retry changed.');
    C.accept(c,m.data,retry);
    job={...job,retryCount:0,retryAt:0,error:'',waiting:''};
@@ -44,7 +45,7 @@
   }
   if(m.op==='state'){
    if(!trusted||m.token!==job.token)return null;
-   job={...job,error:String(m.error||'').slice(0,600),waiting:String(m.waiting||'').slice(0,600),...(Number.isInteger(m.retryCount)&&m.retryCount>=0&&m.retryCount<=4?{retryCount:m.retryCount}:{}),...(Number.isFinite(m.retryAt)&&m.retryAt>=0?{retryAt:m.retryAt}:{}),...(m.stop?{running:false}:{})};
+   job={...job,error:String(m.error||'').slice(0,600),waiting:String(m.waiting||'').slice(0,600),...(Number.isInteger(m.retryCount)&&m.retryCount>=0&&m.retryCount<=1000000?{retryCount:m.retryCount}:{}),...(Number.isFinite(m.retryAt)&&m.retryAt>=0?{retryAt:m.retryAt}:{}),...(m.stop?{running:false}:{})};
    jobs[key]=job;await save();return null;
   }else if(m.op==='pause')job={...job,running:false,waiting:'',error:'',retryCount:0,retryAt:0};
   else if(m.op==='resume'){

@@ -51,7 +51,7 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'test-resul
   assert.equal(result.trackCount, 1); assert.equal(result.laterChoicePreserved, true);
   assert.deepEqual(result.legacy, {page:93}); assert.deepEqual(result.pause, {until:12345});
   assert.equal(result.settings.username, 'LibraryTest');
-  assert.deepEqual(result.permissions, ['storage', 'unlimitedStorage', 'alarms']);
+  assert.deepEqual(result.permissions, ['storage', 'unlimitedStorage', 'alarms', 'offscreen']);
   console.log(`PASS: real extension storage saved 56,000 stylisations and undo (${result.bytes} bytes), reverted 55,999 and preserved a later edit, profile, scan and pause`);
  } finally {
   if (browser) await browser.close();

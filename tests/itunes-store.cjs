@@ -12,10 +12,10 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
  const origin='chrome-extension://test/itunes.html';
  const started=await guarded.request('library-cache',{op:'start',username:'DCCXX'},{id:'test',url:origin});
  const pageData={type:'tracks',page:1,total:1,done:true,items:[{name:'Song',artist:'Artist'}]};
- for(const sender of [{id:'test',url:origin},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:1},{id:'test',url:'https://www.last.fm/user/Friend/library',frameId:0}]){
+ for(const sender of [{id:'test',url:origin},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:1},{id:'test',url:'https://www.last.fm/user/Friend/library',frameId:0},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0}]){
   await assert.rejects(guarded.request('library-cache',{op:'page',username:'DCCXX',id:started.id,data:pageData},sender),/connected|Library pages/);
  }
- await guarded.request('library-cache',{op:'page',username:'DCCXX',id:started.id,data:pageData},{id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0});
+ await guarded.request('library-cache',{op:'page',username:'DCCXX',id:started.id,data:pageData},{id:'test',url:'chrome-extension://test/background.js'});
  assert.equal((await guarded.request('library-cache',{op:'read'})).groups.tracks.page,2);
  const settings={username:'DCCXX',infiniteScroll:true};
  const worker=createMockWorker({settings,rules,legacyScan:{page:93}});

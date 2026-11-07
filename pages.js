@@ -148,11 +148,14 @@
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
-      const now = Date.now();
       // Runs inside the cross-tab lock, so the shared window stays consistent.
-      const recent = (Array.isArray(state[WINDOW]) ? state[WINDOW] : []).filter(t => now - t < BUDGET_WINDOW && t <= now);
-      await chrome.storage.local.set({ [LAST]: now, [WINDOW]: [...recent, now].slice(-BUDGET - 10) });
+      await remember(state[WINDOW]);
     }
+  }
+  async function remember(previous) {
+    const now = Date.now();
+    const recent = (Array.isArray(previous) ? previous : []).filter(t => now - t < BUDGET_WINDOW && t <= now);
+    await chrome.storage.local.set({ [LAST]: now, [WINDOW]: [...recent, now].slice(-BUDGET - 10) });
   }
   async function budgetDelay() {
     const state = await chrome.storage.local.get([PAUSE, WINDOW]), now = Date.now();
@@ -219,8 +222,11 @@
   });
   chrome.storage.local.get(PAUSE).then(data => { if (pause === null) track(data[PAUSE]); });
   // A warning already visible on the loaded page must also stop automatic fetches.
-  if (warning.test(document.body?.textContent || '')) void stop();
-  globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
+  if (typeof document !== 'undefined' && warning.test(document.body?.textContent || '')) void stop();
+  // The background library cache shares these pauses, spacing and budget.
+  const pacing = Object.freeze({ PAUSE, LAST, WINDOW, active, pauseUntil, stop, budgetDelay,
+    remember: async () => remember((await chrome.storage.local.get(WINDOW))[WINDOW]) });
+  globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume, pacing,
     getTrack: (url, options) => get(url, options, 'track'),
     edit: () => Promise.reject(new Error('This extension is read-only. Scrobble submissions are forbidden.')),
     // Fires when the pause starts or ends (including automatic expiry).

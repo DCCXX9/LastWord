@@ -1,51 +1,39 @@
-/* Background orchestration. Every page is a paced GET in a connected profile tab. */
+/* Background orchestration. The worker reads each page itself: no Last.fm tab is needed. */
 (() => {
  'use strict';
- const ALARM='lfm-library-cache',RETRY_ALARM=ALARM+'-retry',DELAYS=[5000,15000,30000,60000];let request,running=false,tabId,lastTab;
- // A sleeping or frozen tab may never answer; it must not hold the whole job.
- const probe=id=>{let timer;return Promise.race([chrome.tabs.sendMessage(id,{type:'lfm:status'}),new Promise(r=>{timer=setTimeout(r,3000)})]).finally(()=>clearTimeout(timer))};
- async function cancel(){if(tabId!==undefined)try{await chrome.tabs.sendMessage(tabId,{type:'lfm:library-cancel'})}catch{}}
+ // Caching never gives up on its own: failures wait and retry, at most every five
+ // minutes, until the library is complete or the user chooses Pause.
+ const ALARM='lfm-library-cache',RETRY_ALARM=ALARM+'-retry',DELAYS=[5000,15000,30000,60000,300000];let request,running=false,controller;
+ const later=ms=>ms<60000?Math.ceil(ms/1000)+' seconds':Math.ceil(ms/60000)+(ms>60000?' minutes':' minute');
+ function cancel(){controller?.abort()}
  async function wake(){
   if(!request||running)return;running=true;
   try{
    for(let n=0;n<20;n++){
     const plan=await request({op:'plan'});if(!plan)break;
     if(plan.retryAt>Date.now()){await chrome.alarms.create(RETRY_ALARM,{when:plan.retryAt});break}
-    let found;
-    // Check the tab that worked last time first, so other tabs are not probed before every page.
-    const tabs=(await chrome.tabs.query({})).sort((a,b)=>(b.id===lastTab)-(a.id===lastTab));
-    for(const tab of tabs){try{const s=await probe(tab.id);if(s?.ownProfile&&s.username===plan.username){found=tab.id;break}}catch{}}
-    if(found===undefined){await request({op:'state',token:plan.token,waiting:'Open your connected Last.fm profile to continue.'});break}
-    tabId=lastTab=found;
+    controller=new AbortController();
     try{
-     const result=await chrome.tabs.sendMessage(tabId,{type:'lfm:library-page',...plan});
-     if(!result?.ok){
-      const active=await request({op:'plan'});if(!active||active.token!==plan.token)break;
-      const count=plan.retryCount||0;
-      // Browsing away from the profile, or a page still loading from an earlier
-      // wake, is not a failure: wait for the next wake without using a retry.
-      if(result?.away||result?.busy){await request({op:'state',token:plan.token,waiting:result.away?'Caching continues when your Last.fm profile is open again. Your progress is saved.':'Finishing the previous library page.'})}
-      else if(result?.retryable&&!result.rateLimited&&count<DELAYS.length){
-       const retryAt=Date.now()+DELAYS[count];
-       await request({op:'state',token:plan.token,retryCount:count+1,retryAt,waiting:'Temporary Last.fm error. Automatic retry '+(count+1)+' of '+DELAYS.length+' in '+DELAYS[count]/1000+' seconds. Your progress is saved.'});
-       await chrome.alarms.create(RETRY_ALARM,{when:retryAt});
-      }else{
-       const error=result?.error||'Refresh your Last.fm profile tab to continue.';
-       await request({op:'state',token:plan.token,error:result?.retryable&&!result.rateLimited?error+' Paused after '+DELAYS.length+' automatic retries. Your progress is saved; choose Resume caching to try again.':error,stop:!result?.rateLimited});
-      }
-      break;
-     }
-     await request({op:'state',token:plan.token});
-    }catch{await request({op:'state',token:plan.token,waiting:'Open or refresh your connected Last.fm profile to continue.'});break}
+     const data=await LastfmLibraryFetch.page(plan,controller.signal);
+     await request({op:'page',username:plan.username,id:plan.id,token:plan.token,data});
+    }catch(error){
+     if(controller.signal.aborted)break;
+     const active=await request({op:'plan'});if(!active||active.token!==plan.token)break;
+     const count=plan.retryCount||0,now=Date.now();
+     // Last.fm's own break and the request budget set their own time; they are not failures.
+     const retryAt=error.retryAt>now?error.retryAt:now+DELAYS[Math.min(count,DELAYS.length-1)];
+     await request({op:'state',token:plan.token,retryCount:error.retryAt>now?count:count+1,retryAt,
+      waiting:(error.retryAt>now?error.message:'Last.fm problem: '+error.message)+' Trying again in '+later(retryAt-now)+'. Your progress is saved.'});
+     await chrome.alarms.create(RETRY_ALARM,{when:retryAt});break;
+    }finally{controller=undefined}
    }
-  }catch(error){console.error('Library cache:',error.message)}finally{running=false;tabId=undefined}
+  }catch(error){console.error('Library cache:',error.message)}finally{running=false}
  }
  function init(enqueue){
-  if(!chrome.alarms?.create||!chrome.tabs?.query)return;
+  if(!chrome.alarms?.create)return;
   request=enqueue;
   chrome.alarms.onAlarm.addListener(a=>{if(a.name===ALARM||a.name===RETRY_ALARM)void wake()});
   chrome.runtime.onStartup?.addListener(()=>{void chrome.alarms.create(ALARM,{periodInMinutes:0.5});void wake()});
-  chrome.tabs.onUpdated?.addListener((_id,change)=>{if(change.status==='complete')void wake()});
   void chrome.alarms.create(ALARM,{periodInMinutes:0.5});
   void wake();
  }
