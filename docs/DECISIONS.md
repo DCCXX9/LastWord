@@ -1,5 +1,15 @@
 # Architecture decisions
 
+## 7 November 2026: display casing on public music page headers
+
+With a connected profile, public `/music/` artist, album and track pages show
+that profile's display casing in the page header only: the main title, the
+artist crumb link and the browser tab title. The page is matched from its URL,
+and only casing-only rules apply. Other links on public pages, other people's
+profiles and pages with no connected profile stay native. This is cosmetic and
+read-only: no Last.fm edits, scrobble changes or extra requests. Changing or
+removing a preference updates or restores the header immediately.
+
 ## 29 October 2026: resumable background caching and recoverable snapshots
 
 Reuse the existing signed-in, paced GET bridge in a connected own-profile tab.
