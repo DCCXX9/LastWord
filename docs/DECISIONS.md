@@ -12,8 +12,19 @@ budget from pages.js. Every failure waits and retries (5 s rising to every 5 min
 without stopping; only Pause, a profile change or completion ends the job. Caching
 waits while a Last.fm page has made a request in the last 10 seconds, so your own
 page loads and artwork go first. Jobs an older version stopped on an error resume
-by themselves; paused jobs stay paused. Packaging
-allows exactly `offscreen` and `https://www.last.fm/*` beyond the earlier permissions.
+by themselves; paused jobs stay paused. Packaging allows exactly `offscreen` and `https://www.last.fm/*` beyond the earlier permissions.
+
+## 7 November 2026: display casing on public music pages
+
+With a connected profile, public `/music/` artist, album and track pages show
+that profile's display casing like library pages do: the main title (matched
+from the page URL), the browser tab title, and linked artist, album and track
+names in the header and lists (each matched from its own link). Only
+casing-only rules apply, and only text that already equals the linked name is
+changed. Other public pages (tags, charts, search), other people's profiles
+and pages with no connected profile stay native. This is cosmetic and
+read-only: no Last.fm edits, scrobble changes or extra requests. Changing or
+removing a preference updates or restores the names immediately.
 
 ## 29 October 2026: resumable background caching and recoverable snapshots
 

@@ -14,6 +14,9 @@
   const pending = new Set();
   const changed = new Map();
   const ownProfile = () => A.ownProfile(location.href, settings.username);
+  // Public artist, album and track pages show the connected profile's own
+  // display casing, as library pages do. Other public pages stay untouched.
+  const musicPage = () => Boolean(settings.username) && /^\/music\//.test(location.pathname);
   const canScroll = () => settings.infiniteScroll && A.scrollView(location.href);
 
   function nameNode(element, name) {
@@ -22,6 +25,37 @@
       if (R.normalize(node.nodeValue) === R.normalize(name)) return node;
     }
     return null;
+  }
+
+  function preferredName(item) {
+    return R.get(rules, item.type, item.name, item.artist) ||
+      (item.type === 'artists' ? R.get(rules, 'albumArtists', item.name) : null);
+  }
+
+  // Recase a name in the tab title, e.g. "Name — Artist | Last.fm" or
+  // "Artist music, videos…". Only same-spelling whole segments are changed.
+  function applyTitle(item) {
+    const title = document.querySelector('title');
+    const node = title?.firstChild;
+    if (!node || node.nodeType !== Node.TEXT_NODE || title.childNodes.length !== 1) return;
+    let saved = changed.get(title);
+    if (saved && (saved.node !== node || node.nodeValue !== saved.applied)) {
+      changed.delete(title);
+      saved = null;
+    }
+    const original = saved ? saved.original : node.nodeValue;
+    const recase = (text, name, preferred) => preferred && R.sameSpelling(text.slice(0, name.length), name) &&
+      /^(?:\s|$)/.test(text.slice(name.length)) ? preferred + text.slice(name.length) : text;
+    const lead = original.match(/^\s*/)[0];
+    let value = lead + recase(original.slice(lead.length), item.name, preferredName(item));
+    if (item.type !== 'artists') {
+      const parts = value.match(/^(.*? — )(.*)$/s);
+      if (parts) value = parts[1] + recase(parts[2], item.artist,
+        preferredName({ type: 'artists', name: item.artist }));
+    }
+    if (node.nodeValue !== value) node.nodeValue = value;
+    if (value !== original) changed.set(title, { node, original, applied: value });
+    else changed.delete(title);
   }
 
   function replaceName(element, item) {
@@ -48,8 +82,7 @@
       if (!node) return;
       saved = { node, original: node.nodeValue };
     }
-    const preferred = R.get(rules, item.type, item.name, item.artist) ||
-      (item.type === 'artists' ? R.get(rules, 'albumArtists', item.name) : null);
+    const preferred = preferredName(item);
     const whitespace = saved.original.match(/^(\s*)(.*?)(\s*)$/s);
     const value = preferred
       ? (whitespace ? whitespace[1] + preferred + whitespace[3] : preferred)
@@ -79,7 +112,7 @@
   }
 
   function applyNames(root) {
-    if (!ownProfile() || !root?.isConnected) return;
+    if (!ownProfile() && !musicPage() || !root?.isConnected) return;
     if (root.matches?.('a[href]')) applyLink(root);
     root.querySelectorAll?.('a[href]').forEach(applyLink);
     const item = A.musicItem(location.href);
@@ -384,9 +417,16 @@
       stopScroll();
       restoreNames();
     }
-    if (ownProfile()) applyNames(document.body);
-    else restoreNames();
+    if (ownProfile() || musicPage()) {
+      applyNames(document.body);
+      applyPageTitle();
+    } else restoreNames();
     startScroll();
+  }
+
+  function applyPageTitle() {
+    const item = musicPage() && A.musicItem(location.href);
+    if (item) applyTitle(item);
   }
 
   function flush() {
@@ -394,6 +434,7 @@
     if (currentUrl !== location.href) refresh();
     for (const node of pending) applyNames(node);
     pending.clear();
+    applyPageTitle();
     for (const [element] of changed) if (!element.isConnected) changed.delete(element);
     if (scrollTimer === undefined) scrollTimer = setTimeout(() => {
       scrollTimer = undefined; startScroll();
