@@ -3,6 +3,8 @@
   const PAUSE = 'lfmNetworkPause';
   const LAST = 'lfmLastPageRequest';
   const WINDOW = 'lfmRequestWindow';
+  // When a Last.fm page last started a request; background caching waits while it is recent.
+  const ACTIVITY = 'lfmPageActivity';
   const warning = /you[’']?re requesting (?:too many|a lot of) pages/i;
   // A Last.fm warning is a cooldown, not a permanent latch. Repeated warnings
   // within STRIKE_WINDOW double the cooldown; an explicit resume ends it early.
@@ -91,6 +93,9 @@
     await wait(Math.min(interval, Math.max(0, interval - (Date.now() - (state[LAST] || 0)))), signal);
     await beforeSend?.();
     check(signal);
+    // Mark the start, so the background cache sees a request still in flight.
+    const started = Date.now();
+    await chrome.storage.local.set({ [LAST]: started, [ACTIVITY]: started });
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
@@ -151,8 +156,8 @@
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
-      // Runs inside the cross-tab lock, so the shared window stays consistent.
-      await remember(state[WINDOW]);
+      // The background cache is outside the cross-tab lock, so read the latest window.
+      await remember((await chrome.storage.local.get(WINDOW))[WINDOW]);
     }
   }
   async function remember(previous) {
@@ -230,7 +235,7 @@
     if (warning.test(document.body?.textContent || '')) void stop();
   }
   // The background library cache shares these pauses, spacing and budget.
-  const pacing = Object.freeze({ PAUSE, LAST, WINDOW, active, pauseUntil, stop, budgetDelay,
+  const pacing = Object.freeze({ PAUSE, LAST, WINDOW, ACTIVITY, active, pauseUntil, stop, budgetDelay,
     remember: async () => remember((await chrome.storage.local.get(WINDOW))[WINDOW]) });
   globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume, pacing,
     getTrack: (url, options) => get(url, options, 'track'),

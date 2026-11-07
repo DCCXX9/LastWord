@@ -8,8 +8,8 @@ async function scenario(responses,before){
  const w=createMockWorker(seed);await w.request('library-cache',{op:'resume'},ui);await before?.(w);
  let now=Date.now(),calls=0,onAlarm;const alarms=new Map();
  const chrome={alarms:{create:async(name,value)=>alarms.set(name,value),clear:async name=>alarms.delete(name),onAlarm:{addListener(fn){onAlarm=fn}}},runtime:{}};
- const LastfmLibraryFetch={page:async m=>{calls++;const result=responses.shift()||{error:Object.assign(Error('Stop test'),{})};if(result.error)throw result.error;return {type:m.group,page:m.page,total:m.page,done:true,items:[m.group==='artists'?{name:'Artist'}:{name:'Song',artist:'Artist'}],skipped:[]}}};
- const context=vm.createContext({chrome,console,Date:{now:()=>now},setTimeout,clearTimeout,AbortController,LastfmLibraryFetch});
+ const LastfmLibraryFetch={close:async()=>{},page:async m=>{calls++;const result=responses.shift()||{error:Object.assign(Error('Stop test'),{})};if(result.error)throw result.error;return {type:m.group,page:m.page,total:m.page,done:true,items:[m.group==='artists'?{name:'Artist'}:{name:'Song',artist:'Artist'}],skipped:[]}}};
+ const context=vm.createContext({chrome,console,Date:{now:()=>now},setTimeout:()=>0,clearTimeout,AbortController,LastfmLibraryFetch});
  const load=async()=>{vm.runInContext(job,context);context.LastfmLibraryCacheJobs.init(m=>w.request('library-cache',m,bg));await settle()};
  const settle=async()=>{for(let n=0;n<30;n++)await new Promise(setImmediate)};await load();
  return {w,seed,alarms,get calls(){return calls},get job(){return w.data.lfmLibraryJobsV1.dccxx},get cache(){return w.data.lfmLibraryCacheV1.profiles.dccxx},
@@ -48,17 +48,22 @@ const ok={},fail=(message,extra={})=>({error:Object.assign(Error(message),extra)
  assert.equal(held.calls,0,'a paused job is never resumed automatically');assert.equal(held.job.running,false);
  await held.restart();assert.equal(held.calls,0);
  // Background reads step aside while a Last.fm page is loading things for you.
- const store={},fetched=[];let clock=1e6;
- const pacing={PAUSE:'p',LAST:'l',WINDOW:'w',active:()=>false,pauseUntil:()=>0,stop:async()=>({until:0}),budgetDelay:async()=>0,remember:async()=>(store.l=clock)};
- const fctx=vm.createContext({chrome:{storage:{local:{get:async k=>Object.fromEntries((Array.isArray(k)?k:[k]).filter(x=>x in store).map(x=>[x,store[x]]))}},runtime:{sendMessage:async()=>({ok:true,data:{}})},offscreen:{createDocument:async()=>{}}},
-  LastfmPages:{pacing},LastfmLibraryCache:{url:()=>'https://www.last.fm/user/DCCXX/library'},Date:{now:()=>clock},setTimeout:(f)=>(f(),0),clearTimeout:()=>{},AbortController,DOMException,
+ const store={},fetched=[];let clock=1e6,documents=0,reader=async()=>({ok:true,data:{}});
+ const pacing={PAUSE:'p',LAST:'l',WINDOW:'w',ACTIVITY:'a',active:()=>false,pauseUntil:()=>0,stop:async()=>({until:0}),budgetDelay:async()=>0,remember:async()=>(store.l=clock)};
+ const fctx=vm.createContext({chrome:{storage:{local:{get:async k=>Object.fromEntries((Array.isArray(k)?k:[k]).filter(x=>x in store).map(x=>[x,store[x]])),set:async v=>Object.assign(store,v)}},runtime:{sendMessage:m=>reader(m)},offscreen:{createDocument:async()=>{documents++},closeDocument:async()=>{}}},
+  LastfmPages:{pacing},LastfmLibraryCache:{url:()=>'https://www.last.fm/user/DCCXX/library'},Date:{now:()=>clock},setTimeout:(f,ms)=>ms>=15000?0:(f(),0),clearTimeout:()=>{},AbortController,DOMException,
   fetch:async u=>(fetched.push(u),{status:200,ok:true,url:u,text:async()=>''})});
  vm.runInContext(fs.readFileSync(path.join(__dirname,'../library-cache-fetch.js'),'utf8'),fctx);
  const plan={username:'DCCXX',group:'tracks',page:1},signal=new AbortController().signal,F=fctx.LastfmLibraryFetch;
  await F.page(plan,signal);assert.equal(fetched.length,1,'reads normally when no page is loading');
  clock+=2000;await F.page(plan,signal);assert.equal(fetched.length,2,'its own previous read is not a reason to wait');
- clock+=2000;store.l=clock-1000;
- await assert.rejects(F.page(plan,signal),e=>e.retryAt===store.l+10000&&/browse/.test(e.message),'a recent page load makes caching wait');assert.equal(fetched.length,2);
+ clock+=2000;store.a=clock-1000;
+ await assert.rejects(F.page(plan,signal),e=>e.retryAt===store.a+10000&&/pages load/.test(e.message),'a recent page load makes caching wait');assert.equal(fetched.length,2);
  clock+=9000;await F.page(plan,signal);assert.equal(fetched.length,3,'caching continues once pages are quiet');
+ const halted=new AbortController();halted.abort();await assert.rejects(F.page(plan,halted.signal),e=>e.name==='AbortError');assert.equal(fetched.length,3,'nothing is sent after Pause');
+ // A hidden reader page that closed or crashed is opened again on the next try.
+ reader=async()=>{throw Error('Receiving end does not exist.')};clock+=2000;
+ await assert.rejects(F.page(plan,signal),/library reader/);reader=async()=>({ok:true,data:{}});clock+=2000;await F.page(plan,signal);
+ assert.equal(documents,2,'a fresh reader page is created after a failure');
  console.log('PASS: tab-free background caching, persistent backoff, never-ending capped retries, former stop errors retried, rate-limit waits, manual pause, recovery of jobs older versions stopped, stepping aside for page loads and saved-data preservation');
 })().catch(e=>{console.error(e);process.exitCode=1});

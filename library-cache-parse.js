@@ -5,7 +5,7 @@
  const warning=/you[’']?re requesting (?:too many|a lot of) pages/i; // same check as pages.js
  chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   if(m?.type!=='lfm:parse-library-page')return;
-  if(sender.id!==chrome.runtime.id){reply({ok:false,error:'Unknown sender.'});return}
+  if(sender.id!==chrome.runtime.id||sender.url!==chrome.runtime.getURL('background.js')){reply({ok:false,error:'Unknown sender.'});return}
   try{
    const doc=new DOMParser().parseFromString(m.html,'text/html');
    if(warning.test(doc.body?.textContent||''))reply({ok:false,warning:true});

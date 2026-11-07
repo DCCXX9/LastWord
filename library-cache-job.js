@@ -3,15 +3,18 @@
  'use strict';
  // Caching never gives up on its own: failures wait and retry, at most every five
  // minutes, until the library is complete or the user chooses Pause.
- const ALARM='lfm-library-cache',RETRY_ALARM=ALARM+'-retry',DELAYS=[5000,15000,30000,60000,300000];let request,running=false,controller;
+ const ALARM='lfm-library-cache',RETRY_ALARM=ALARM+'-retry',DELAYS=[5000,15000,30000,60000,300000];let request,running=false,again=false,controller;
  const later=ms=>ms<60000?Math.ceil(ms/1000)+' seconds':Math.ceil(ms/60000)+(ms>60000?' minutes':' minute');
  function cancel(){controller?.abort()}
+ // Packed extensions run alarms at most every 30 seconds, so a shorter wait also
+ // uses a timer while the worker is awake; the alarm covers a worker restart.
+ async function retryLater(when){await chrome.alarms.create(RETRY_ALARM,{when});const ms=when-Date.now();if(ms<30000)setTimeout(()=>void wake(),Math.max(0,ms)+50)}
  async function wake(){
-  if(!request||running)return;running=true;
+  if(!request)return;if(running){again=true;return}running=true;again=false;
   try{
    for(let n=0;n<20;n++){
-    const plan=await request({op:'plan'});if(!plan)break;
-    if(plan.retryAt>Date.now()){await chrome.alarms.create(RETRY_ALARM,{when:plan.retryAt});break}
+    const plan=await request({op:'plan'});if(!plan){await LastfmLibraryFetch.close();break}
+    if(plan.retryAt>Date.now()){await retryLater(plan.retryAt);break}
     controller=new AbortController();
     try{
      const data=await LastfmLibraryFetch.page(plan,controller.signal);
@@ -24,13 +27,14 @@
      const retryAt=error.retryAt>now?error.retryAt:now+DELAYS[Math.min(count,DELAYS.length-1)];
      await request({op:'state',token:plan.token,retryCount:error.retryAt>now?count:count+1,retryAt,
       waiting:(error.retryAt>now?error.message:'Last.fm problem: '+error.message)+' Trying again in '+later(retryAt-now)+'. Your progress is saved.'});
-     await chrome.alarms.create(RETRY_ALARM,{when:retryAt});break;
+     await retryLater(retryAt);break;
     }finally{controller=undefined}
    }
-  }catch(error){console.error('Library cache:',error.message)}finally{running=false}
+  }catch(error){console.error('Library cache:',error.message)}finally{running=false;if(again)void wake()}
  }
  async function recover(){
   // A job an older version stopped on an error carries on; a paused job has no error.
+  // The cheap info read comes first so a normal start never loads the whole cache.
   try{const info=await request({op:'info'});if(info?.job&&!info.job.running&&info.job.error)await request({op:'recover'})}
   catch(error){console.error('Library cache:',error.message)}
  }
