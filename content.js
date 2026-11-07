@@ -15,7 +15,7 @@
   const changed = new Map();
   const ownProfile = () => A.ownProfile(location.href, settings.username);
   // Public artist, album and track pages show the connected profile's own
-  // display casing in their page header only. Other pages stay untouched.
+  // display casing, as library pages do. Other public pages stay untouched.
   const musicPage = () => Boolean(settings.username) && /^\/music\//.test(location.pathname);
   const canScroll = () => settings.infiniteScroll && A.scrollView(location.href);
 
@@ -112,11 +112,9 @@
   }
 
   function applyNames(root) {
-    const own = ownProfile();
-    if (!own && !musicPage() || !root?.isConnected) return;
-    const links = own ? 'a[href]' : 'a.header-new-crumb[href]';
-    if (root.matches?.(links)) applyLink(root);
-    root.querySelectorAll?.(links).forEach(applyLink);
+    if (!ownProfile() && !musicPage() || !root?.isConnected) return;
+    if (root.matches?.('a[href]')) applyLink(root);
+    root.querySelectorAll?.('a[href]').forEach(applyLink);
     const item = A.musicItem(location.href);
     if (item) {
       if (root.matches?.('h1,.library-header-title')) replaceName(root, item);

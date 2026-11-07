@@ -13,7 +13,8 @@ const html = n => `<main><table class="chartlist"><tbody><tr class="chartlist-ro
    await loadScripts(page,['rules.js','store.js','adapter.js','pages.js','content.js']);
    await page.getByRole('button',{name:'Yes',exact:true}).click();
    await page.waitForFunction(()=>document.querySelectorAll('tr.chartlist-row').length===2);
-   assert.deepEqual(await page.locator('td a').allTextContents(),['Yeat','Yeat'],'foreign/public names stay native');
+   // Public music pages show the connected profile's casing, including appended rows; others stay native.
+   assert.deepEqual(await page.locator('td a').allTextContents(),path.startsWith('/music/')?['YEAT','YEAT']:['Yeat','Yeat'],'foreign/tag/chart names stay native; public music names use display casing');
    assert.deepEqual(calls,['GET','GET']);
    const denied=await page.evaluate(async()=>{try{await LastfmPages.get('https://www.last.fm/user/Other/library?page=2');return false;}catch{return true;}});
    assert.equal(denied,true,'cannot load an unrelated foreign profile');
