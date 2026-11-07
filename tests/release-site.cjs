@@ -19,6 +19,8 @@ const {build}=require('../tools/package-beta.cjs');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${file} fits ${width}px`);
     const resources=await page.locator('a[href],img[src],link[href]').evaluateAll(nodes=>nodes.map(n=>n.href||n.src));
     for(const url of resources)if(url.startsWith('file:'))assert.ok(fs.existsSync(fileURLToPath(new URL(url))),`missing site target ${url}`);
+    // Off-screen lazy images need an explicit load before asserting all assets.
+    await page.locator('img').evaluateAll(nodes=>Promise.all(nodes.map(n=>{n.loading='eager';return n.decode()})));
     assert.equal(await page.locator('img').evaluateAll(nodes=>nodes.every(n=>n.complete&&n.naturalWidth>0)),true,'site images load');
     await page.screenshot({path:path.join(root,'test-results',`beta-${file.slice(0,-5)}-${width}.png`),fullPage:true});
    }
