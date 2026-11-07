@@ -18,7 +18,14 @@ instead of stopping. Only Pause, a profile change or completion ends a job. The 
 bridge is removed. New permissions: `offscreen` and host access to www.last.fm only
 (the content scripts already ran there). See DECISIONS.md, 7 November 2026.
 
-A job that an older version already stopped stays paused until Resume is pressed once.
+A job that an older version stopped on an error resumes by itself when the worker
+starts; a job the user paused (no error) stays paused. While a Last.fm page has made a
+request in the last 10 seconds (next pages, artwork), caching waits, so it never
+competes with your browsing. The worker loads pages.js only for its shared pacing;
+the page-only pause tracker and its wake-up timer no longer run there (that timer kept
+the artwork-rate-recovery and scroll-overlap test processes alive). Cache, Settings,
+Help and Privacy wording now describe tab-free caching, `offscreen` and the
+www.last.fm host access.
 Not tested on live Last.fm or the installed extension. Rollback: revert this PR.
 
 # Cache retry candidate — 7 November 2026

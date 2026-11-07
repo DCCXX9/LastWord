@@ -18,6 +18,9 @@
   const queue = [];
   let draining = false, wake = null, resumeTimer;
   const listeners = new Set();
+  // The background worker loads this file only for the shared pacing values;
+  // the pause tracker and its wake-up timer belong to Last.fm pages.
+  const inPage = typeof document !== 'undefined';
   const pauseUntil = value => !value ? 0 : Number.isFinite(value.until) ? value.until : (Number(value.at) || 0) + BASE_COOLDOWN;
   const active = (value, now = Date.now()) => Boolean(value) && now < pauseUntil(value);
   const struck = (value, now = Date.now()) => Boolean(value) && now - (Number(value.at) || 0) < STRIKE_WINDOW;
@@ -34,7 +37,7 @@
     pause = value || null;
     clearTimeout(resumeTimer);
     // Wake every consumer when the cooldown ends, so nothing waits for a reload.
-    if (active(pause)) resumeTimer = setTimeout(() => { notify(); void drain(); }, pauseUntil(pause) - Date.now() + 50);
+    if (inPage && active(pause)) resumeTimer = setTimeout(() => { notify(); void drain(); }, pauseUntil(pause) - Date.now() + 50);
     if (was !== active(pause)) notify();
   }
   async function stop() {
@@ -156,6 +159,7 @@
     const now = Date.now();
     const recent = (Array.isArray(previous) ? previous : []).filter(t => now - t < BUDGET_WINDOW && t <= now);
     await chrome.storage.local.set({ [LAST]: now, [WINDOW]: [...recent, now].slice(-BUDGET - 10) });
+    return now;
   }
   async function budgetDelay() {
     const state = await chrome.storage.local.get([PAUSE, WINDOW]), now = Date.now();
@@ -217,12 +221,14 @@
     track(value);
     lastError = '';
   }
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[PAUSE]) track(changes[PAUSE].newValue);
-  });
-  chrome.storage.local.get(PAUSE).then(data => { if (pause === null) track(data[PAUSE]); });
-  // A warning already visible on the loaded page must also stop automatic fetches.
-  if (typeof document !== 'undefined' && warning.test(document.body?.textContent || '')) void stop();
+  if (inPage) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes[PAUSE]) track(changes[PAUSE].newValue);
+    });
+    chrome.storage.local.get(PAUSE).then(data => { if (pause === null) track(data[PAUSE]); });
+    // A warning already visible on the loaded page must also stop automatic fetches.
+    if (warning.test(document.body?.textContent || '')) void stop();
+  }
   // The background library cache shares these pauses, spacing and budget.
   const pacing = Object.freeze({ PAUSE, LAST, WINDOW, active, pauseUntil, stop, budgetDelay,
     remember: async () => remember((await chrome.storage.local.get(WINDOW))[WINDOW]) });

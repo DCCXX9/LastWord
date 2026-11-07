@@ -9,7 +9,10 @@ reads library pages itself (GET only, host access limited to www.last.fm) and a 
 offscreen page parses them, because service workers cannot parse HTML and offscreen
 pages cannot use extension storage. Requests keep the shared pause, spacing and
 budget from pages.js. Every failure waits and retries (5 s rising to every 5 min)
-without stopping; only Pause, a profile change or completion ends the job. Packaging
+without stopping; only Pause, a profile change or completion ends the job. Caching
+waits while a Last.fm page has made a request in the last 10 seconds, so your own
+page loads and artwork go first. Jobs an older version stopped on an error resume
+by themselves; paused jobs stay paused. Packaging
 allows exactly `offscreen` and `https://www.last.fm/*` beyond the earlier permissions.
 
 ## 29 October 2026: resumable background caching and recoverable snapshots

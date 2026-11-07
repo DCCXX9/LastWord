@@ -29,13 +29,18 @@
    }
   }catch(error){console.error('Library cache:',error.message)}finally{running=false}
  }
+ async function recover(){
+  // A job an older version stopped on an error carries on; a paused job has no error.
+  try{const info=await request({op:'info'});if(info?.job&&!info.job.running&&info.job.error)await request({op:'recover'})}
+  catch(error){console.error('Library cache:',error.message)}
+ }
  function init(enqueue){
   if(!chrome.alarms?.create)return;
   request=enqueue;
   chrome.alarms.onAlarm.addListener(a=>{if(a.name===ALARM||a.name===RETRY_ALARM)void wake()});
   chrome.runtime.onStartup?.addListener(()=>{void chrome.alarms.create(ALARM,{periodInMinutes:0.5});void wake()});
   void chrome.alarms.create(ALARM,{periodInMinutes:0.5});
-  void wake();
+  void recover().finally(()=>void wake());
  }
  async function connected(username){if(!request||!username)return;await request({op:'resume'});void wake()}
  globalThis.LastfmLibraryCacheJobs=Object.freeze({init,wake,cancel,connected});

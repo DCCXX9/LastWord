@@ -295,7 +295,7 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
       const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
-      if (['page','start','resume','rebuild','import'].includes(message.op)) cacheKnown = false;
+      if (['page','start','resume','recover','rebuild','import'].includes(message.op)) cacheKnown = false;
       if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
       if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
       return result;

@@ -13,11 +13,14 @@ Apple and older Apple Computer plist headers, rejects custom DTDs/entities, and
 never fetches external XML resources. XML locations, playlists and IDs are discarded.
 
 The persisted Last.fm cache visits all-time track, album and artist lists through
-the shared paced GET queue. Connecting a profile starts background caching;
-existing installations retain their current progress and paused state. Keep an
-own-profile Last.fm tab open. Closing the comparison screen does not stop the
-job. Browser/tab closure preserves progress; a 30-second alarm resumes a running
-job when a connected tab is available. Pause and Resume caching are separate
+paced GET requests made by the background worker (no Last.fm tab is needed; a
+hidden offscreen page parses them). Connecting a profile starts background
+caching; existing installations retain their current progress and paused state,
+and a job an older version stopped on an error resumes by itself. Every failure
+retries (5 seconds rising to every 5 minutes); only Pause, a profile change or
+completion stops a job. Caching waits while Last.fm pages are loading. Closing
+the comparison screen does not stop the job; a 30-second alarm resumes it after
+the browser restarts. Pause and Resume caching are separate
 from XML comparison. Compare uses the current saved cache without restarting it.
 Incomplete review is labeled Partial library and includes observed matches only.
 

@@ -48,7 +48,10 @@
    job={...job,error:String(m.error||'').slice(0,600),waiting:String(m.waiting||'').slice(0,600),...(Number.isInteger(m.retryCount)&&m.retryCount>=0&&m.retryCount<=1000000?{retryCount:m.retryCount}:{}),...(Number.isFinite(m.retryAt)&&m.retryAt>=0?{retryAt:m.retryAt}:{}),...(m.stop?{running:false}:{})};
    jobs[key]=job;await save();return null;
   }else if(m.op==='pause')job={...job,running:false,waiting:'',error:'',retryCount:0,retryAt:0};
-  else if(m.op==='resume'){
+  else if(m.op==='resume'||m.op==='recover'){
+   // Older versions stopped a job on errors. Restart those by themselves; a job
+   // the user paused has no error and stays paused.
+   if(m.op==='recover'&&(!trusted||job.running||!job.error))return null;
    if(!cache){root.profiles[key]=C.create(current.settings.username);cacheChanged=true}
    const mode=draft?'rebuild':job.mode==='retry'&&job.remaining?.length?'retry':'resume';
    job={...job,mode,running:true,token:crypto.randomUUID(),error:'',waiting:'',retryCount:0,retryAt:0};
