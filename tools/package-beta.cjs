@@ -17,8 +17,9 @@ function inputs() {
 function validate(entries) {
   const names = new Set(entries.map(x => x.name));
   const manifest = JSON.parse(entries.find(x => x.name === 'manifest.json').data);
-  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage","unlimitedStorage","alarms"]' ||
-      manifest.host_permissions || manifest.optional_permissions || manifest.key || manifest.update_url ||
+  if (manifest.manifest_version !== 3 || JSON.stringify(manifest.permissions) !== '["storage","unlimitedStorage","alarms","offscreen"]' ||
+      // Background library caching reads Last.fm itself; no other site is allowed.
+      JSON.stringify(manifest.host_permissions) !== '["https://www.last.fm/*"]' || manifest.optional_permissions || manifest.key || manifest.update_url ||
       manifest.externally_connectable || manifest.web_accessible_resources) throw new Error('Unexpected manifest authority or identity change.');
   const required = [manifest.background.service_worker,manifest.options_page,manifest.action.default_popup,
     ...Object.values(manifest.icons),...manifest.content_scripts.flatMap(s=>[...(s.js||[]),...(s.css||[])])];

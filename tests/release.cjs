@@ -12,6 +12,7 @@ assert.throws(()=>validate(entries.filter(x=>x.name!=='store.js')),/Missing pack
 assert.throws(()=>validate([...entries,{name:'albumless-engine.js',data:Buffer.from('')}]), /Removed Albumless/);
 const invalid=entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,permissions:['storage','tabs']}))}:x);
 assert.throws(()=>validate(invalid),/authority/);
+assert.throws(()=>validate(entries.map(x=>x.name==='manifest.json'?{...x,data:Buffer.from(JSON.stringify({...manifest,host_permissions:['<all_urls>']}))}:x)),/authority/,'site access stays limited to Last.fm');
 assert.ok(entries.every(x=>!/(?:test|backup|\.xml$|\.log$|\.git|profile)/i.test(x.name)));
 for(const page of entries.filter(x=>x.name.endsWith('.html')))
  assert.doesNotMatch(page.data.toString(),/\bv\d+\.\d+\.\d+/,page.name+' must show the manifest version through version.js');

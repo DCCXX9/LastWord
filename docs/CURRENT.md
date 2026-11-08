@@ -1,3 +1,55 @@
+# Cache stall candidate — 7 November 2026
+
+Issue #9 / claude/9-cache-stalls, stacked on codex/6-cache-recovery (PR #7).
+Read-only copy of installed v0.9.27 storage at 15:20: cache started 6 Nov 21:54,
+Songs page 856 of 1,025 (42,731 songs), albums and artists not started. While running
+it reads ~12 pages a minute, so about 70 minutes of work in 17.5 hours; the rest was
+idle or stopped. No Last.fm rate-limit pause was recorded.
+
+Reproduced cause: when the caching tab left the profile (Last.fm navigates in-page,
+e.g. clicking an artist), the worker refused the tab's cache request and the job
+stopped with "Open your connected Last.fm profile to change its preferences" until
+Resume. Missing, sleeping or closed tabs also left it waiting indefinitely.
+
+Jay then asked that caching start the moment a username is added and never stop
+until complete. The worker now downloads pages itself with no Last.fm tab, a hidden
+offscreen page parses them, and every failure retries (5 s rising to every 5 min)
+instead of stopping. Only Pause, a profile change or completion ends a job. The tab
+bridge is removed. New permissions: `offscreen` and host access to www.last.fm only
+(the content scripts already ran there). See DECISIONS.md, 7 November 2026.
+
+A job that an older version stopped on an error resumes by itself when the worker
+starts; a job the user paused (no error) stays paused. While a Last.fm page has made a
+request in the last 10 seconds (next pages, artwork), caching waits, so it never
+competes with your browsing. The worker loads pages.js only for its shared pacing;
+the page-only pause tracker and its wake-up timer no longer run there (that timer kept
+the artwork-rate-recovery and scroll-overlap test processes alive). Cache, Settings,
+Help and Privacy wording now describe tab-free caching, `offscreen` and the
+www.last.fm host access.
+Not tested on live Last.fm or the installed extension. Rollback: revert this PR.
+
+# Cache retry candidate — 7 November 2026
+
+Issue #6 / codex/6-cache-recovery, based on main 7a4091a9. The existing cache
+worker retried flagged transport errors silently on its periodic alarm without a
+limit, while an HTTP 200 error page without a library list stopped the job.
+Jay's dismissed Edge error could not be recovered, so its exact cause is unknown.
+The installed Edge screen was read only: paused at 6,498 names, Songs page 131.
+
+Temporary read failures now retry the same saved page four times with increasing
+5/15/30/60-second delays, visible retry feedback and a persistent deadline/count.
+Browser alarms may run later than these minimum delays. Extra wakeups and worker
+restarts cannot bypass the deadline. Success resets retries; exhaustion pauses
+with Resume instructions and keeps all completed pages. Explicit pauses, sign-in
+redirects, unverified page identity and existing network cooldowns remain gates.
+An empty/unverifiable list is retried, never accepted or marked complete.
+
+Fresh validation: all 14 unit suites passed. Isolated installed Edge executable: cache-background (including injected HTTP 503 and HTTP 200 error pages), cache-skip and page-priority passed (3/3). The real extension worker, bridge, parser and cache writer recovered without advancing the failed cursor. This is synthetic, intercepted browser testing, not a live Last.fm outage reproduction. Independent review is recorded on the PR.
+No installed extension, preferences, cache, XML undo, scan records or network
+pause were modified. All fault injection is isolated and all cache reads are GET.
+No release/store upload is made. Rollback: revert this PR; cache format is unchanged
+and the additional job fields are backwards-compatible.
+
 # Current state — 6 November 2026
 
 ## Repository integration: v0.9.27 on main

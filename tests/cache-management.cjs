@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
 const {createMockWorker,libraryCache}=require('./harness.cjs');
-const ui={id:'test',url:'chrome-extension://test/itunes.html'},bg={id:'test',url:'chrome-extension://test/background.js'},own={id:'test',url:'https://www.last.fm/user/DCCXX/library',frameId:0};
+const ui={id:'test',url:'chrome-extension://test/itunes.html'},bg={id:'test',url:'chrome-extension://test/background.js'};
 (async()=>{
  const seed={settings:{username:'DCCXX'},rules:{artists:{},tracks:{},albums:{},albumArtists:{}},itunesImportUndo:{id:'keep'},legacyScan:{page:1000},lfmNetworkPause:{until:123}};
  const w=createMockWorker({...seed,lfmLibraryCacheV1:libraryCache('DCCXX',[])}),call=(op,v={},s=ui)=>w.request('library-cache',{op,...v},s);
@@ -9,18 +9,18 @@ const ui={id:'test',url:'chrome-extension://test/itunes.html'},bg={id:'test',url
  await call('rebuild',{confirm:true,expectedId:original.id});
  assert.deepEqual(w.data.lfmLibraryCacheV1.profiles.dccxx,original,'rebuild keeps usable old cache');
  const plan=()=>call('plan',{},bg);let p=await plan();
- await assert.rejects(call('page',{username:'DCCXX',id:p.id,token:'stale',data:{}},own),/active/);
+ await assert.rejects(call('page',{username:'DCCXX',id:p.id,token:'stale',data:{}},bg),/active/);
  await call('pause');assert.equal(await plan(),null);await call('resume');
  for(const type of ['tracks','albums','artists']){
   p=await plan();assert.equal(p.group,type);
   const miss={type,page:1,index:0,name:'Broken',artist:'Artist',href:'https://www.last.fm/music/Broken',reason:'Unverified name'};
-  await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type,page:1,total:1,done:true,items:[],skipped:type==='tracks'?[miss]:[]}},own);
+  await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type,page:1,total:1,done:true,items:[],skipped:type==='tracks'?[miss]:[]}},bg);
   if(type!=='artists')assert.deepEqual(w.data.lfmLibraryCacheV1.profiles.dccxx,original);
  }
  assert.equal(w.data.lfmLibraryCacheV1.drafts.dccxx,undefined);assert.equal((await call('info')).skipped.length,1);
  const rebuilt=w.data.lfmLibraryCacheV1.profiles.dccxx.id;assert.notEqual(rebuilt,original.id);
  await call('retry');p=await plan();assert.equal(p.retry,true);assert.equal(p.page,1);
- await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type:'tracks',page:1,total:1,done:true,items:[{name:'Fixed',artist:'Artist'}],skipped:[]}},own);
+ await call('page',{username:'DCCXX',id:p.id,token:p.token,data:{type:'tracks',page:1,total:1,done:true,items:[{name:'Fixed',artist:'Artist'}],skipped:[]}},bg);
  assert.equal((await call('info')).skipped.length,0);assert.equal(w.data.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.page,2,'retry keeps cursor');
  const before=structuredClone(w.data),bad=structuredClone(exported);bad.cache.username='Friend';
  await assert.rejects(call('inspect',{payload:bad}),/profile/);

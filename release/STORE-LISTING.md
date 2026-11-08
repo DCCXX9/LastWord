@@ -17,7 +17,7 @@ Make your own Last.fm library display the letter casing you prefer, with local d
 - Save casing changes from Last.fm's native edit dialog using Save casing changes.
 - Match an iTunes/Apple Music XML export against your cached Last.fm library. Review Before and After, select changes and save them locally.
 - Only exact names differing in letter casing qualify for XML matching. Featuring credits, punctuation and edition suffixes are never removed.
-- Cache your library in the background while a connected Last.fm profile tab is open. Pause, resume, export or import the cache. Large libraries can take several hours.
+- Cache your library in the background from the moment you connect, with no Last.fm tab needed. Pause, resume, export or import the cache. Large libraries can take several hours.
 - Search and manage saved preferences; export and restore a JSON backup. Undo the latest XML import while preserving later manual changes.
 - Load native paginated lists as you scroll across Last.fm profiles, music, tag and chart pages, with your consent.
 - Keep supported artist, song and album links on their original pages using redirect protection.
@@ -40,6 +40,8 @@ Single purpose: Personalise the connected user's Last.fm library presentation us
 - unlimitedStorage: Whole-library preferences, library cache and the undo record can exceed Chrome's usual local storage quota. This enables local storage, not additional website access.
 - alarms: Resume persisted background library caching after the extension worker is suspended, respecting saved pauses and request pacing.
 - https://www.last.fm/* content-script access: Read the connected profile's library, native form metadata and public music pages; apply local display names, append library rows and protect original music links. The shared page transport permits GET only. No unrelated-site access.
+- https://www.last.fm/* host access: The background worker reads the connected profile's own library pages (GET only) to build the local name cache without an open Last.fm tab. No other site is requested.
+- offscreen: A hidden extension page reads names from the library pages the worker downloaded, because service workers cannot parse HTML. It makes no requests and stores nothing.
 - Remote code: No. All executable JavaScript is included in the ZIP.
 
 Data processed: username, settings, selected XML music metadata, display preferences, Last.fm library names/counts/timestamps and native form metadata, local cache/progress/undo and voluntary diagnostics. Original XML files and filenames are not retained. Native security fields are not saved in preferences or diagnostics. Normal page/image requests go to Last.fm and its image hosts using the browser session. No automatic data reporting to the developer. User-requested JSON downloads can contain listening metadata and should be kept private.
@@ -49,7 +51,7 @@ Complete the dashboard's current data-category selections and Limited Use certif
 ## Reviewer instructions
 
 1. Install the extension ZIP. A new installation starts disconnected. Open Settings and connect your own Last.fm username; no password is entered into the extension.
-2. Keep that profile's Last.fm tab open to cache the library. Step 1 of iTunes casing shows progress, Pause/Resume and cache export/import. Advanced rebuild requires confirmation and retains the current cache until its replacement finishes.
+2. Caching starts in the background; no Last.fm tab is needed. Step 1 of iTunes casing shows progress, Pause/Resume and cache export/import. Advanced rebuild requires confirmation and retains the current cache until its replacement finishes.
 3. Export your iTunes library using File → Library → Export Library…; choose the XML in Step 2 and Compare libraries. Step 3 shows only different casing for names observed in the cache. Review selected changes and confirm. Saving and Complete reflect the actual local storage operation. An incomplete cache only matches names cached so far.
 4. Refresh the connected Last.fm library to see saved casing. Other users' libraries remain unchanged. Use Display names to manage preferences and Settings to export a backup. Undo the latest XML import from Backup & undo on the import screen.
 5. If native edit access is available on your own Last.fm account, change only letter casing and use Save casing changes. Do not click Last.fm's Save edit during local-only testing. No reviewer credentials are bundled.

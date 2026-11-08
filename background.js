@@ -1,6 +1,6 @@
 /* The worker is the sole writer of preferences. Every mutation reads the latest
    stored value inside one queue, so different tabs cannot replace stale copies. */
-importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-job.js');
+importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.js', 'library-cache-store.js', 'library-cache-fetch.js', 'library-cache-job.js');
 
 (() => {
   'use strict';
@@ -295,7 +295,7 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'library-cache.js', 'library
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
       const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
-      if (['page','start','resume','rebuild','import'].includes(message.op)) cacheKnown = false;
+      if (['page','start','resume','recover','rebuild','import'].includes(message.op)) cacheKnown = false;
       if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
       if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
       return result;

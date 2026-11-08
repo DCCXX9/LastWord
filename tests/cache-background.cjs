@@ -1,20 +1,21 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),origin='https://www.last.fm';
-let repaired=false;
+let repaired=false,transientFailures=0;
 const row=(type,name,broken=false)=>`<tr class="chartlist-row"><td class="chartlist-name"><a href="/music/${type==='artists'?name:'Artist/'+(type==='tracks'?'_/':'')+(broken&&!repaired?'Wrong':name)}">${name}</a></td>${type!=='artists'?'<td class="chartlist-artist"><a href="/music/Artist">Artist</a></td>':''}</tr>`;
 const html=(type,page)=>`<main class="col-main"><table class="chartlist">${type==='tracks'?row(type,'Song '+page)+(page===1?row(type,'Broken',true):''):row(type,type==='artists'?'Artist':'Album')}</table><nav class="pagination">${type==='tracks'&&page===1?'<a class="pagination-next" href="?date_preset=ALL&page=2">Next</a>':''}</nav></main>`;
 (async()=>{fs.mkdirSync(path.join(root,'test-results'),{recursive:true});const profile=fs.mkdtempSync(path.join(root,'test-results','background-cache-'));let b;try{
- b=await chromium.launchPersistentContext(profile,{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,headless:false,acceptDownloads:true,args:['--headless=new','--no-sandbox',`--disable-extensions-except=${root}`,`--load-extension=${root}`]});
+ b=await chromium.launchPersistentContext(profile,{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,headless:false,acceptDownloads:true,args:['--headless=new','--no-sandbox','--host-resolver-rules=MAP www.last.fm ~NOTFOUND',`--disable-extensions-except=${root}`,`--load-extension=${root}`]});
  const requests=[],errors=[];b.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
- await b.route('**/*',r=>{const u=new URL(r.request().url());if(u.protocol==='chrome-extension:')return r.continue();requests.push({url:u.href,method:r.request().method()});if(u.origin===origin)return r.fulfill({contentType:'text/html',body:html(u.pathname.split('/').pop(),Number(u.searchParams.get('page')||1))});return r.abort()});
+ await b.route('**/*',r=>{const u=new URL(r.request().url());if(u.protocol==='chrome-extension:')return r.continue();requests.push({url:u.href,method:r.request().method()});if(u.origin===origin&&r.request().resourceType()==='fetch'&&u.pathname.endsWith('/tracks')&&u.searchParams.get('page')==='1'&&transientFailures<2){transientFailures++;return r.fulfill({status:transientFailures===1?503:200,contentType:'text/html',body:'<main class="col-main"><h1>Temporary Last.fm error</h1></main>'})}if(u.origin===origin)return r.fulfill({contentType:'text/html',body:html(u.pathname.split('/').pop(),Number(u.searchParams.get('page')||1))});return r.abort()});
  const w=b.serviceWorkers()[0]||await b.waitForEvent('serviceworker'),id=new URL(w.url()).host,base=`chrome-extension://${id}/`;
- let setup;for(let n=0;n<100&&!setup;n++){setup=b.pages().find(p=>p.url()===base+'options.html');if(!setup)await new Promise(r=>setTimeout(r,25))}assert.ok(setup,'installation opens setup');await setup.locator('#profile-status').filter({hasText:'Not connected'}).waitFor();
- const own=await b.newPage();await own.goto(origin+'/user/DCCXX/library/tracks');
+ let setup;for(let n=0;n<400&&!setup;n++){setup=b.pages().find(p=>p.url()===base+'options.html');if(!setup)await new Promise(r=>setTimeout(r,25))}assert.ok(setup,'installation opens setup');await setup.locator('#profile-status').filter({hasText:'Not connected'}).waitFor();
+ // No Last.fm tab is ever opened: caching starts the moment the username is saved.
  await setup.evaluate(()=>LastfmStore.saveSettings({username:'DCCXX'}));await setup.close();
+ assert.equal(b.pages().filter(p=>p.url().startsWith(origin)).length,0);
  const read=()=>w.evaluate(()=>chrome.storage.local.get(null));
  const until=async fn=>{for(let n=0;n<900;n++){const s=await read();if(fn(s))return s;await new Promise(r=>setTimeout(r,50))}throw Error('Background cache did not progress: '+JSON.stringify({jobs:(await read()).lfmLibraryJobsV1,requests,errors}))};
  let state=await until(s=>s.lfmLibraryCacheV1?.profiles.dccxx?.groups.artists.done);
- assert.equal(state.lfmLibraryJobsV1.dccxx.running,false);assert.equal(state.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.skipped[0].name,'Broken','bad row does not stop later pages or groups');
+ assert.equal(transientFailures,2,'HTTP 503 and HTTP 200 error pages recover through the actual transport and bridge');assert.equal(state.lfmLibraryJobsV1.dccxx.retryCount,0);assert.equal(state.lfmLibraryJobsV1.dccxx.running,false);assert.equal(state.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.skipped[0].name,'Broken','bad row does not stop later pages or groups');
  const p=await b.newPage();await p.goto(base+'itunes.html');await p.locator('#cache-status').filter({hasText:'Complete'}).waitFor({state:'attached'});
  await p.locator('#step-cache').evaluate(e=>e.open=true);await p.locator('#cache-skipped').evaluate(e=>e.open=true);assert.match(await p.locator('#cache-skipped-list').innerText(),/Broken/);
  await p.locator('.cache-advanced').evaluate(e=>e.open=true);const old=state.lfmLibraryCacheV1.profiles.dccxx.id;
@@ -32,5 +33,5 @@ const html=(type,page)=>`<main class="col-main"><table class="chartlist">${type=
  const next=await b.newPage();await next.goto(base+'itunes.html');await next.locator('#cache-status').filter({hasText:'Complete'}).waitFor({state:'attached'});repaired=true;await next.locator('#step-cache').evaluate(e=>e.open=true);await next.locator('#cache-skipped').evaluate(e=>e.open=true);const beforeRetry=requests.length;await next.locator('#cache-retry').click();state=await until(s=>!s.lfmLibraryJobsV1.dccxx.running&&!s.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.skipped.length);
  assert.equal(requests.length-beforeRetry,1,'retry downloads only the missed page');assert.equal(state.lfmLibraryCacheV1.profiles.dccxx.groups.tracks.page,3);
  assert.ok(requests.every(x=>x.method==='GET'));assert.deepEqual(errors,[]);
- console.log('PASS: first-connect background caching with UI closed, bad-row continuation, skipped report/retry, export/import UI validation and cancel, confirmed retained rebuild, pause/reopen/resume, atomic completion and GET-only traffic');
+ console.log('PASS: automatic HTTP 503/error-page recovery, first-connect background caching with UI closed, bad-row continuation, skipped report/retry, export/import UI validation and cancel, confirmed retained rebuild, pause/reopen/resume, atomic completion and GET-only traffic');
  }finally{if(b)await b.close();const actual=fs.realpathSync(profile);assert.equal(path.dirname(actual),fs.realpathSync(path.join(root,'test-results')));fs.rmSync(actual,{recursive:true,force:true,maxRetries:5})}})().catch(e=>{console.error(e);process.exitCode=1});

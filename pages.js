@@ -3,6 +3,8 @@
   const PAUSE = 'lfmNetworkPause';
   const LAST = 'lfmLastPageRequest';
   const WINDOW = 'lfmRequestWindow';
+  // When a Last.fm page last started a request; background caching waits while it is recent.
+  const ACTIVITY = 'lfmPageActivity';
   const warning = /you[’']?re requesting (?:too many|a lot of) pages/i;
   // A Last.fm warning is a cooldown, not a permanent latch. Repeated warnings
   // within STRIKE_WINDOW double the cooldown; an explicit resume ends it early.
@@ -18,6 +20,9 @@
   const queue = [];
   let draining = false, wake = null, resumeTimer;
   const listeners = new Set();
+  // The background worker loads this file only for the shared pacing values;
+  // the pause tracker and its wake-up timer belong to Last.fm pages.
+  const inPage = typeof document !== 'undefined';
   const pauseUntil = value => !value ? 0 : Number.isFinite(value.until) ? value.until : (Number(value.at) || 0) + BASE_COOLDOWN;
   const active = (value, now = Date.now()) => Boolean(value) && now < pauseUntil(value);
   const struck = (value, now = Date.now()) => Boolean(value) && now - (Number(value.at) || 0) < STRIKE_WINDOW;
@@ -34,7 +39,7 @@
     pause = value || null;
     clearTimeout(resumeTimer);
     // Wake every consumer when the cooldown ends, so nothing waits for a reload.
-    if (active(pause)) resumeTimer = setTimeout(() => { notify(); void drain(); }, pauseUntil(pause) - Date.now() + 50);
+    if (inPage && active(pause)) resumeTimer = setTimeout(() => { notify(); void drain(); }, pauseUntil(pause) - Date.now() + 50);
     if (was !== active(pause)) notify();
   }
   async function stop() {
@@ -88,6 +93,9 @@
     await wait(Math.min(interval, Math.max(0, interval - (Date.now() - (state[LAST] || 0)))), signal);
     await beforeSend?.();
     check(signal);
+    // Mark the start, so the background cache sees a request still in flight.
+    const started = Date.now();
+    await chrome.storage.local.set({ [LAST]: started, [ACTIVITY]: started });
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
@@ -148,11 +156,15 @@
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener('abort', abort);
-      const now = Date.now();
-      // Runs inside the cross-tab lock, so the shared window stays consistent.
-      const recent = (Array.isArray(state[WINDOW]) ? state[WINDOW] : []).filter(t => now - t < BUDGET_WINDOW && t <= now);
-      await chrome.storage.local.set({ [LAST]: now, [WINDOW]: [...recent, now].slice(-BUDGET - 10) });
+      // The background cache is outside the cross-tab lock, so read the latest window.
+      await remember((await chrome.storage.local.get(WINDOW))[WINDOW]);
     }
+  }
+  async function remember(previous) {
+    const now = Date.now();
+    const recent = (Array.isArray(previous) ? previous : []).filter(t => now - t < BUDGET_WINDOW && t <= now);
+    await chrome.storage.local.set({ [LAST]: now, [WINDOW]: [...recent, now].slice(-BUDGET - 10) });
+    return now;
   }
   async function budgetDelay() {
     const state = await chrome.storage.local.get([PAUSE, WINDOW]), now = Date.now();
@@ -214,13 +226,18 @@
     track(value);
     lastError = '';
   }
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes[PAUSE]) track(changes[PAUSE].newValue);
-  });
-  chrome.storage.local.get(PAUSE).then(data => { if (pause === null) track(data[PAUSE]); });
-  // A warning already visible on the loaded page must also stop automatic fetches.
-  if (warning.test(document.body?.textContent || '')) void stop();
-  globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume,
+  if (inPage) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes[PAUSE]) track(changes[PAUSE].newValue);
+    });
+    chrome.storage.local.get(PAUSE).then(data => { if (pause === null) track(data[PAUSE]); });
+    // A warning already visible on the loaded page must also stop automatic fetches.
+    if (warning.test(document.body?.textContent || '')) void stop();
+  }
+  // The background library cache shares these pauses, spacing and budget.
+  const pacing = Object.freeze({ PAUSE, LAST, WINDOW, ACTIVITY, active, pauseUntil, stop, budgetDelay,
+    remember: async () => remember((await chrome.storage.local.get(WINDOW))[WINDOW]) });
+  globalThis.LastfmPages = Object.freeze({ get, getAlbum: (url, options) => get(url, options, true), resume, pacing,
     getTrack: (url, options) => get(url, options, 'track'),
     edit: () => Promise.reject(new Error('This extension is read-only. Scrobble submissions are forbidden.')),
     // Fires when the pause starts or ends (including automatic expiry).
