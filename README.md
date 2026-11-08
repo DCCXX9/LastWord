@@ -324,3 +324,11 @@ rules are not migrated. Export a backup before reverting to older source that
 does not understand imported exact preferences.
 Restoring source files does not restore or delete browser storage. The old
 failed scan candidates remain in the ignored `.codex-backups` folder.
+
+## Logo assets
+
+The supplied logo is preserved unchanged in `icons/source.png` (447 × 447).
+`icons/source.svg` is a raster wrapper, not a vector recreation. Windows developers
+can regenerate the extension/store icons and promotional logo with
+`powershell -NoProfile -File tools/build-branding.ps1`, then run the existing
+package scripts. No new runtime dependency or permission is required.

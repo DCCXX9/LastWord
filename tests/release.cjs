@@ -38,4 +38,5 @@ const built=build(),site=fs.readFileSync(path.join(__dirname,'../dist/site/index
 assert.ok(site.includes(built.filename),'download page points to the newly built version');
 assert.ok(site.includes('Free beta '+manifest.version));
 assert.doesNotMatch(site,/lastfm-personal-library-0\.9\.13-beta/);
+assert.deepEqual(fs.readFileSync(path.join(__dirname,'../release/assets/icon128.png')),entries.find(x=>x.name==='icons/icon128.png').data,'store and extension icons use the same logo');
 console.log(`PASS: ${entries.length} allowlisted files, complete references, approved local-storage permissions, unchanged identity, deterministic ZIP and store image dimensions`);

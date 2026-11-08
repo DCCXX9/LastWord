@@ -1,3 +1,16 @@
+# Logo candidate — 7 November 2026
+
+Issue #5 / codex/5-new-logo, based on main 7a4091a9. Replaces extension icons,
+store icon, promotional logo and extension/download-page favicons with Jay's
+exact supplied green/white/pencil design. The original 447-pixel PNG is retained
+and a Windows build script regenerates the smaller assets. Existing page layout,
+permissions, identity and storage code are unchanged. No installed browser,
+user preferences, cache or release assets on GitHub Releases were modified.
+
+Fresh checks: release packaging, desktop/mobile download/privacy site, and isolated Edge extension onboarding passed (3 suites). Exact source PNG preservation and byte-identical regeneration passed. The original site image assertion failed on both baseline and candidate in Edge because lazy images were checked before loading; the test now explicitly loads/decodes those images before asserting. Store handoff built successfully and visual inspection confirmed the new icon/promo. Independent review: pending on the PR. This is a
+source/package candidate, not a Chrome store publication or installed update.
+Rollback: revert this PR; prior branding remains in Git history and v0.9.27.
+
 # Current state — 6 November 2026
 
 ## Repository integration: v0.9.27 on main

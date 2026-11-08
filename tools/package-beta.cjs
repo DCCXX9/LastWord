@@ -88,7 +88,7 @@ function build() {
     fs.copyFileSync(path.join(root,'release','assets',name),path.join(site,'assets',name));
   }
   fs.writeFileSync(path.join(site,'privacy.html'),fs.readFileSync(path.join(root,'privacy.html'),'utf8')
-    .replaceAll('options.html','index.html').replaceAll('help.html','index.html#help')
+    .replaceAll('icons/icon128.png','assets/icon128.png').replaceAll('options.html','index.html').replaceAll('help.html','index.html#help')
     .replace('← Settings &amp; backup','← Beta download')
     // The hosted copy has no extension runtime, so write the version in directly.
     .replace(/<span data-version>[^<]*<\/span>/g,'v'+manifest.version).replace(/<script src="version\.js"><\/script>\r?\n/,''));
