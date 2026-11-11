@@ -1,3 +1,9 @@
+# v0.9.28 beta - Whole iTunes library import
+
+- Save casing for your entire iTunes XML export, including unplayed songs, without waiting for a Last.fm cache.
+- Review XML casing alongside saved preferences. Existing rules can be replaced by selection, and the most recent import can be undone.
+- Includes the background cache and retry improvements merged since v0.9.27. The release uses the existing storage and permissions on main.
+
 # v0.9.27 beta - Casing and compatibility
 
 - Apply saved casing earlier during page parsing and before paints of newly inserted names; initial display reads no longer wait behind cache work.

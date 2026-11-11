@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {inputs,validate,zip,build}=require('../tools/package-beta.cjs');
 const entries=inputs(),manifest=validate(entries);
-assert.equal(manifest.version,'0.9.27');assert.equal(manifest.version_name,'0.9.27 beta');
+assert.equal(manifest.version,'0.9.28');assert.equal(manifest.version_name,'0.9.28 beta');
 assert.ok(entries.every(entry=>!entry.name.startsWith('albumless')), 'removed feature is not packaged');
 assert.equal(manifest.name,'LastWord for Last.fm');
 assert.equal(manifest.action.default_title,'LastWord for Last.fm');
