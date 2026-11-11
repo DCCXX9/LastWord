@@ -55,7 +55,6 @@ summary { cursor: pointer; }
 .step-body > p + p { margin-top: 8px; }
 .workflow-step .cache-panel { margin-top: 16px; }
 .xml-instructions { padding-left: 22px; margin: 12px 0 18px; line-height: 1.9; }
-#partial-cache-note { margin-bottom: 16px; }
 .save-status { display: flex; align-items: center; gap: 14px; margin: 18px 0; padding: 16px; border: 1px solid var(--lfm-border); border-radius: 6px; background: var(--lfm-surface); }
 .save-status strong { display: block; font-size: 17px; }
 .save-status p { font-size: 13px; margin-top: 4px; }

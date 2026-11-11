@@ -6,9 +6,36 @@
   <header class="page-header"><h1>iTunes casing</h1><span id="profile-status" class="badge"></span></header>
   <main>
     <p class="safety-note workflow-safety">Only letter casing changes on this device. Your Last.fm scrobbles are never edited.</p>
-    <details id="step-cache" class="card workflow-step" open>
-      <summary><span class="step-number">1</span><span>Cache your Last.fm library</span><span id="cache-step-status" class="step-status">Checking…</span></summary>
-      <div class="step-body"><p>We check which songs, artists and albums are in your Last.fm library so we can match them against your XML.</p>
+    <details id="step-xml" class="card workflow-step" open>
+      <summary><span class="step-number">1</span><span>Import your iTunes XML</span><span id="xml-step-status" class="step-status">Choose a file</span></summary>
+      <div class="step-body"><p>Import casing for your whole iTunes library, including songs you haven’t played yet.</p>
+      <ol class="xml-instructions"><li>Open iTunes.</li><li>Choose <strong>File → Library → Export Library…</strong> and save the XML file.</li><li>Select that file below, then choose <strong>Review XML</strong>.</li></ol>
+      <div class="file-controls"><div><label for="xml-file">iTunes XML files</label><input id="xml-file" type="file" accept=".xml,text/xml,application/xml" multiple disabled></div><button id="compare" type="button" class="primary" disabled>Review XML</button></div>
+      <div id="scan-status" class="scan-status" hidden><progress id="scan-progress" aria-label="XML reading progress"></progress><span id="scan-label" role="status"></span><button id="cancel-scan" type="button">Pause</button></div>
+      <p id="scan-error" class="message" role="alert" data-tone="error"></p>
+      </div>
+    </details>
+    <details id="step-review" class="card workflow-step">
+      <summary><span class="step-number">2</span><span>Review and accept changes</span><span id="review-step-status" class="step-status">Read your XML first</span></summary>
+      <div class="step-body">
+      <p id="review-intro" class="subtle">Review the XML casing alongside any preference you’ve already saved. Choose a version where the XML has conflicting casing.</p>
+      <div id="save-status" class="save-status" role="status" aria-live="polite" tabindex="-1" hidden><progress id="save-progress" aria-label="Saving display preferences" hidden></progress><div><strong id="save-title"></strong><p id="save-detail"></p></div></div>
+    <section id="review" aria-labelledby="review-heading" hidden>
+      <div class="section-header"><h2 id="review-heading">Casing changes</h2><span id="selected-count" class="badge"></span></div>
+      <p id="scan-summary" class="subtle"></p>
+      <div id="stale-notice" class="notice" hidden><button id="refresh-review" type="button">Refresh preview</button></div>
+      <div class="filters"><div class="search-field"><label for="search">Search</label><input id="search" type="search" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="tracks">Songs</option><option value="artists">Artists</option><option value="albums">Albums</option><option value="albumArtists">Album artists</option></select></div><div><label for="review-filter">Review</label><select id="review-filter"><option value="">All changes</option><option value="unresolved">Needs casing choice</option><option value="replacement">Replaces preference</option></select></div></div>
+      <div class="selection-tools"><label><input id="select-all" type="checkbox"> Select all changes</label><span id="shown-count" class="subtle"></span></div>
+      <div class="table-wrap"><table><thead><tr><th scope="col">Use</th><th scope="col">Type / artist</th><th scope="col">Saved casing</th><th class="arrow" aria-label="changes to">→</th><th scope="col">iTunes casing</th></tr></thead><tbody id="candidates"></tbody></table></div>
+      <p id="empty" class="empty-state" hidden>No casing changes.</p>
+      <nav class="page-controls" aria-label="Results pages"><button id="previous" type="button">Previous</button><span id="page-label"></span><button id="next" type="button">Next</button></nav>
+      <div class="apply-area"><span id="apply-summary"></span><button id="apply" type="button" class="primary" disabled>Apply selected casing</button></div>
+    </section>
+      </div>
+    </details>
+    <details id="step-cache" class="card workflow-step">
+      <summary><span>Last.fm cache (optional)</span><span id="cache-step-status" class="step-status">Checking…</span></summary>
+      <div class="step-body"><p>You can import your iTunes XML while this cache is still building.</p>
       <p class="subtle">Caching starts automatically when you connect your profile and runs in the background, with no Last.fm tab needed. You can close this screen; caching keeps going until your library is complete or you pause it. Large libraries can take several hours.</p>
       <section class="cache-panel" aria-label="Last.fm cache">
         <div class="section-header"><strong>Last.fm cache</strong><span id="cache-status" role="status">Checking…</span></div>
@@ -18,34 +45,6 @@
         <details id="cache-skipped" hidden><summary id="cache-skipped-summary">Skipped items</summary><ul id="cache-skipped-list"></ul><div class="page-controls"><button id="skipped-previous" type="button">Previous</button><span id="skipped-page"></span><button id="skipped-next" type="button">Next</button><button id="cache-retry" type="button">Retry skipped items</button></div></details>
         <details class="cache-advanced"><summary>Advanced cache controls</summary><p>Rebuilding downloads your library again. Your current cache stays available until the new download completes.</p><p class="cache-warning">Accounts with over 50,000 scrobbles can take over 30 minutes to cache. Large libraries can take several hours.</p><button id="cache-rebuild" type="button">Rebuild cache…</button><button id="cache-export-draft" type="button" hidden>Export rebuild progress</button></details>
       </section>
-      </div>
-    </details>
-    <details id="step-xml" class="card workflow-step">
-      <summary><span class="step-number">2</span><span>Import your iTunes XML</span><span id="xml-step-status" class="step-status">Choose a file</span></summary>
-      <div class="step-body"><p>The XML supplies the letter casing you want to display.</p>
-      <ol class="xml-instructions"><li>Open iTunes.</li><li>Choose <strong>File → Library → Export Library…</strong> and save the XML file.</li><li>Select that file below, then choose <strong>Compare libraries</strong>.</li></ol>
-      <p id="partial-cache-note" class="subtle">If caching is incomplete, comparison includes only names cached so far. Compare again after caching finishes to include the rest.</p>
-      <div class="file-controls"><div><label for="xml-file">iTunes XML files</label><input id="xml-file" type="file" accept=".xml,text/xml,application/xml" multiple disabled></div><button id="compare" type="button" class="primary" disabled>Compare libraries</button></div>
-      <div id="scan-status" class="scan-status" hidden><progress id="scan-progress" aria-label="Comparison progress"></progress><span id="scan-label" role="status"></span><button id="cancel-scan" type="button">Pause</button></div>
-      <p id="scan-error" class="message" role="alert" data-tone="error"></p>
-      </div>
-    </details>
-    <details id="step-review" class="card workflow-step">
-      <summary><span class="step-number">3</span><span>Review and accept changes</span><span id="review-step-status" class="step-status">Compare your XML first</span></summary>
-      <div class="step-body">
-      <p id="review-intro" class="subtle">Compare your XML in Step 2 to see Before → After changes. Unchanged names are skipped. Select the casing you want, then save.</p>
-      <div id="save-status" class="save-status" role="status" aria-live="polite" tabindex="-1" hidden><progress id="save-progress" aria-label="Saving display preferences" hidden></progress><div><strong id="save-title"></strong><p id="save-detail"></p></div></div>
-    <section id="review" aria-labelledby="review-heading" hidden>
-      <div class="section-header"><h2 id="review-heading">Casing changes</h2><span id="selected-count" class="badge"></span></div>
-      <p id="scan-summary" class="subtle"></p>
-      <div id="stale-notice" class="notice" hidden><button id="refresh-review" type="button">Refresh preview</button></div>
-      <div class="filters"><div class="search-field"><label for="search">Search</label><input id="search" type="search" autocomplete="off"></div><div><label for="type-filter">Type</label><select id="type-filter"><option value="">All types</option><option value="tracks">Songs</option><option value="artists">Artists</option><option value="albums">Albums</option></select></div><div><label for="review-filter">Review</label><select id="review-filter"><option value="">All changes</option><option value="unresolved">Needs casing choice</option><option value="replacement">Replaces preference</option></select></div></div>
-      <div class="selection-tools"><label><input id="select-all" type="checkbox"> Select all changes</label><span id="shown-count" class="subtle"></span></div>
-      <div class="table-wrap"><table><thead><tr><th scope="col">Use</th><th scope="col">Type / artist</th><th scope="col">Before</th><th class="arrow" aria-label="changes to">→</th><th scope="col">After</th></tr></thead><tbody id="candidates"></tbody></table></div>
-      <p id="empty" class="empty-state" hidden>No casing changes.</p>
-      <nav class="page-controls" aria-label="Results pages"><button id="previous" type="button">Previous</button><span id="page-label"></span><button id="next" type="button">Next</button></nav>
-      <div class="apply-area"><span id="apply-summary"></span><button id="apply" type="button" class="primary" disabled>Apply selected casing</button></div>
-    </section>
       </div>
     </details>
     <details id="backup-undo" class="card backup-details"><summary>Backup &amp; undo</summary><button id="export" type="button">Export backup</button><div id="revert-section" hidden><p id="batch-summary" class="subtle"></p><button id="revert" type="button">Undo last import</button></div></details>

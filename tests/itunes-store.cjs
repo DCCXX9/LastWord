@@ -51,6 +51,17 @@ const entry = (name, expected = null, type = 'artists', artist) => ({
  await assert.rejects(worker.request('mutate',{operations:[{op:'put',type:'tracks',artist:'Artist',from:'Song (feat. Guest)',to:'Song'}]}),/Only letter casing/);
  const denied={id:'test',url:'https://www.last.fm/user/DCCXX/library'};
  await assert.rejects(worker.request('itunes-apply',{entries:[entry('New')],username:'DCCXX'},denied),/connected/);
+ const unplayed=createMockWorker({settings});
+ const xml=entries=>({source:'xml',entries,username:'DCCXX'});
+ const long=entry('İ'.repeat(251));
+ long.rule.from=long.rule.to;
+ const plain=entry('Song',null,'tracks','Artist');
+ const renamed={...plain,rule:{...plain.rule,to:'Song (feat. Guest)'}};
+ await assert.rejects(unplayed.request('itunes-apply',xml([long,renamed])),/casing/);
+ assert.equal(unplayed.data.rules,undefined,'a substantive change rejects the entire batch');
+ await assert.rejects(unplayed.request('itunes-apply',{...xml([plain]),username:'Friend'}),/profile changed/);
+ await assert.rejects(unplayed.request('itunes-apply',xml([plain]),denied),/connected/);
+ assert.equal((await unplayed.request('itunes-apply',xml([long,plain]))).applied,2);
  const first=await apply([entry('First')]);
  const noop=await apply([entry('First',worker.data.rules.artists['["first"]'])]);
  assert.equal(noop.applied,0); assert.equal(noop.batch.id,first.batch.id);
