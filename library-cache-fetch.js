@@ -5,7 +5,8 @@
  'use strict';
  // While Last.fm pages are loading things for you (next pages, artwork), caching
  // steps aside until they have been quiet for ten seconds.
- const P=LastfmPages.pacing,C=LastfmLibraryCache,YIELD=10000;let parser,closed=false;
+ const P=LastfmPages.pacing,C=LastfmLibraryCache,YIELD=10000;let parser,closed=false,transport=Promise.resolve();
+ const serial=task=>{const pending=transport.then(task);transport=pending.catch(()=>{});return pending};
  const paused=()=>new DOMException('Caching paused.','AbortError');
  const wait=(ms,signal)=>new Promise((resolve,reject)=>{if(signal.aborted){reject(paused());return}const t=setTimeout(resolve,ms);signal.addEventListener('abort',()=>{clearTimeout(t);reject(paused())},{once:true})});
  function ready(){
@@ -50,5 +51,5 @@
   if(!result?.ok){if(!result)parser=undefined;throw Error(result?.error||'The library page could not be read.')}
   return result.data;
  }
- globalThis.LastfmLibraryFetch=Object.freeze({page,close});
+ globalThis.LastfmLibraryFetch=Object.freeze({page:(plan,signal)=>serial(()=>page(plan,signal)),close:()=>serial(close)});
 })();

@@ -14,6 +14,7 @@
       groups:Object.fromEntries(TYPES.map(t=>{const g=cache.groups[t];return [t,{page:g.page,total:g.total,done:g.done,count:Object.keys(g.items).length,skipped:(g.skipped||[]).length}]}))};
   }
   function url(user,type,page) {
+    if(type==='recent'&&page===1)return `https://www.last.fm/user/${encodeURIComponent(user)}/library`;
     if(!TYPES.includes(type)||!Number.isSafeInteger(page)||page<1)throw Error('Invalid library page.');
     return `https://www.last.fm/user/${encodeURIComponent(user)}/library/${type}?date_preset=ALL&page=${page}`;
   }
@@ -24,6 +25,8 @@
   function parse(doc,address,user,type,page) {
     const target=new URL(url(user,type,page)),returned=new URL(address);
     if(returned.origin!==target.origin||returned.pathname!==target.pathname||(returned.searchParams.get('date_preset')||'ALL')!=='ALL'||Number(returned.searchParams.get('page')||1)!==page||[...returned.searchParams.keys()].some(k=>!['page','date_preset'].includes(k)))throw Error('Last.fm returned a different library page.');
+    const recent=type==='recent';
+    if(recent)type='tracks';
     const root=doc.querySelector('.col-main')||doc,items=[],missed=[];
     const rows=[...root.querySelectorAll('tr.chartlist-row')].filter(r=>!r.matches('.chartlist__placeholder-row'));
     for(const [index,row]of rows.entries()) {
@@ -38,6 +41,8 @@
       items.push({name,...(type!=='artists'?{artist}:{})});
     }
     if(!items.length&&!missed.length&&!root.querySelector('.library-empty,.chartlist-empty,.empty-library'))throw Object.assign(Error('Last.fm returned no verifiable library list. Check your sign-in if this persists.'),{retryable:true});
+    // Recent plays are supplementary evidence, not ranked library pages.
+    if(recent)return {items};
     const next=root.querySelector('nav.pagination .pagination-next a[href],nav.pagination a[rel=next],nav.pagination a.pagination-next[href]');
     let total=page;
     for(const a of root.querySelectorAll('nav.pagination a[href]')){const u=new URL(a.getAttribute('href'),address),n=Number(u.searchParams.get('page'));if(u.origin===target.origin&&u.pathname===target.pathname&&Number.isSafeInteger(n))total=Math.max(total,n)}
@@ -52,6 +57,19 @@
     for(const x of missed)if(x.type!==data.type||x.page!==data.page||typeof x.name!=='string'||x.name.length>500||typeof x.reason!=='string'||x.reason.length>500||!Number.isSafeInteger(x.index)||x.index<0||safeLink(x.href,url(cache.username,data.type,data.page))!==x.href)throw Error('Invalid skipped-item record.');
     g.skipped=[...(g.skipped||[]).filter(x=>x.page!==data.page),...missed];
     if(!retry){g.page++;g.total=data.total;g.done=data.done}cache.updatedAt=Date.now();return cache;
+  }
+  function addRecent(cache,items) {
+    const observed=new Map(), tracks=cache.groups.tracks.items;
+    for(const item of items){
+      const id=R.idFor('tracks',item.name,item.artist), previous=observed.get(id);
+      if(!previous)observed.set(id,item);
+      else if(previous.name!==item.name)observed.set(id,{...previous,ambiguous:true});
+    }
+    let added=0;
+    for(const [id,item]of observed){
+      if(!item.ambiguous&&!Object.hasOwn(tracks,id)){tracks[id]=item;added++}
+    }
+    return added;
   }
   function compare(scan,cache,rules) {
     if(!cache?.groups)throw Error('Cache your Last.fm library before reviewing changes.');
@@ -68,5 +86,5 @@
     return out;
   }
   const exportFile=cache=>({format:'lastfm-personal-library-cache',version:1,exportedAt:Date.now(),cache});
-  globalThis.LastfmLibraryCache=Object.freeze({KEY,TYPES,spelling,create,status,complete,skipped,url,parse,accept,compare,validate,exportFile});
+  globalThis.LastfmLibraryCache=Object.freeze({KEY,TYPES,spelling,create,status,complete,skipped,url,parse,accept,addRecent,compare,validate,exportFile});
 })();

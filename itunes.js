@@ -114,15 +114,22 @@
       cache = await S.cacheLibrary('read');
       if(!cache)throw new Error('Start caching your Last.fm library, then compare again.');
       if (signal.aborted) throw new DOMException('Comparison paused.', 'AbortError');
+      if (cache.username !== user) throw new Error('Your connected profile changed. Compare again.');
+      $('scan-label').textContent = 'Checking recent Last.fm plays…';
+      $('cancel-scan').hidden = true;
+      const recent = await S.cacheLibrary('check-recent', { username: user, id: cache.id });
+      if (signal.aborted) throw new DOMException('Comparison paused.', 'AbortError');
+      if (recent?.added) cache = await S.cacheLibrary('read');
       await refresh();
-      if (snapshot.settings.username !== user || cache.username !== user) throw new Error('Your connected profile changed. Compare again.');
+      if (snapshot.settings.username !== user || cache?.username !== user) throw new Error('Your connected profile changed. Compare again.');
       build();
+      if (!recent) message('Recent plays could not be checked. Showing matches from your saved cache.');
     } catch (error) {
-      if (signal.aborted || error.name === 'AbortError') message('Paused. Compare again to resume.');
+      if (signal.aborted || error.name === 'AbortError') { scan = null; message('Paused. Compare again to resume.'); }
       else $('scan-error').textContent = error.message;
       try { await refresh(); cache = await S.cacheLibrary('read'); if (scan && cache && cache.username === user && snapshot.settings.username === user) build(); }
       catch { /* Keep the original comparison error visible. */ }
-    } finally { controller = null; $('scan-status').hidden = true; $('compare').textContent = 'Compare libraries'; if (!scan || $('scan-error').textContent) $('xml-step-status').textContent = 'Compare again'; setBusy(false); if (!$('review').hidden) draw(); }
+    } finally { controller = null; $('cancel-scan').hidden = false; $('scan-status').hidden = true; $('compare').textContent = 'Compare libraries'; if (!scan || $('scan-error').textContent) $('xml-step-status').textContent = 'Compare again'; setBusy(false); if (!$('review').hidden) draw(); }
   });
   $('cancel-scan').addEventListener('click', () => controller?.abort());
   $('select-all').addEventListener('change', e => { for (const entry of entries) entry.selected = e.target.checked && !!entry.choice && entry.choice !== entry.before; draw(); });
