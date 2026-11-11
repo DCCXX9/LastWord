@@ -1,7 +1,7 @@
 /* Cache controls never modify display preferences or Last.fm data. */
 (() => {
  'use strict';const S=LastfmStore,C=LastfmLibraryCache,$=id=>document.getElementById(id);
- let info,action,skipPage=1,generation=0,hadComplete;
+ let info,action,skipPage=1,generation=0;
  const total=s=>s?Object.values(s.groups).reduce((n,g)=>n+g.count,0):0;
  const note=(text='',error=false)=>{ $('cache-message').textContent=text;$('cache-message').dataset.tone=error?'error':'' };
  function drawSkipped(){
@@ -15,10 +15,6 @@
   const work=next.draft||next.cache,running=next.job.running,kind=next.draft?'Rebuilding':next.job.mode==='retry'?'Retrying skipped items':'Caching';
   $('cache-status').textContent=running?kind:next.cache?.complete?'Complete':!next.cache?'Waiting for profile':'Paused';
   $('cache-step-status').textContent=$('cache-status').textContent;
-  const complete=!!next.cache?.complete; $('partial-cache-note').hidden=complete;
-  if(hadComplete===undefined){$('step-cache').open=!complete;$('step-xml').open=complete}
-  else if(!hadComplete&&complete){$('step-xml').open=true}
-  hadComplete=complete;
   let detail=work?total(work).toLocaleString()+' names cached · '+work.skipped.toLocaleString()+' skipped':'Not cached yet.';
   if(work){const t=C.TYPES.find(t=>!work.groups[t].done);if(t)detail+=' · '+({tracks:'Songs',albums:'Albums',artists:'Artists'}[t])+' page '+work.groups[t].page+(work.groups[t].total?' of '+work.groups[t].total:'')}
   if(work&&!work.complete)$('cache-step-status').textContent=$('cache-status').textContent+' · '+total(work).toLocaleString()+' names';

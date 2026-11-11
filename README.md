@@ -23,13 +23,12 @@ Git history. See [version history](docs/VERSION_HISTORY.md) for version tags,
 recoverable snapshots and their acceptance limitations. Tags identify source
 snapshots; they do not certify every historical build as stable.
 
-The XML comparison compares casing with an observed Last.fm library
-cache through three collapsible steps and shows only changes in a Before → After table.
+The XML importer saves casing preferences for your whole iTunes library,
+including unplayed songs. Review the iTunes casing alongside any saved preference.
 Saving and Complete feedback follow the actual commit. Exact spelling and artist
 identity are required; featuring text, punctuation and titles stay intact.
-Caching starts after profile connection and continues with the comparison screen
-closed while an own-profile Last.fm tab is open. Existing progress stays paused
-until resumed. Advanced rebuild keeps the old cache until completion and asks
+Last.fm caching is separate from import. It starts after profile connection and
+can run without a Last.fm tab. Advanced rebuild keeps the old cache until completion and asks
 for confirmation. Cache JSON export/import preserves complete or partial progress;
 malformed rows are skipped and reported for targeted retry. Large-cache reads and
 status broadcasts are reduced to avoid unnecessary memory churn. Preferences are local only;
@@ -145,12 +144,12 @@ Already-started modules are reused, retaining early cached artwork application.
 - **iTunes XML import:** Open Settings and backup → Import iTunes XML. Choose
   a library XML export. Files are read incrementally, with no 50 MB file cap.
   A cancellable progress bar shows the file percentage and songs checked while
-  the XML is scanned locally. Compare uses observed cache names and shows only
-  casing differences in a Before → After table, with search/filter and 100-row
+  the XML is scanned locally. Review XML shows preferences from the whole file
+  alongside existing saved casing, with search/filter and 100-row
   pages. Choose names or Select all changes, resolve conflicting XML casings,
-  then Save casing changes. Replacements start unchecked. Exact title and artist
-  identity is required; unobserved names, substantive differences and unchanged
-  display names are excluded. Separate album-artist values are not inferred.
+  then Save casing changes. Replacements start unchecked. Rules apply when a
+  Last.fm title and artist match exactly apart from casing. Album-artist values
+  are imported when present in the XML.
   The XML's exact casing is used without title-case conversion. A fresh XML export after Library Doctor
   cleanup can be imported through this same flow. The source-independent casing
   builder is documented in [docs/LIBRARY_CASING.md](docs/LIBRARY_CASING.md);

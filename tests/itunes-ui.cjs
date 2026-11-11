@@ -1,34 +1,37 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {chromium}=require('playwright');const {mockExtension,loadScripts,libraryCache}=require('./harness.cjs');
+const {chromium}=require('playwright');const {mockExtension,loadScripts}=require('./harness.cjs');
 const root=path.resolve(__dirname,'..');
 (async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox']});try{
  const page=await browser.newPage();await page.goto('about:blank');
  await page.setContent(fs.readFileSync(path.join(root,'itunes.html'),'utf8').replace(/<script[^>]*><\/script>/g,''));
  await page.addStyleTag({path:path.join(root,'extension-ui.css')});await page.addStyleTag({path:path.join(root,'itunes.css')});
  const entries=Array.from({length:105},(_,i)=>({type:'tracks',id:JSON.stringify(['artist','song '+i]),rule:{from:'song '+i,to:'song '+i,artist:'Artist',exact:true}}));
- const cached=libraryCache('DCCXX',entries);cached.profiles.dccxx.groups.tracks.items['["artist","same"]']={name:'Same',artist:'Artist'};
- const worker=await mockExtension(page,{settings:{username:'DCCXX',infiniteScroll:false},rules:{artists:{},albums:{},tracks:{'["artist","song 0"]':{from:'song 0',to:'Song 0',artist:'Artist',exact:true}},albumArtists:{}},lfmLibraryCacheV1:cached},{senderUrl:'chrome-extension://test/itunes.html'});
+ const worker=await mockExtension(page,{settings:{username:'DCCXX',infiniteScroll:false},rules:{
+   artists:{'["artist"]':{from:'artist',to:'Artist',exact:true}},albums:{},albumArtists:{},
+   tracks:{'["artist","song 0"]':{from:'song 0',to:'Song 0',artist:'Artist',exact:true},
+     '["artist","same"]':{from:'same',to:'Same',artist:'Artist',exact:true}}
+ }},{senderUrl:'chrome-extension://test/itunes.html'});
  await loadScripts(page,['rules.js','store.js','library-casing.js','itunes-parser.js','library-cache.js']);
  await loadScripts(page,['itunes.js']);await page.locator('#step-xml').evaluate(e=>e.open=true);await page.locator('#xml-file:enabled').waitFor();
  const xml='<plist><dict><key>Tracks</key><dict>'+[...entries.map(e=>e.rule.to),'Same','Song 0','Absent','Song (feat. Guest)'].map((name,i)=>`<key>${i}</key><dict><key>Name</key><string>${name}</string><key>Artist</key><string>Artist</string></dict>`).join('')+'</dict></dict></plist>';
  await page.locator('#xml-file').setInputFiles({name:'Library.xml',mimeType:'text/xml',buffer:Buffer.from(xml)});
  assert.equal(await page.locator('#review').isHidden(),true,'no speculative preview before comparison');
  await page.locator('#compare').click();await page.locator('#review').waitFor();
- assert.equal(await page.locator('#candidates tr').count(),100);assert.match(await page.locator('#scan-summary').innerText(),/105 changes · 1 need/);
- assert.equal(await page.locator('#selected-count').innerText(),'104 selected');
+ assert.equal(await page.locator('#candidates tr').count(),100);assert.match(await page.locator('#scan-summary').innerText(),/107 preferences to review · 1 need/);
+ assert.equal(await page.locator('#selected-count').innerText(),'106 selected');
  await page.locator('#review-filter').selectOption('unresolved');assert.equal(await page.locator('#candidates tr').count(),1);
  assert.equal(await page.locator('#candidates td').nth(2).textContent(),'Song 0','before uses existing displayed preference');
  await page.locator('#candidates select').selectOption('song 0');
  await page.locator('#review-filter').selectOption('');await page.locator('#select-all').check();
- assert.equal(await page.locator('#selected-count').innerText(),'105 selected','selection spans result pages');
- await page.locator('#search').fill('Absent');assert.equal(await page.locator('#candidates tr').count(),0);
+ assert.equal(await page.locator('#selected-count').innerText(),'107 selected','selection spans result pages');
+ await page.locator('#search').fill('Absent');assert.equal(await page.locator('#candidates tr').count(),1,'unplayed XML track appears without a cache');
  await page.locator('#search').fill('Same');assert.equal(await page.locator('#candidates tr').count(),0,'identical display skipped');
- await page.locator('#search').fill('');await page.locator('#apply').click();assert.match(await page.locator('#confirm-detail').textContent(),/105 display changes. 1 saved preferences replaced/);
- await page.locator('#cancel-confirm').click();assert.equal(Object.keys(worker.data.rules.tracks).length,1);
- await page.locator('#apply').click();await page.locator('#confirm').click();await page.getByText('Complete — 105 display preferences saved.',{exact:true}).waitFor();
- assert.equal(Object.keys(worker.data.rules.tracks).length,105);assert.equal(await page.locator('#candidates tr').count(),0,'saved matches disappear');
+ await page.locator('#search').fill('');await page.locator('#apply').click();assert.match(await page.locator('#confirm-detail').textContent(),/107 display changes. 1 saved preferences replaced/);
+ await page.locator('#cancel-confirm').click();assert.equal(Object.keys(worker.data.rules.tracks).length,2);
+ await page.locator('#apply').click();await page.locator('#confirm').click();await page.getByText('Complete — 107 display preferences saved.',{exact:true}).waitFor();
+ assert.equal(Object.keys(worker.data.rules.tracks).length,108);assert.equal(await page.locator('#candidates tr').count(),0,'saved matches disappear');
  await worker.request('mutate',{operations:[{op:'put',type:'tracks',artist:'Artist',from:'song 1',to:'SoNg 1'}]});
- await page.locator('.backup-details').evaluate(e=>e.open=true);await page.locator('#revert').click();await page.locator('#confirm').click();await page.getByText('Complete — 104 changes undone.',{exact:true}).waitFor();
+ await page.locator('.backup-details').evaluate(e=>e.open=true);await page.locator('#revert').click();await page.locator('#confirm').click();await page.getByText('Complete — 106 changes undone.',{exact:true}).waitFor();
  assert.equal(worker.data.rules.tracks['["artist","song 1"]'].to,'SoNg 1');
  await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'page fits mobile; table scroll stays local');
  console.log('PASS: compact before/after preview, exact-match-only rows, unchanged exclusion, conflicts, 100-row pagination, all-selection, confirmation, selective undo and mobile layout');

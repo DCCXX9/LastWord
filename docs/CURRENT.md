@@ -1,3 +1,20 @@
+# Whole iTunes library import — 11 November 2026
+
+Issue #17. Import now builds local casing preferences directly from XML, including
+songs absent from Last.fm or never played. The review shows the iTunes casing
+beside any saved preference. Replacements start unchecked and XML conflicts need
+a choice. Later matches still require the same spelling and artist, ignoring case.
+
+Import needs no Last.fm cache read or network request. Existing Last.fm cache
+controls and background jobs are separate. The importer uses the existing atomic
+rules and undo write. This removes the need for the recent-plays workaround in
+draft PR #16.
+
+Seven focused suites passed, including a 56,000-rule import without a cache and
+a browser fixture that showed casing for tracks outside the paused cache. Four
+focused suites passed again after the Unicode boundary fix. Jay’s installed
+Edge and signed-in Last.fm were not exercised. Rollback is to revert this PR.
+
 # Cache stall candidate — 7 November 2026
 
 Issue #9 / claude/9-cache-stalls, stacked on codex/6-cache-recovery (PR #7).

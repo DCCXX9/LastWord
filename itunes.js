@@ -1,9 +1,9 @@
 (() => {
   'use strict';
-  const S = LastfmStore, R = LastfmRules, C = LastfmLibraryCache, $ = id => document.getElementById(id);
-  const names = { tracks: 'Song', albums: 'Album', artists: 'Artist' }, size = 100;
+  const S = LastfmStore, R = LastfmRules, $ = id => document.getElementById(id);
+  const names = { tracks: 'Song', albums: 'Album', artists: 'Artist', albumArtists: 'Album artist' }, size = 100;
   const equal = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-  let snapshot, cache, scan, reviewProfile = '', entries = [], batch, page = 1, busy = false, stale = false, controller, confirmation;
+  let snapshot, scan, reviewProfile = '', entries = [], batch, page = 1, busy = false, stale = false, controller, confirmation;
   const selected = () => entries.filter(e => e.selected && e.choice && e.choice !== e.before);
   function message(text = '', error = false) { $('message').textContent = text; $('message').dataset.tone = error ? 'error' : 'success'; }
   function saveState(phase, title, detail = '') {
@@ -47,13 +47,13 @@
       const cell = text => { const c = row.insertCell(); c.textContent = text; return c; };
       const check = document.createElement('input'); check.type = 'checkbox'; check.checked = entry.selected && !!entry.choice;
       check.disabled = busy || !entry.choice || entry.choice === entry.before;
-      check.setAttribute('aria-label', 'Use ' + entry.before);
+      check.setAttribute('aria-label', 'Use ' + (entry.choice || entry.to));
       check.addEventListener('change', () => { entry.selected = check.checked; summary(); }); cell('').append(check);
       const context = cell(names[entry.type]);
       if (entry.artist) { const artist = document.createElement('span'); artist.className = 'artist-context'; artist.textContent = entry.artist; context.append(artist); }
-      cell(entry.before); const arrow = cell('→'); arrow.className = 'arrow'; const after = cell(entry.choice || '');
+      cell(entry.before || '—'); const arrow = cell('→'); arrow.className = 'arrow'; const after = cell(entry.choice || '');
       if (entry.variants.length > 1) {
-        const select = document.createElement('select'); select.setAttribute('aria-label', 'Choose casing for ' + entry.before);
+        const select = document.createElement('select'); select.setAttribute('aria-label', 'Choose casing for ' + entry.to);
         for (const value of ['', ...entry.variants]) { const o = document.createElement('option'); o.value = value; o.textContent = value || 'Choose casing…'; select.append(o); }
         select.value = entry.choice; select.disabled = busy;
         select.addEventListener('change', () => { entry.choice = select.value; entry.selected = false; draw(); }); after.replaceChildren(select);
@@ -70,17 +70,18 @@
   function build(keep = false) {
     const choices = new Map(entries.map(e => [e.type + e.id, e.choice]));
     reviewProfile = snapshot.settings.username;
-    const matched = C.compare(scan, cache, snapshot.rules);
-    entries = matched.candidates.map(e => {
+    entries = scan.candidates.flatMap(e => {
       const expected = snapshot.rules[e.type]?.[e.id] || null;
+      const before = expected?.to || '';
+      if (e.variants.every(value => value === before)) return [];
       const choice = keep && choices.has(e.type + e.id) ? choices.get(e.type + e.id) : e.variants.length === 1 ? e.to : '';
-      return { ...e, choice, expected: structuredClone(expected), selected: !expected && !!choice };
+      return [{ ...e, before, choice, expected, selected: !expected && !!choice }];
     });
     stale = false; page = 1; $('review').hidden = false;
     $('step-review').open = true; $('step-xml').open = false;
-    $('xml-step-status').textContent = 'Compared';
+    $('xml-step-status').textContent = 'Ready to review';
     if ($('save-status').hidden) $('review-step-status').textContent = entries.length.toLocaleString() + ' changes';
-    $('scan-summary').textContent = entries.length.toLocaleString() + ' changes · ' + entries.filter(e => !e.choice).length.toLocaleString() + ' need a casing choice' + (C.status(cache).complete ? '' : ' · Partial library');
+    $('scan-summary').textContent = entries.length.toLocaleString() + ' preferences to review · ' + entries.filter(e => !e.choice).length.toLocaleString() + ' need a casing choice';
     draw();
   }
   async function refresh() {
@@ -91,12 +92,12 @@
     if (batch) $('batch-summary').textContent = batch.remaining.toLocaleString() + ' changes can be undone. Later edits are kept.';
 
   }
-  $('xml-file').addEventListener('change', () => { scan = null; entries = []; $('review').hidden = true; $('save-status').hidden = true; $('step-xml').open = true; $('xml-step-status').textContent = $('xml-file').files.length ? 'File selected' : 'Choose a file'; $('review-step-status').textContent = 'Compare your XML first'; setBusy(false); message(); });
+  $('xml-file').addEventListener('change', () => { scan = null; entries = []; $('review').hidden = true; $('save-status').hidden = true; $('step-xml').open = true; $('xml-step-status').textContent = $('xml-file').files.length ? 'File selected' : 'Choose a file'; $('review-step-status').textContent = 'Read your XML first'; setBusy(false); message(); });
   $('compare').addEventListener('click', async () => {
     if (busy || !$('xml-file').files.length) return;
     controller = new AbortController(); const signal = controller.signal, user = snapshot.settings.username;
     reviewProfile = user;
-    setBusy(true); $('save-status').hidden = true; $('xml-step-status').textContent = 'Comparing…'; $('compare').textContent = 'Comparing…'; $('review').hidden = true; $('scan-status').hidden = false; $('scan-error').textContent = ''; message();
+    setBusy(true); $('save-status').hidden = true; $('xml-step-status').textContent = 'Reading…'; $('compare').textContent = 'Reading XML…'; $('review').hidden = true; $('scan-status').hidden = false; $('scan-error').textContent = ''; message();
     try {
       const combined = new Map(); let songs = 0;
       for (const file of $('xml-file').files) {
@@ -110,26 +111,27 @@
           combined.set(key, old ? { ...old, variants: [...new Set([...old.variants, ...candidate.variants])] } : candidate);
         }
       }
-      scan = { songs, candidates: [...combined.values()] }; $('scan-progress').removeAttribute('value');
-      cache = await S.cacheLibrary('read');
-      if(!cache)throw new Error('Start caching your Last.fm library, then compare again.');
-      if (signal.aborted) throw new DOMException('Comparison paused.', 'AbortError');
       await refresh();
-      if (snapshot.settings.username !== user || cache.username !== user) throw new Error('Your connected profile changed. Compare again.');
+      if (signal.aborted) throw new DOMException('Reading paused.', 'AbortError');
+      if (snapshot.settings.username !== user) throw new Error('Your connected profile changed. Read the XML again.');
+      scan = { songs, candidates: [...combined.values()] };
       build();
     } catch (error) {
-      if (signal.aborted || error.name === 'AbortError') message('Paused. Compare again to resume.');
+      scan = null;
+      if (signal.aborted || error.name === 'AbortError') message('Paused. Choose Review XML to start again.');
       else $('scan-error').textContent = error.message;
-      try { await refresh(); cache = await S.cacheLibrary('read'); if (scan && cache && cache.username === user && snapshot.settings.username === user) build(); }
-      catch { /* Keep the original comparison error visible. */ }
-    } finally { controller = null; $('scan-status').hidden = true; $('compare').textContent = 'Compare libraries'; if (!scan || $('scan-error').textContent) $('xml-step-status').textContent = 'Compare again'; setBusy(false); if (!$('review').hidden) draw(); }
+    } finally { controller = null; $('scan-status').hidden = true; $('compare').textContent = 'Review XML'; if (!scan) $('xml-step-status').textContent = 'Read again'; setBusy(false); if (!$('review').hidden) draw(); }
   });
   $('cancel-scan').addEventListener('click', () => controller?.abort());
   $('select-all').addEventListener('change', e => { for (const entry of entries) entry.selected = e.target.checked && !!entry.choice && entry.choice !== entry.before; draw(); });
   for (const id of ['search', 'type-filter', 'review-filter']) $(id).addEventListener(id === 'search' ? 'input' : 'change', () => { page = 1; draw(); });
   $('previous').addEventListener('click', () => { page--; draw(); }); $('next').addEventListener('click', () => { page++; draw(); });
   $('refresh-review').addEventListener('click', async () => {
-    try { await refresh(); cache = await S.cacheLibrary('read'); build(true); } catch (error) { message(error.message, true); }
+    try {
+      await refresh();
+      if (snapshot.settings.username !== reviewProfile) throw new Error('Your connected profile changed. Read the XML again.');
+      build(true);
+    } catch (error) { message(error.message, true); }
   });
   function confirm(action, payload, detail) {
     confirmation = { action, payload }; $('confirm-heading').textContent = action === 'apply' ? 'Save casing changes?' : 'Undo last import?';
@@ -139,8 +141,10 @@
   $('apply').addEventListener('click', () => {
     if (busy || stale || !selected().length) return;
     const chosen = selected();
-    confirm('apply', { username: reviewProfile, cacheId: cache.id, entries: chosen.map(e => ({ type: e.type, id: e.id,
-      rule: { from: e.from, to: e.choice, ...(e.artist ? { artist: e.artist } : {}), exact: true }, expected: e.expected })) },
+    confirm('apply', { username: reviewProfile, source: 'xml', entries: chosen.map(e => ({ type: e.type, id: e.id,
+      // Some Unicode letters expand when lowercased. Keep a valid original
+      // spelling if the normalized key is longer than the rule field limit.
+      rule: { from: e.from.length <= 500 ? e.from : e.choice, to: e.choice, ...(e.artist ? { artist: e.artist } : {}), exact: true }, expected: e.expected })) },
       chosen.length.toLocaleString() + ' display changes. ' + chosen.filter(e => e.expected).length + ' saved preferences replaced.' +
       (batch?.remaining ? ' This replaces the previous import’s undo record.' : '') + ' Scrobbles stay unchanged.');
   });
@@ -158,7 +162,7 @@
     try {
       out = action === 'apply' ? await S.applyItunes(payload) : await S.revertItunes(payload);
       saveState('updating', 'Saved. Updating this preview…');
-      await refresh(); if (scan && cache) build(true);
+      await refresh(); if (scan && snapshot.settings.username === reviewProfile) build(true);
       saveState('complete', action === 'apply'
         ? 'Complete — ' + out.applied.toLocaleString() + ' display preferences saved.'
         : 'Complete — ' + out.reverted.toLocaleString() + ' changes undone.',
@@ -179,7 +183,6 @@
       const link = document.createElement('a'); link.href = url; link.download = 'lastfm-display-backup.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { message(error.message, true); }
   });
-  window.addEventListener('lfm-cache-changed',event=>{if(cache&&event.detail?.cache?.id!==cache.id){stale=true;summary()}});
   S.subscribe(next => {
     snapshot = next; $('profile-status').textContent = next.settings.username || 'Not connected';
     if (controller && reviewProfile && reviewProfile !== next.settings.username) controller.abort();

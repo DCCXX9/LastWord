@@ -201,8 +201,9 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
     if (!Array.isArray(message.entries) || !message.entries.length) {
       throw new Error('Select at least one display preference to apply.');
     }
-    const cache = stored[LastfmLibraryCache.KEY]?.profiles?.[R.normalize(current.settings.username)];
-    if (!cache?.groups || message.cacheId !== cache.id) {
+    const fromXml = message.source === 'xml';
+    const cache = fromXml ? null : stored[LastfmLibraryCache.KEY]?.profiles?.[R.normalize(current.settings.username)];
+    if (!fromXml && (!cache?.groups || message.cacheId !== cache.id)) {
       throw new Error('Finish comparing your Last.fm library before applying casing changes.');
     }
     const rules = stored.rules == null ? R.empty() : validateRules(stored.rules);
@@ -214,18 +215,19 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
       if (seen.has(key)) throw new Error('The selection contains duplicate display preferences.');
       seen.add(key);
       validRule(type, id, rule);
-      const source = cache.groups[type]?.items[id];
-      if (!source || source.ambiguous || !R.sameSpelling(source.name, rule.to)) {
+      const source = cache?.groups[type]?.items[id];
+      if (!fromXml && (!source || source.ambiguous || !R.sameSpelling(source.name, rule.to))) {
         throw new Error('This exact spelling was not found in your Last.fm library. Only casing changes are allowed.');
       }
-      if (rule.exact !== true || rule.from !== R.normalize(rule.to)) {
+      const from = fromXml ? R.normalize(rule.from) : rule.from;
+      if (rule.exact !== true || from !== R.normalize(rule.to)) {
         throw new Error('An XML preference must preserve its original spelling and change display casing only.');
       }
       const before = rules[type][id] || null;
       if (!owns(entry, 'expected') || !equal(before, entry.expected)) {
         throw new Error('A selected preference changed in another tab. Scan again to review the latest preferences.');
       }
-      const displayed = before && R.sameSpelling(source.name, before.to) ? before.to : source.name;
+      const displayed = fromXml ? before?.to : before && R.sameSpelling(source.name, before.to) ? before.to : source.name;
       if (displayed === rule.to) { unchanged++; continue; }
       rules[type][id] = rule;
       changes.push({ type, id, before, after: rule });
@@ -283,7 +285,9 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
     // XML undo record. Cache growth must not multiply ordinary browsing cost.
     const cacheAction=message.action==='library-cache';
     const metadata=cacheAction&&['plan','info'].includes(message.op);
-    const keys=message.action==='read'?['settings','rules']:cacheAction?
+    const keys=message.action==='read'?['settings','rules']:
+      message.action==='itunes-status'?['settings',UNDO]:
+      message.action==='itunes-revert'||message.action==='itunes-apply'&&message.source==='xml'?['settings','rules',UNDO]:cacheAction?
       ['settings','lfmLibraryJobsV1',...(['active','state'].includes(message.op)||metadata?[]:[LastfmLibraryCache.KEY])]:null;
     const stored = await chrome.storage.local.get(keys);
     if (metadata) stored[LastfmLibraryCache.KEY] = await cacheMetadataView();

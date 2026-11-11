@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 (async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,args:['--no-sandbox']});try{
  const p=await browser.newPage();await p.goto('about:blank');await p.setContent(fs.readFileSync(path.join(__dirname,'../itunes.html'),'utf8').replace(/<script[^>]*><\/script>/g,''));
  const entry={type:'tracks',id:'["artist","song"]',rule:{from:'song',to:'Song',artist:'Artist',exact:true}};
- const w=await mockExtension(p,{settings:{username:'DCCXX'},rules:{artists:{},albums:{},tracks:{},albumArtists:{}},lfmLibraryCacheV1:libraryCache('DCCXX',[entry])},{senderUrl:'chrome-extension://test/itunes.html'});
+ const w=await mockExtension(p,{settings:{username:'DCCXX'},rules:{artists:{'["artist"]':{from:'artist',to:'Artist',exact:true}},albums:{},tracks:{},albumArtists:{}},lfmLibraryCacheV1:libraryCache('DCCXX',[entry])},{senderUrl:'chrome-extension://test/itunes.html'});
  await loadScripts(p,['rules.js','store.js','library-casing.js','itunes-parser.js','library-cache.js','cache-ui.js','itunes.js']);
  await p.waitForFunction(()=>!document.querySelector('#xml-file').disabled&&document.querySelector('#cache-step-status').textContent==='Complete');
  assert.equal(await p.locator('details.workflow-step').count(),3);assert.equal(await p.locator('#step-cache').evaluate(e=>e.open),false);assert.equal(await p.locator('#step-xml').evaluate(e=>e.open),true);

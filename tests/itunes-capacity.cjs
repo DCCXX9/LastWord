@@ -27,18 +27,18 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'test-resul
     return { type: 'tracks', id: LastfmRules.idFor('tracks', to, 'Artist'),
      rule: { from: LastfmRules.normalize(to), to, artist: 'Artist', exact: true }, expected: null };
    });
-   const cache = LastfmLibraryCache.create('LibraryTest');
-   for (const group of Object.values(cache.groups)) group.done = true;
-   for (const entry of entries) cache.groups.tracks.items[entry.id] = {name:entry.rule.to.toUpperCase(),artist:'Artist'};
-   await chrome.storage.local.set({lfmLibraryCacheV1:{version:1,profiles:{librarytest:cache}}});
-   const saved = await LastfmStore.applyItunes({ username: 'LibraryTest', cacheId:cache.id, entries });
+   const saved = await LastfmStore.applyItunes({ username: 'LibraryTest', source: 'xml', entries });
+   const sample = entries[0];
+   const futureDisplay = LastfmRules.get(saved.snapshot.rules, 'tracks', sample.rule.to.toLowerCase(), 'Artist');
+   const differentTitle = LastfmRules.get(saved.snapshot.rules, 'tracks', sample.rule.to + ' (feat. Guest)', 'Artist');
    const bytes = await chrome.storage.local.getBytesInUse(null);
    const status = await LastfmStore.itunesStatus();
    const later = entries[0].rule.to.toUpperCase();
    await LastfmStore.mutate([{op:'put',type:'tracks',from:entries[0].rule.from,to:later,artist:'Artist'}]);
    const reverted = await LastfmStore.revertItunes({id:status.batch.id});
    const stored = await chrome.storage.local.get(null);
-   return { applied: saved.applied, bytes, undoCount: status.batch.count,
+   return { applied: saved.applied, bytes, undoCount: status.batch.count, futureDisplay, differentTitle,
+    cache: stored.lfmLibraryCacheV1,
     reverted: reverted.reverted, kept: reverted.kept,
     trackCount: Object.keys(stored.rules.tracks).length,
     laterChoicePreserved: stored.rules.tracks[entries[0].id].to === later,
@@ -46,6 +46,9 @@ const root = path.resolve(__dirname, '..'), output = path.join(root, 'test-resul
     permissions: chrome.runtime.getManifest().permissions };
   });
   assert.equal(result.applied, 56000); assert.equal(result.undoCount, 56000);
+  assert.equal(result.futureDisplay, 'sTyLiSeD library song 0 — café & friends');
+  assert.equal(result.differentTitle, null);
+  assert.equal(result.cache, undefined);
   assert.ok(result.bytes > 10 * 1024 * 1024, 'real Chrome storage exceeds its ordinary 10 MB quota');
   assert.equal(result.reverted, 55999); assert.equal(result.kept, 1);
   assert.equal(result.trackCount, 1); assert.equal(result.laterChoicePreserved, true);

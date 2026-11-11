@@ -1,14 +1,12 @@
-# iTunes casing comparison
+# iTunes casing import
 
 Copy letter casing from selected XML exports onto the connected user's displayed
 Last.fm names. This never changes scrobbles, XML or iTunes metadata.
 
 ## Review flow
 
-Three numbered, collapsible steps guide the process: cache Last.fm, import XML,
-then review/accept changes. Step 2 explains iTunes File → Library → Export
-Library… and Compare libraries. Completed caching opens Step 2; comparison
-opens Step 3. Incomplete caching is visible in the collapsed step summary. The streaming XML reader supports standard
+Read the XML, then review and save display preferences. You can start as soon as
+you connect your profile. The Last.fm cache is a separate section. The streaming XML reader supports standard
 Apple and older Apple Computer plist headers, rejects custom DTDs/entities, and
 never fetches external XML resources. XML locations, playlists and IDs are discarded.
 
@@ -21,8 +19,7 @@ retries (5 seconds rising to every 5 minutes); only Pause, a profile change or
 completion stops a job. Caching waits while Last.fm pages are loading. Closing
 the comparison screen does not stop the job; a 30-second alarm resumes it after
 the browser restarts. Pause and Resume caching are separate
-from XML comparison. Compare uses the current saved cache without restarting it.
-Incomplete review is labeled Partial library and includes observed matches only.
+from XML import.
 
 Advanced → Rebuild cache requires confirmation, warns about the download time
 and warns that 50,000+ scrobbles can take over 30 minutes (large libraries can
@@ -41,8 +38,8 @@ Sign-in, whole-page structure and pagination failures still pause the job rather
 than silently declaring an unverifiable library complete. Rate limits retain the
 existing pause and pacing rules.
 
-Review shows Type/artist, Before → After, selection, search and 100-row pages.
-Before includes applicable existing local casing. Identical names are omitted.
+Review shows the type, artist, saved casing and iTunes casing, with selection,
+search and 100-row pages. Identical saved preferences are omitted.
 Conflicting XML casings require a choice; replacements start unchecked. Save
 casing changes confirms counts and writes local rules plus persistent undo.
 Saving feedback appears before the worker call, disables review changes and
@@ -54,19 +51,18 @@ succeeded and asks for a reload. Undo preserves subsequent manual edits. Existin
 
 Compare NFC-normalized names ignoring case only. Preserve punctuation, accents,
 inner whitespace and suffixes; songs/albums also need the exact artist identity.
-Song (feat. Artist) cannot match Song unless Song itself appears in the cache.
-Unobserved XML names and ambiguous raw casings never create preferences.
-Separate album-artist metadata cannot be proved by these aggregate lists, so it
-is not imported speculatively; native manual album-artist casing still works.
+A rule for Song does not match Song (feat. Artist). Unplayed names are saved as
+rules, ready to apply when an exact match appears. Album artists are imported
+from explicit Album Artist fields.
 
-library-cache.js owns parsing/comparison, library-cache-bridge.js reads raw lists
-in the connected tab, library-cache-job.js coordinates persisted background work,
-library-cache-store.js handles sole-writer operations, and cache-ui.js owns its
-controls. background.js serializes storage changes. Last.fm's double-escaped literal plus
+library-cache.js parses ranked lists for the separate Last.fm cache.
+library-cache-fetch.js reads pages and library-cache-job.js coordinates background
+work. library-cache-store.js handles writes and cache-ui.js owns its controls.
+Last.fm's double-escaped literal plus
 signs are decoded only for link verification; matching retains the raw plus sign.
 
-Apply revalidates profile, cache generation, observed spelling, casing-only rules
-and expected previous preferences. Rules and undo save atomically. The renderer
+Apply revalidates the profile, casing-only identity and expected previous
+preferences. Older open import screens can still use their cache-backed review. Rules and undo save atomically. The renderer
 rejects substantive replacements even from old backups. pages.js uses literal
 GET requests and unconditionally rejects edits/forms, including old experimental
 correction callers. Normal native site edits remain separate user actions.
@@ -91,8 +87,8 @@ resolved.
 
 ## Checks
 
-Coverage includes exact intersection, unchanged exclusion, suffix/artist mismatch,
-original/current Before values, profile/stale-cache guards, read-only transport,
+Coverage includes a cache-free import, future-track display, identical saved
+preference exclusion, exact artist and title matching, profile guards, read-only transport,
 pause/reopen/resume, apply/undo, later edits, infinite-scroll display, friend
 isolation and large-storage capacity. Fixtures do not substitute for installed
 signed-in acceptance. See CURRENT.md for actual results and full-cache limits.
