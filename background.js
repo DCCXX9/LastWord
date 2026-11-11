@@ -295,7 +295,7 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
     if (message.action === 'read') return current;
     if (message.action === 'library-cache') {
       const result=await LastfmLibraryCacheStore.execute(message,current,stored,sender);
-      if (['page','start','resume','recover','rebuild','import'].includes(message.op)) cacheKnown = false;
+      if (['page','recent-page','start','resume','recover','rebuild','import'].includes(message.op)) cacheKnown = false;
       if(['resume','rebuild','retry'].includes(message.op))void LastfmLibraryCacheJobs.wake();
       if(['pause','import'].includes(message.op))void LastfmLibraryCacheJobs.cancel();
       return result;
@@ -379,10 +379,28 @@ importScripts('rules.js', 'store.js', 'adapter.js', 'pages.js', 'library-cache.j
   }
 
   const enqueue=(message,sender)=>{const pending=queue.then(()=>execute(message,sender));queue=pending.catch(()=>{});return pending};
-  LastfmLibraryCacheJobs.init(message=>enqueue({channel:'lastfm-store-v1',action:'library-cache',...message},{id:chrome.runtime.id,url:'chrome-extension://'+chrome.runtime.id+'/background.js'}));
+  const internalCache=message=>enqueue({channel:'lastfm-store-v1',action:'library-cache',...message},{id:chrome.runtime.id,url:'chrome-extension://'+chrome.runtime.id+'/background.js'});
+  LastfmLibraryCacheJobs.init(internalCache);
+  let recentCheck;
+  async function checkRecent(message,sender) {
+    if(sender.id!==chrome.runtime.id||sender.url!=='chrome-extension://'+chrome.runtime.id+'/itunes.html')throw Error('Open the iTunes comparison.');
+    const {username,cache}=await internalCache({op:'info'});
+    if(!cache||message.id!==cache.id||message.username!==username)throw Error('The library cache changed. Compare again.');
+    if(recentCheck?.id===cache.id)return recentCheck.pending;
+    const pending=(async()=>{
+      try{
+        const data=await LastfmLibraryFetch.page({username,group:'recent',page:1},new AbortController().signal);
+        const added=await internalCache({op:'recent-page',id:cache.id,username,data});
+        return {added};
+      }catch{return null}
+      finally{void LastfmLibraryFetch.close()}
+    })();
+    recentCheck={id:cache.id,pending};
+    try{return await pending}finally{if(recentCheck?.pending===pending)recentCheck=undefined}
+  }
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (message?.channel !== 'lastfm-store-v1') return false;
-    const pending = enqueue(message,sender);
+    const pending = message.action==='library-cache'&&message.op==='check-recent' ? checkRecent(message,sender) : enqueue(message,sender);
     pending.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error.message }));
     return true;
   });

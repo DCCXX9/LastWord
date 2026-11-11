@@ -1,3 +1,20 @@
+# Recent plays in iTunes casing review — 11 November 2026
+
+Issue #15. The comparison used only the saved library snapshot, which can predate
+new scrobbles. The supplied XML has `PARLAY` by Cochise, and a 7 November cache
+export does not have the track. The installed browser's current cache was not read.
+
+Comparison now checks one page of the configured profile's recent plays using
+the existing paced, read-only Last.fm request path. Verified new track names are
+added to the cache without a rebuild. Existing entries, scan position, preferences
+and undo are kept. If Last.fm cannot be checked, the saved cache still works.
+Spelling, artist and ambiguity checks still gate the local casing preference.
+
+An isolated Supermium fixture reproduced the missing row before the change. It
+now previews and saves Parlay → PARLAY, honours a network pause and leaves the
+cache job unchanged. Existing import and background cache tests passed. The fix
+has not been verified in Jay's signed-in Edge session. Rollback: revert this PR.
+
 # Cache stall candidate — 7 November 2026
 
 Issue #9 / claude/9-cache-stalls, stacked on codex/6-cache-recovery (PR #7).

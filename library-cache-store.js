@@ -24,6 +24,15 @@
   }
   if(m.op==='export'){const selected=m.draft?draft:cache;if(!ui||!selected)throw Error('No cache is available to export.');return C.exportFile(selected)}
   if(m.op==='inspect'){if(!ui)throw Error('Open the cache screen.');return C.status(C.validate(m.payload,current.settings.username))}
+  if(m.op==='recent-page'){
+   if(!trusted||!cache||cache.id!==m.id||m.username!==current.settings.username)throw Error('The library cache changed. Compare again.');
+   const added=C.addRecent(cache,m.data.items);
+   if(added){
+    cache.updatedAt=Math.max(Date.now(),cache.updatedAt+1);
+    await chrome.storage.local.set({[C.KEY]:root});
+   }
+   return added;
+  }
   if(m.op==='page'){
    // Only the background worker reads library pages; it needs no Last.fm tab.
    const c=(draft?.id===m.id?draft:cache);
